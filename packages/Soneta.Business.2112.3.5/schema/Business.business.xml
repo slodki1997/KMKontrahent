@@ -1,0 +1,1531 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Business" namespace="Soneta.Business.Db" internal="true"
+        versionName="system" versionNumber="21120305">
+
+	<using>Soneta.Config</using>
+	<using>Soneta.Business.App</using>
+	<using>Soneta.Business.Db.Wizard</using>
+	<using>Soneta.Business.Runtime</using>
+	<using>Soneta.Business.Db.Permissions</using>
+	<using>Soneta.Business.Db.Notifications</using>
+	<using>Soneta.Business.Db.Verifiers</using>
+
+	<!-- ====================================================================================== -->
+	<!-- TYPY STANDARDOWE -->
+
+	<simpletype name="string">
+		<cstype>string</cstype>
+		<nullcondition>string.IsNullOrEmpty(value)</nullcondition>
+		<null>""</null>
+		<csinitializer> = ""</csinitializer>
+		<dbfield type="string"/>
+	</simpletype>
+
+	<simpletype name="int">
+		<cstype>int</cstype>
+		<nullcondition>value==0</nullcondition>
+		<null>0</null>
+		<dbfield type="int"/>
+	</simpletype>
+
+	<simpletype name="enum">
+		<cstype>int</cstype>
+		<nullcondition>((int)value)==0</nullcondition>
+		<null>0</null>
+		<dbfield type="int"/>
+	</simpletype>
+
+	<simpletype name="date">
+		<cstype>Date</cstype>
+		<nullcondition>value==Date.MinValue</nullcondition>
+		<null>Date.MinValue</null>
+		<dbfield type="DateTime"/>
+	</simpletype>
+
+	<simpletype name="time">
+		<cstype>Time</cstype>
+		<nullcondition>value==Time.Zero</nullcondition>
+		<null>Time.Zero</null>
+		<dbfield type="int"/>
+	</simpletype>
+
+	<simpletype name="datetime">
+		<cstype>DateTime</cstype>
+		<nullcondition>value==DateTime.MinValue</nullcondition>
+		<null>DateTime.MinValue</null>
+		<dbfield type="DateTime"/>
+	</simpletype>
+
+	<simpletype name="boolean">
+		<cstype>bool</cstype>
+		<nullcondition>!value</nullcondition>
+		<null>false</null>
+		<dbfield type="bool"/>
+	</simpletype>
+
+	<simpletype name="double">
+		<cstype>double</cstype>
+		<nullcondition>value==0.0</nullcondition>
+		<null>0.0</null>
+		<dbfield type="double"/>
+	</simpletype>
+
+	<simpletype name="percent">
+		<cstype>Percent</cstype>
+		<nullcondition>value==Percent.Zero</nullcondition>
+		<null>Percent.Zero</null>
+		<dbfield type="decimal"/>
+	</simpletype>
+
+	<simpletype name="decimal">
+		<cstype>decimal</cstype>
+		<nullcondition>value==0.0m</nullcondition>
+		<null>0.0m</null>
+		<dbfield type="decimal" />
+		<attribute>TypeConverter(typeof(Soneta.Business.Design.CurrencyConverter))</attribute>
+	</simpletype>
+
+	<simpletype name="guid">
+		<cstype>System.Guid</cstype>
+		<nullcondition>value==System.Guid.Empty</nullcondition>
+		<null>Guid.Empty</null>
+		<dbfield type="Guid"/>
+	</simpletype>
+
+	<simpletype name="interfaceGroup">
+		<nullcondition>value==null</nullcondition>
+		<null>null</null>
+		<dbfield type="int" />
+		<dbfield type="string" postfix="Type" />
+	</simpletype>
+
+	<simpletype name="FromTo">
+		<cstype>FromTo</cstype>
+		<nullcondition>value==FromTo.Empty</nullcondition>
+		<null>FromTo.Empty</null>
+		<dbfield type="DateTime" postfix="From"/>
+		<dbfield type="DateTime" postfix="To"/>
+	</simpletype>
+
+	<simpletype name="YearMonth">
+		<cstype>YearMonth</cstype>
+		<nullcondition>value==YearMonth.Empty</nullcondition>
+		<null>YearMonth.Empty</null>
+		<dbfield type="int" postfix="Year"/>
+		<dbfield type="int" postfix="Month"/>
+	</simpletype>
+
+	<simpletype name="Fraction">
+		<cstype>Fraction</cstype>
+		<nullcondition>value.Value==0</nullcondition>
+		<null>Fraction.Zero</null>
+		<dbfield type="int" postfix="Num"/>
+		<dbfield type="int" postfix="Den"/>
+	</simpletype>
+
+	<simpletype name="currency">
+		<cstype>Currency</cstype>
+		<nullcondition>value==Currency.Zero</nullcondition>
+		<null>Currency.Zero</null>
+		<dbfield type="decimal" postfix="Value"/>
+		<dbfield type="string" postfix="Symbol" />
+	</simpletype>
+
+	<simpletype name="doublecy">
+		<cstype>DoubleCy</cstype>
+		<nullcondition>value==DoubleCy.Zero</nullcondition>
+		<null>DoubleCy.Zero</null>
+		<dbfield type="double" postfix="Value" />
+		<dbfield type="string" postfix="Symbol" />
+	</simpletype>
+
+	<simpletype name="text">
+		<cstype>MemoText</cstype>
+		<nullcondition>value.IsEmpty</nullcondition>
+		<null>null</null>
+		<dbfield type="memo"/>
+	</simpletype>
+
+	<simpletype name="binary">
+		<cstype>MemoBin</cstype>
+		<nullcondition>value.IsEmpty</nullcondition>
+		<null>null</null>
+		<dbfield type="binary"/>
+	</simpletype>
+
+	<simpletype name="timesec">
+		<cstype>TimeSec</cstype>
+		<dbfield type="double"/>
+		<nullcondition>value==TimeSec.Zero</nullcondition>
+		<null>TimeSec.Zero</null>
+	</simpletype>
+
+	<!-- ====================================================================================== -->
+	<!-- FEATURES -->
+
+	<table name="FeatureDefinition" tablename="FeatureDefs" guided="Root" caption="Definicja cechy"
+		config="true" tablecaption="Definicje cechy" namespace="Soneta.Business">
+		<key name="ByName" keyunique="true" keyprimary="true">
+			<keycol name="TableName"/>
+			<keycol name="Name"/>
+		</key>
+		<col name="TableName" type="string" length="16" required="true" readonly="true"
+			category="Ogólne" caption="Klasa" description="Klasa obiektu nadrzędanego"/>
+		<col name="Name" type="string" length="30" required="true" important="true"
+			category="Ogólne" caption="Nazwa" description="Nazwa cechy" localization="dictionary"/>
+		<col name="Category" type="string" length="30" localization="dictionary"
+			category="Ogólne" caption="Kategoria" description="Kategoria cechy grupująca wartości na formularzu">
+			<attribute>Dictionary("Feat.Category")</attribute>
+		</col>
+		<col name="Description" type="string" length="80" localization="dictionary"
+			category="Ogólne" caption="Opis" description="Opis objaśniający zastosowanie cechy"/>
+		<col name="TypeNumber" type="FeatureTypeNumber" important="true"
+			category="Ogólne" caption="Typ" description="Typ wartości przechowywanej przez cechę"/>
+		<col name="TypeInformation" type="string" length="30" modifier="internal"/>
+		<col name="ReadOnlyMode" type="FeatureReadOnlyMode"
+			category="Ogólne" caption="Tylko odczyt" description="Określa warunki edycji cechy z formularza lub listy."/>
+		<col name="InitValueStr" type="string" length="80" modifier="internal"
+			category="Ogólne" description="Wartość w formacie tekstowym inicjująca cechę podczas dodawania zapisu."/>
+
+		<col name="Algorithm" type="FeatureAlgorithm"
+			category="Algorytm" caption="Algorytm" description="Rodzaj algorytmu wyliczenia cechy"/>
+		<col name="ValueRequired" type="boolean"
+			category="Algorytm" caption="Wartość wymagana" description="Wymagane jest wprowadzenie wartości tej cechy"/>
+		<col name="Precision" type="int"
+			category="Algorytm" description="Prezycja przechowywania liczb zmiennoprzecinkowych"/>
+		<col name="ValueFrom" type="string" length="80"
+			category="Algorytm" description="Minimalna akceptowalna wartość. Wartość pusta oznacza brak ograniczeń"/>
+		<col name="ValueTo" type="string" length="80"
+			category="Algorytm" description="Maksymalna akceptowalna wartość. Wartość pusta oznacza brak ograniczeń"/>
+		<col name="TextLength" type="int"
+			category="Algorytm" description="Maksymalny rozmiar wprowadzanego tekstu"/>
+		<col name="Code" type="text"
+			category="Algorytm" description="Algorytm (C#) odczytu i wyliczenia cechy">
+			<attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+		</col>
+		<col name="ValueFilter" type="string" length="255"
+			category="Algorytm" description="Wyrażenie filtrujące poprawne wartości dla cechy. Filtrowanie wartości obiektowych."/>
+
+		<col name="Group" type="boolean"
+			category="Ogólne" caption="Grupa" description="Cecha wykorzystywana do grupowania wartości w drzewie po lewej strony listy"/>
+		<col name="History" type="boolean"
+			category="Ogólne" caption="Historyczna" description="Wskazuje na historyczność wartości cechy"/>
+		<col name="StrictDictionary" type="boolean"
+			category="Ogólne" caption="Tylko słownik" description="Cecha może przyjmować wartości tylko ze slownika"/>
+		<col name="Dictionary" type="string" length="14"
+			category="Ogólne" caption="Nazwa słownika" description="Nazwa słownika wartości do wyboru">
+			<attribute>Dictionary("Feature.Diction")</attribute>
+		</col>
+		<col name="BISerialization" type="boolean" caption="Utrwalanie BI"
+         category="Ogólne" description="Cecha utrwalana mechanizmem BI"/>
+		<col name="Info" type="string" length="2" description="Pole tymczasowe. Nie używać."/>
+
+	</table>
+
+	<interface name="IFeatureTransferHost" />
+
+	<table name="FeatureTransferDefinition" tablename="FeatureTrDefs" guided="Root" caption="Definicja transferu cechy"
+		config="true" tablecaption="Definicje transferu cechy" namespace="Soneta.Business">
+		<col name="Host" type="IFeatureTransferHost" keyprimary="true" required="true" readonly="true"
+			   relname="Definicje transferu cechy" relguided="inner" delete="cascade">
+			<keycol name="TableName"/>
+			<keycol name="FeatureDefinition"/>
+		</col>
+		<key name="ByHost" keyclass="Lp" keyclasscol="Lp">
+			<keycol name="Host" />
+			<keycol name="TableName" />
+		</key>
+		<col name="Lp" type="int" required="true" category="Ogólne" batchfield="false"
+			description="Liczba porządkowa definicji transferu cech" />
+		<col name="TableName" type="string" length="16" required="true" readonly="true"
+			   category="Ogólne" caption="Klasa" description="Klasa definicji cechy"/>
+		<col name="FeatureDefinition" type="FeatureDefinition" required="true"
+			   category="Ogólne" caption="Definicja cechy" description="Definicja cechy" />
+		<col name="Synchronize" type="boolean" category="Ogólne" caption="Synchronizuj"
+				 description="Flaga wskazująca, czy cecha ma być synchronizowana" />
+	</table>
+
+	<enum name="FeatureTypeNumber"/>
+	<enum name="FeatureAlgorithm"/>
+	<enum name="FeatureReadOnlyMode"/>
+
+	<table name="FeatureSetDefinition" tablename="FSDefs" guided="Root" caption="Definicja zestawu cech"
+		config="true" tablecaption="Definicje zestawu cech" namespace="Soneta.Business">
+		<key name="ByHostName" keyunique="true" keyprimary="true">
+			<keycol name="HostName"/>
+			<keycol name="Name"/>
+		</key>
+		<col name="HostName" type="string" length="16" required="true" readonly="true"
+			category="Ogólne" caption="Typ danych" description="Typ danych, którego dotyczy definicja" />
+		<col name="Name" type="string" length="30" required="true" important="true" modifier="public virtual"
+			category="Ogólne" caption="Nazwa" description="Nazwa cechy" localization="dictionary" />
+		<col name="Description" type="string" length="80" localization="dictionary"
+			category="Ogólne" caption="Opis" description="Opis objaśniający zastosowanie zestawu cech" />
+		<col name="Priority" type="int" required="false" category="Ogólne"
+			description="Priorytet zestawu cech, uwzględniany przy kolejności wyświetlania" />
+		<col name="Locked" type="boolean" category="Ogólne"
+			caption="Blokada" description="Określa, czy definicja jest aktualnie zablokowana" />
+		<col name="Code" type="text" category="Algorytm"
+				 description="Algorytm (C#) ustalania widoczności zestawu cech dla obiektu" >
+			<attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+		</col>
+		<col name="CodeActive" type="boolean" category="Ogólne" modifier="public virtual"
+			caption="Algorytm włączony" description="Określa, czy algorytm wyliczania widoczności jest aktywny" />
+	</table>
+
+	<table name="FeatureSetDefinitionItem" tablename="FSDefItems" guided="Root" caption="Element definicji zestawu cech"
+		config="true" tablecaption="Elementy definicji zestawu cech" namespace="Soneta.Business">
+		<key name="ByFeatureSetDefinition" keyunique="true" keyprimary="true">
+			<keycol name="FeatureSetDefinition"/>
+			<keycol name="FeatureDefinition"/>
+		</key>
+		<col name="Lp" type="int" required="true" category="Ogólne" batchfield="false"
+			description="Liczba porządkowa elementu w zestawie cech" />
+		<col name="FeatureSetDefinition" type="FeatureSetDefinition" required="true" readonly="true"
+			category="Ogólne" caption="Definicja zestawu cech" description="Definicja zestawu cech"
+			children="FeatureSetDefinitionItems" relname="Elementy definicji zestawu cech"
+			delete="cascade" relguided="inner" relright="true" keyclass="Lp" keyclasscol="Lp" />
+		<col name="FeatureDefinition" type="FeatureDefinition" required="true"
+			category="Ogólne" caption="Definicja cechy" description="Definicja cechy"/>
+	</table>
+
+	<interface name="IFeatureSetRelationHost" />
+
+	<table name="FeatureSetRelation" tablename="FSRels" caption="Relacja zestawu cech"
+		tablecaption="Powiązania obiektów z definicjami zestawów cech" namespace="Soneta.Business">
+		<col name="Host" type="IFeatureSetRelationHost" required="true" readonly="true" keyunique="true" keyprimary="true"
+			category="Ogólne" caption="Obiekt nadrzędny" description="Obiekt, do którego przypisana jest definicja zestawu cech"
+			delete="cascade">
+			<keycol name="FeatureSetDefinition"/>
+		</col>
+		<col name="FeatureSetDefinition" type="FeatureSetDefinition" required="true"
+			category="Ogólne" caption="Definicja zestawu cech" description="Definicja zestawu cech"
+			delete="cascade" relguided="inner" relright="true"/>
+	</table>
+
+	<!-- ====================================================================================== -->
+	<!-- KONFIGURACJA -->
+
+	<!-- CFG NODE -->
+	<enum name="CfgNodeType"/>
+	<table name="CfgNode" tablename="CfgNodes" guided="Root" config="true" caption="Konfiguracja" namespace="Soneta.Config">
+		<col name="Parent" type="CfgNode" category="Node"
+			relname="Config Node parent"
+			reldefault="true"
+			children="Subkeys"
+			keyprimary="true"
+			keyunique="true"
+		>
+			<keycol name="Name"/>
+		</col>
+		<col name="Name" type="string" length="40" required="true" category="Node" />
+		<col name="Type" type="CfgNodeType" category="Node" />
+	</table>
+
+	<!-- CFG ATTRIBUTE -->
+	<enum name="AttributeType"/>
+	<table name="CfgAttribute" tablename="CfgAttributes" config="true" caption="Dane konfiguracji" namespace="Soneta.Config">
+		<col name="Node" type="CfgNode" required="true" category="Attribute"
+			relname="Config Attribute Node"
+			children="Attributes"
+			keyprimary="true"
+			keyunique="true"
+			delete="cascade"
+			relguided="inner"
+		>
+			<keycol name="Name"/>
+		</col>
+		<col name="Name" type="string" length="40" category="Attribute" />
+		<col name="Type" type="AttributeType" category="Attribute" />
+		<col name="StrValue" type="string" length="255" category="Attribute" />
+		<col name="MemoValue" type="text" category="Attribute" />
+	</table>
+
+	<!-- ====================================================================================== -->
+	<!-- OPERATORZY -->
+
+	<table name="Operator" tablename="Operators" guided="Root" config="true" namespace="Soneta.Business.App" caption="Operator">
+
+		<interface>IŹródłoPowiązaniaStrukturyOrganizacyjnej</interface>
+		<interface>ITaskUser</interface>
+		<interface>IAuthorised</interface>
+
+		<key name="ByName" keyunique="true" keyprimary="true">
+			<keycol name="Name" />
+		</key>
+		<key name="ByTrusted">
+			<keycol name="Trusted" />
+		</key>
+
+		<col name="Name" type="string" length="20" required="true" category="Ogólne" important="true"
+			caption="Kod" description="Unikalny kod operatora wymagany podczas logowania się do bazy.">
+      <verifier onadded="true" name="Operator.NameVerifier"/>
+    </col>
+    <col name="Password" type="string" length="64" required="true" modifier="protected" specialaccess="true" />
+    <col name="PromptPassword" type="string" length="40" category="Logowanie" specialaccess="true"
+			caption="Podpowiedź hasła" description="Informacja podpowiadająca użytkownikowi jakie ma hasło dostępu."/>
+		<col name="Trusted" type="string" length="32" category="Logowanie"
+			caption="Logowanie zintegrowane" description="Nazwa operatora zintegrowanego, który może się logować na to konto."/>
+
+		<col name="Locked" type="boolean" category="Ogólne"
+			caption="Zablokowany" description="Określa, czy konto jest aktualnie zablokowane."/>
+		<col name="IsAccountLocked" type="boolean" category="Ogólne" caption="Zablokowany (hasło)"
+				 description="Oznacza operatora zablokowane z powodu wielokrotnego wprowadzania niepoprawnego hasła" />
+		<col name="IsOperatorNet" type="boolean" category="Ogólne" caption="Logowaniu multi"
+				 description="Oznacza konto z możliwością do logowania się do wersji multi (HTML/Mobile)" />
+
+		<col name="FullName" type="string" length="60" category="Ogólne" specialaccess="true"
+			caption="Nazwa" description="Imię i nazwisko operatora."/>
+		<col name="Email" type="string" length="255" category="Ogólne" caption="Adres e-mail" description="Określa adres e-mail operatora." />
+	</table>
+
+	<table name="OperatorEx" tablename="OperatorsEx" caption="Dodatkowe ustawienia operatora">
+		<key name="ByProvider">
+			<keycol name="ExternalProvider" />
+			<keycol name="ExternalProviderUserId" />
+		</key>
+
+		<col name="Operator" type="Operator" required="true" readonly="true"
+			relname="Ustawienia operatora"
+			keyprimary="true"
+			keyunique="true"
+			delete="cascade"
+			relguided="inner"
+		>
+		</col>
+		<col name="AllowConversion" type="boolean" category="Ogólne"
+		    caption="Dozwolona konwersja" description="Określa operatora, który może wykonywać konwersję bazy danych."/>
+		<col name="AllowOperatorsManagment" type="boolean" category="Ogólne"
+		    caption="Edycja operatorów" description="Umożliwia operatorowi zarządzanie innymi operatorami."/>
+		<col name="AllowDevelopment" type="boolean" category="Ogólne"
+		    caption="Funkcje programistyczne" description="Zezwala na zarządzanie funkcjami programistycznymi."/>
+		<col name="AllowEnova365" type="boolean" category="Ogólne"
+		    caption="Funkcje wersji serwerowej" description="Zezwala na dostęp do aplikacji serwerowej (HTML/Mobilna)."/>
+		<col name="ClientLicenceNumber" type="string" length="8" category="Licencja"
+		    caption="Numer licencji klienta" description="Umożliwia operatorowi logowanie na licencji innej niż podstawowa licencja bazy danych."/>
+		<col name="PasswordHistory" type="text" category="Autentykacja" modifier="internal" specialaccess="true"
+		    caption="Historia haseł" description="Standardowy oddział, który jest źródłem praw operatora."/>
+		<col name="InvalidLoginCounter" type="int" category="Autentykacja" readonly="set" specialaccess="true"
+		    caption="Niepoprawne logowanie" description="Liczba ostatnich błędnych logowań na konto operatora."/>
+		<col name="RecentInvalidLogin" type="datetime" category="Autentykacja" readonly="set" specialaccess="true"
+		    caption="Ostatnie niepoprawne logowanie" description="Czas ostatniego niepoprawnego logowania."/>
+		<col name="RecentPasswordChange" type="datetime" category="Autentykacja" readonly="set" specialaccess="true"
+		    caption="Ostatnia zmiana hasła" description="Czas ostatniej zmiany hasła przez operatora."/>
+		<col name="AllowExternalProviders" type="boolean" category="Ogólne"
+		    caption="Zewnętrzne logowanie" description="Zezwala na dostęp do aplikacji serwerowej za pośrednictwem loginów zewnętrznych (facebook, google etc.)"/>
+		<col name="ExternalProvider" type="string" length="20" category="Ogólne" readonly="set" specialaccess="true"
+		    caption="Nazwa zewnętrznego provider'a" description="Nazwa zewnętrznego providera, który odpowiada za wstępną autentykacje użytkownika."/>
+		<col name="ExternalProviderUserId" type="string" length="100" category="Ogólne" readonly="set" specialaccess="true"
+		    caption="Identyfikator użytkownika dla zewnętrznego provider'a" description="Identyfikator użytkownika zewnętrznego providera, z którym powiązane jest konto."/>
+		<col name="IsSupervisor" type="boolean" category="Ogólne"
+		    caption="Przełożony" description="Czy operator jest przełożonym."/>
+		<col name="ExcludeFromPassSecPolicy" type="boolean" category="Ogólne"
+         caption="Wykluczenie z polityki bezpieczeństwa haseł" description="Wyklucza operatora z polityki bezpieczeństwa haseł."/>
+		<col name="AllowDataObfuscation" type="boolean" category="Ogólne"
+         caption="Zaciemnianie danych" description="Umożliwia operatorowi zaciemnianie wybranych wrażliwych danych."/>
+		<col name="UICulture" type="string" length="5" category="Ogólne"
+		    caption="Język interface-u" description="Język wyświetlania interface-u użytkownika aplikacji."/>
+	</table>
+
+	<interface name="IEntitle"/>
+	<enum name="RightsSystem"/>
+	<table name="Entitle" tablename="Entitles" guided="Root" config="true"
+         caption="Uprawnienie" tablecaption="Uprawnienia" namespace="Soneta.Business.App">
+		<interface>IEntitle</interface>
+		<key name="ByName" keyunique="true" keyprimary="true">
+			<keycol name="Name" />
+		</key>
+
+		<col name="Parent" type="Entitle"
+			relname="Uprawnienia nadrzędne"
+         children="Children"
+			keyunique="true">
+			<keycol name="Name"/>
+			<attribute>Context(Required=false)</attribute>
+		</col>
+		<col name="Name" type="string" length="20" required="true" category="Ogólne" important="true"
+         caption="Kod" description="Unikalny kod oddziału praw."/>
+		<col name="FullName" type="string" length="60" category="Ogólne"
+         caption="Nazwa" description="Pełna nazwa oddziału praw."/>
+
+		<col name="CurrentOddzial" type="IOddzialFirmy"
+      description="Aktualny oddział firmy przypisany do uprawnienia."
+      relname="Aktualny oddział firmy" />
+		<col name="RightsSystem" type="RightsSystem" readonly="set"/>
+	</table>
+
+	<table name="OperatorEntitle" tablename="OperatorEntitles" name8="OperEnti" caption="Uprawnienia operatora" config="true">
+		<col name="Entitle" type="Entitle" required="true"
+      description="Uprawnienia przypisane operatorowi."
+			relname="Uprawnienia operatora"
+			keyprimary="true"
+			keyunique="true"
+			delete="cascade"
+			children="Operators"
+		>
+			<keycol name="Operator" />
+		</col>
+		<col name="Operator" type="Operator" required="true"
+      description="Operator przypisany do uprawnień."
+			relname="Operator uprawnień"
+			keyunique="true"
+			delete="cascade"
+			relguided="inner"
+			children="Entitles"
+		>
+			<keycol name="Entitle" />
+		</col>
+	</table>
+
+	<table name="EntitleRole" tablename="EntitleRoles" name8="EntiRole" caption="Role uprawnienia">
+		<col name="Entitle" type="Entitle" required="true" readonly="true"
+      description="Uprawnienia, którym dana rola została przypisana."
+			relname="Role uprawnień"
+			keyprimary="true"
+			keyunique="true"
+			delete="cascade"
+			relguided="inner"
+			children="Roles"
+		>
+			<keycol name="RoleGuid" />
+		</col>
+		<col name="RoleGuid" type="guid" required="true" readonly="true"/>
+	</table>
+
+	<table name="Right" tablename="Rights" caption="Prawo dostępu">
+		<col name="Entitle" type="IEntitle" required="true" readonly="true"
+      description="Uprawienia, którym dane prawo zostało przypisane."
+      relname="Prawa uprawnień"
+      keyprimary="true"
+      delete="cascade"
+      relguided="inner"
+      children="Rights"
+		/>
+		<col name="Source" type="IRightsSource" required="true" readonly="true" name12="Src"
+      description="Dane, dla których prawo jest określone."
+			relname="Żródło praw"
+			delete="cascade"
+		>
+			<keycol name="Entitle" />
+		</col>
+		<col name="ReadOnlyRight" type="boolean" readonly="true"
+       description="Określono prawo tylko do przeglądania danych. Nie można modyfikować zapisów." />
+	</table>
+
+	<interface name="IRightsSource"/>
+	<interface name="IOddzialFirmy"/>
+
+	<!-- ====================================================================================== -->
+	<!-- SŝOWNIKI -->
+
+	<table name="DictionaryItem" tablename="Dictionary" name8="Diction" guided="Root" caption="Słownik" >
+		<!--<key name="ByCategory" keyprimary="true">
+      <keycol name="Category"/>
+      <keycol name="Lp"/>
+    </key>-->
+		<col name="Parent" type="DictionaryItem"
+      description="Określa nadrzędny obiekt słownikowy"
+			relname="Parent dictionary"
+			delete="cascade"
+      keyprimary="true" />
+		<col name="DataContext" type="IOddzialFirmy"
+      description="Oddział firmy będący kontekstem wyboru danych ze słownika."
+      relname="Kontekst słownika">
+			<keycol name="Category"/>
+			<keycol name="Lp"/>
+		</col>
+		<col name="Category" type="string" length="16" required="true" readonly="true" caption="Nazwa słownika"
+			description="Nazwa słownika, do którego należy dany element." />
+		<col name="Lp" type="int" readonly="true" batchfield="false"
+			description="Określa kolejność występowania elementów w słowniku." />
+		<col name="Value" type="string" length="255" required="true" caption="Wartość"
+			description="Tekst będący pojedynczym elementem słownika.">
+			<verifier name="NIPVerifier" onadded="true" />
+		</col>
+	</table>
+
+	<!-- ====================================================================================== -->
+	<!-- SYSTEMOWE -->
+
+	<table name="LockInfo" tablename="LockInfos" name8="LckInfos" guided="None" caption="Edytowane zapisy">
+		<key name="BySession" keyprimary="true">
+			<keycol name="Instance"/>
+			<keycol name="SessionID"/>
+		</key>
+		<col name="Instance" type="guid" required="true" readonly="true"/>
+		<col name="SessionID" type="int" required="true" readonly="true"/>
+		<col name="Action" type="LockInfoAction" required="true" readonly="true"/>
+		<col name="RecordTable" type="string" length="16" readonly="true"/>
+		<col name="RecordID" type="int" readonly="true"/>
+		<col name="OperatorID" type="int" readonly="true"/>
+		<col name="ModificationTime" type="datetime" required="true" readonly="true" />
+	</table>
+
+	<enum name="LockInfoAction"/>
+
+	<table name="SystemInfo" tablename="SystemInfos" name8="SysInfos" guided="None" caption="Informacja systemowa">
+		<key name="ByIdent" keyprimary="true" keyunique="true">
+			<keycol name="Ident"/>
+		</key>
+		<col name="Ident" type="SysInfoIdentifier" required="true" readonly="true"/>
+		<col name="Value" type="string" length="500"/>
+		<col name="Data" type="text" />
+	</table>
+
+	<enum name="SysInfoIdentifier"/>
+
+	<table name="ChangeInfo" tablename="ChangeInfos" name8="ChgInfos" guided="None" timestamp="false" caption="Historia zmian">
+		<key name="ByTime" keyprimary="true" >
+			<keycol name="Time"/>
+		</key>
+		<key name="BySource" >
+			<keycol name="SourceTable"/>
+			<keycol name="SourceGuid"/>
+			<keycol name="Time"/>
+		</key>
+		<col name="Operator" type="Operator" required="true" readonly="true"
+			description="Operator, który był zalogowany do systemu, który utworzył to zgłoszenie."
+			relname="Zmiany operatora"
+			delete="cascade"
+		>
+			<keycol name="Time"/>
+		</col>
+		<col name="WebUser" type="string" length="16" caption="Operator systemu" readonly="true"
+			description="Operator zalogowany do systemu." />
+		<col name="SourceTable" type="string" length="16" readonly="true" caption="Tabela źródła"
+			description="Nazwa tabeli bazy danych zawierającej zapis, do którego zostało wywołane zgłoszenie." />
+		<col name="SourceGuid" type="guid" readonly="true" caption="Guid źródła"
+			description="Unikalny identyfikator zapisu, do którego zostało wywołane zgłoszenie." />
+		<col name="Type" type="ChangeInfoType" required="true" readonly="true" caption="Typ"
+			description="Typ zgłoszenia określający powód jego zgłoszenia." />
+		<col name="Time" type="datetime" required="true" readonly="true" caption="Dzień"
+			description="Data wystąpienia zgłoszenia." />
+		<col name="Info" type="string" length="80" caption="Informacje" readonly="true"
+			description="Dodatkowa informacja o danym zgłoszeniu." />
+		<col name="Data" type="text" caption="Dane dodatkowe" readonly="true"
+			description="Dodatkowa informacja o danym zgłoszeniu." />
+		<col name="NoteToChange" type="text" caption="Uwagi do zmian" readonly="true"
+			description="Uwagi do zmian wymagane w metryce dokumentów." />
+	</table>
+
+	<enum name="ChangeInfoType"/>
+
+	<!-- ====================================================================================== -->
+	<!-- GUIDMAP -->
+
+	<enum name="GuidMapType"/>
+
+	<!-- Uniwersalny link pomiedzy dwoma dowolnymi rekordami GUID'owanymi -->
+	<table name="GuidMap" tablename="GuidMaps" guided="None">
+		<!-- unique + To zamiast unikalności opartej o ID -->
+		<key name="WgFrom" keyunique="true" keyprimary="true">
+			<keycol name="From"/>
+			<keycol name="Type"/>
+		</key>
+		<key name="WgTo">
+			<keycol name="To"/>
+			<keycol name="Type"/>
+		</key>
+		<col name="From" type="guid" required="true" readonly="set"/>
+		<col name="To" type="guid" name12="Tox" required="true" readonly="set"/>
+		<col name="Type" type="GuidMapType" required="true" readonly="true"/>
+		<col name="Tag" type="int"/>
+	</table>
+
+	<!-- ====================================================================================== -->
+	<!-- TASKS -->
+
+	<enum name="TaskOperatorType"/>
+	<enum name="TaskProgress"/>
+	<enum name="ActionType" />
+	<enum name="ActionRunAt" />
+	<enum name="NotificationType" />
+	<enum name="DeleteOnRealized" />
+	<enum name="MultiTaskType"/>
+	<enum name="VerifierCheckType"/>
+	<enum name="ProcessManagementVisibilityType"/>
+	<interface name="IGuidedRow"/>
+	<interface name="IWFDefinition" />
+	<interface name="IOGSchema" />
+	<interface name="IWFDefItem" />
+	<interface name="IWFFeatureDefs" />
+	<interface name="ITemplate"/>
+	<interface name="IWFProcessRole"/>
+
+	<table name="TaskDefinition" tablename="TaskDefs" caption="Definicja zadania" tablecaption="Definicje zadań"
+		guided="Root" config="true">
+
+		<key name="ByName" keyunique="true" keyprimary="true">
+			<keycol name="TableName"/>
+			<keycol name="Name"/>
+		</key>
+
+		<col name="TableName" type="string" length="16" required="true" readonly="true" category="Ogólne" caption="Klasa" description="Klasa obiektu nadrzędanego.">
+			<verifier name="TaskDefinition.IsAutoActionProperVerifier" onadded="true" />
+		</col>
+		<col name="Name" type="string" length="80" localization="dictionary" required="true" description="Ogólne" />
+		<col name="FormatedName" type="string" length="80" required="true" localization="dictionary" description="Ogólne" />
+		<col name="Description" type="string" localization="dictionary" length="255" category="Ogólne" caption="Opis" description=""/>
+		<col name="Locked" type="boolean" category="Ogólne" caption="Zablokowany" description="">
+			<verifier name="TaskDefinition.LockedVerifier" onadded="true" />
+		</col>
+		<col name="IsNotification" type="boolean" category="Ogólne" description=""/>
+		<col name="NotificationType" type="NotificationType" category="Ogólne" description=""/>
+		<col name="NotificationTime" type="time" category="Ogólne" description=""/>
+		<col name="AllowModification" type="boolean" category="Ogólne" description=""/>
+		<col name="IsVisibleInScheduler" type="boolean" category="Ogólne" description="Określa czy zadanie jest widoczne na liście" />
+		<col name="Algorithm" type="boolean" category="Algorytm" description=""/>
+		<col name="MultiTask" type="boolean" category="Ogólne" description="">
+			<attribute>Obsolete("Use MultiTaskType property instead. MultiTaskProperty will be removed in version 15.0.")</attribute>
+		</col>
+		<col name="Code" type="text" category="Algorytm" description="">
+			<verifier name="TaskDefinition.IsStartAllowedVerifier" onadded="true" />
+			<verifier name ="TaskDefinition.FormsTokenCodeVerifier" onadded="true" />
+		</col>
+		<col name="OperatorType" type="TaskOperatorType" category="Algorytm" description=""/>
+		<col name="Operator" type="Operator" category="Algorytm" description=""/>
+		<col name="ActionType" type="ActionType" category="Algorytm" description=""/>
+		<col name="ActionRunAt" type="ActionRunAt" category="Algorytm" description="">
+			<verifier name="TaskDefinition.IsAutoActionProperVerifier" />
+		</col>
+		<col name="RoleGuid" type="guid" category="Ogólne" description=""/>
+		<col name="DeleteOnRealized" type="DeleteOnRealized" category="Ogólne" description="Określa zachowanie taska przy realizacji."/>
+
+		<!--[11604][8.0][CRM 8.0]: Wizardy a Taski Etap 3-->
+		<col name="WizardDefinition"
+         type="WizardDefinition"
+         category="Kreator"
+         relname="TaskDefinitions"
+         children="TaskDefinitions"
+         description="Definicja kreatora powiązana z definicją zadania"
+         delete="cascade"
+		/>
+
+		<!--[14683][8.4][Workflow 8.4]: Opis na kreatorze z definicji taska-->
+		<col name="WizardInstruction" type="text" localization="dictionary" category="Kreator" caption="Instrukcja dla definicji kreatora" description="Określa instrukcję dla definicji kreatora"/>
+
+		<!--[13609][8.3][Systemowe 8.3]: Warunkowe kompilowanie tasków w enova.NET-->
+		<col name="SonetaExplorer" type="boolean" category="Algorytm" description="Określa czy kompilacja kodu definicji zadania może być wykonana tylko w SonetaExplorer">
+			<verifier name ="TaskDefinition.FormsTokenCodeVerifier" onadded="true" />
+			<verifier name ="TaskDefinition.SchedulerReferenceVerifier" onadded="true" />
+		</col>
+
+		<!--[13062][8.3][CRM 8.3]: Workflow-->
+		<col name="InWorkflowUse" type="boolean" category="Workflow" description="Określa czy definicja jest widoczna tylko jako kontrolka w toolbox definicji workflow." />
+		<col name="MakeParentReadonly" type="boolean" category="Workflow" caption="Tylko do odczytu" description="Czy obiekt powiązany z definicją (Parent dla zadania) ma być blokowany do edycji poza Workflow"/>
+		<col name="IsStart" type="boolean" category="Workflow" caption="Element startowy" description="Czy definicja zadania jest początkiem procesu workflow">
+			<verifier name="TaskDefinition.IsStartAllowedVerifier" onadded="true" />
+			<verifier name="TaskDefinition.IsAutoActionProperVerifier" />
+		</col>
+		<col name="WFDefinition" type="IWFDefinition" category="Workflow" caption="Definicja workflow" description="Określa definicję wokflow">
+			<verifier name="TaskDefinition.IsAutoActionProperVerifier" />
+			<verifier name="TaskDefinition.ConnectionsVerifier" />
+		</col>
+		<col name="WFDefItem" type="IWFDefItem" category="Workflow" caption="Definicja elementu workflow" description="Określa definicję elementu wokflow"/>
+		<col name="OGSchema" type="IOGSchema" category="Workflow" caption="Definicja schematu generatora" description="Określa definicję schematu generatora obiektów"/>
+		<col name="InitParent" type="boolean" category="Workflow" caption="Inicjacja zadania wierszem generatora" description="Określa czy inicjować zadanie wierszem utworzonym przez generator obiektów">
+			<verifier name="Verifiers.OgSchemaTypeVerifier" />
+		</col>
+		<col name="XML" type="text" category="Graf workflow" caption="XML opisujący rozmiar i położenie węzła" description="XML opisujący rozmiar i położenie węzła">
+			<attribute>Obsolete(&quot;Use WFDefinition.SerializedDiagram column insted. It will be removed by the end of 2020.&quot;)</attribute>
+		</col>
+
+		<!--[15000][9.1][Workflow 9.1]: Pojedyncza instancja taska w procesie - task typu scalenie rozwidlenia-->
+		<col name="IsSingleInstance" type="boolean" category="Workflow" caption="Złączenie" description="Określa czy definicja jest typu złączenie" />
+
+		<!--[17035][9.3][Workflow 9.3]: Wrzucić do 9.3 zmiany związane z schedule - cofnięte do wersji 9.2-->
+		<col name="OverdueHandling" type="boolean" category="Schedule" caption="Obsługa eskalacji" description="Określa obsługiwana jest eskalacja" />
+		<col name="OverdueServiceType" type="TaskDefinition" category="Schedule" caption="Sposób obsługi eskalacji" description="Określa sposób obsługi eskalacji">
+			<verifier name="TaskDefinition.OverdueVerifier" onadded="true" />
+		</col>
+		<col name="MultiTaskType" type="MultiTaskType" category="Ogólne" description="Określa typ wywołania procedury w przypadku zadań typu MultiTask"/>
+		<col name="GetSysNotificationsCode" type="AlgorithmColumn" category="Algorytm" caption="Kod metody GetSysNotifications" description="Określa algorytm metody GetSysNotifications"/>
+		<col name="VerifierCheckType" type="VerifierCheckType" category="Workflow" caption="Sposób weryfikacji zadań" description="Określa sposób weryfikacji zadań procesów zależnych"/>
+		<col name="ProcessManagementVisibilityType" type="ProcessManagementVisibilityType" category="Workflow" caption="Typ widoczności elementów UI obsługi procesu" description="Określa typ widoczności elementów UI obsługi procesu"/>
+    <col name="ProcessRole" type="IWFProcessRole" category="Workflow" caption="Rola procesowa" description="Określa rolę procesową"/>
+    <col name="SubprocessDef" type="IWFDefinition" category="Workflow" caption="Definicja podprocesu" description="Określa definicję podprocesu"/>
+
+	</table>
+
+	<table name="TaskTrigger" tablename="TaskTriggers" caption="Wyzwalacze tasków" tablecaption="Kolekcja klas mających wpływ na przetworzenie taska" config="true">
+
+		<col name="TaskDefinition" type="TaskDefinition"  required="true" category="Ogólne"
+          description="Definicja zadania, do której jest przypisana klasa"
+          children="TaskTriggers"
+          relname="Definicja zadania"
+          delete="cascade"
+          relguided="inner"
+          keyprimary="true"
+			/>
+
+		<key name="ByTableName">
+			<keycol name="TableName"/>
+		</key>
+
+		<col name="TableName" type="string" length="16" setonlynull="true" required="true" category="Ogólne" caption="Klasa" description="Klasa obiektu nadrzędanego."/>
+		<col name="Code" type="text" category="Ogólne" description="Kod metody która zwraca obkiekt do którego utworzona jest definicja zadania."/>
+	</table>
+
+	<enum name="OperatorRoleType" />
+	<interface name="ITaskUser" />
+	<interface name="IWFWorkflow" />
+	<interface name="IWFTransition" />
+	<table name="Task" tablename="Tasks" caption="Zadanie" tablecaption="Zadania" guided="Root">
+
+		<key name="WgTaskDefAndGuidedRow">
+			<keycol name="Definition" />
+			<keycol name="Parent"/>
+			<keycol name="TaskUser"/>
+		</key>
+
+    <key name="WgTaskDefAndGuidedRowAndSysNotification">
+      <keycol name="Definition" />
+      <keycol name="Parent"/>
+      <keycol name="SysNotification"/>
+      <keycol name="TaskUser"/>
+    </key>
+
+	<key name="WgTaskDefAndGuidedRowAndSysNotificationAndOperator">
+		<keycol name="Definition" />
+		<keycol name="Parent"/>
+		<keycol name="SysNotification"/>
+		<keycol name="Operator"/>
+	</key>
+
+		<key name="WgName" >
+			<keycol name="Name"/>
+		</key>
+
+		<col name="Parent" type="IGuidedRow" readonly="set"
+			keyprimary="true"
+			delete="notify"
+			description="" relname="Parents">
+			<keycol name="Start"/>
+		</col>
+
+		<col name="Definition" type="TaskDefinition" readonly="set" required="true"
+			description=""
+			relname="Definicja zadania">
+			<keycol name="Start"/>
+		</col>
+
+		<col name="OperatorRoleType" type="OperatorRoleType" category="Ogólne" description="Określa czy zadanie przypisane jest do operatora czy do roli czy innego obiektu."/>
+
+		<col name="Operator" type="Operator"
+				relname="Zadanie operatora"
+				delete="cascade"
+				description="Operator do którego jest przypisany task.">
+			<keycol name="Start"/>
+		</col>
+
+		<col name="RoleGuid" type="guid" category="Ogólne" description="Giud roli do której przypisane jest zadania." />
+		<col name="TaskUser" type="ITaskUser" category="Ogólne" description="Określa obiekt który jest właścicielem zadania." />
+
+		<col name="Start" type="datetime" description="Data i czas rozpoczęcia zadania.">
+			<verifier name="Task.TaskPeriodVerifier" onadded="false"/>
+		</col>
+
+		<col name="End" type="datetime" description="Data i czas zakończenia zadania.">
+			<verifier name="Task.TaskPeriodVerifier" onadded="false"/>
+		</col>
+
+		<col name="Notification" type="datetime" description=""/>
+		<col name="Progress" type="TaskProgress" description=""/>
+		<col name="Name" type="string" length="255" required="true" description="Krótka nazwa zadania." />
+		<col name="Description" type="text" category="Ogólne" caption="Opis" description="Opis zadania."/>
+		<col name="Modified" type="boolean" category="Ogólne" description=""/>
+		<col name="ValidFrom" category="Ogólne" type="date" description="Określa datę od której task staje się ważny" />
+
+		<col name="WizardDefinition"
+         type="WizardDefinition"
+         category="Kreator"
+         relname="Tasks"
+         description="Definicja kreatora powiązana z zadaniem"
+         delete="cascade" />
+
+		<col name="WFWorkflow" type="IWFWorkflow" category="Workflow" caption="Workflow" description="Określa element wokflow" readonly="set" />
+		<col name="WFTransition" type="IWFTransition" category="Workflow" caption="Tranzycja" description="Określa tranzycję dla zadania" />
+		<col name="EditInWorkflow" type="boolean" category="Workflow" caption="Edycja wiersza w workflow" description="Określa czy powiązany z zadaniem wiersz może być edytowany poza workflow" readonly="set"/>
+		<col name="TakeOverOperator" type="Operator" relname="Zadanie operatora przejmującego" category="Ogólne" description="operator, który przejmuje zadanie"/>
+
+		<col name="SysNotification"
+         type="SysNotification"
+         category="SysNotifications"
+         relname="Tasks"
+         description="Powiadomienie systemowe powiązane z zadaniem"
+         readonly="set"/>
+
+    <col name="ExecutorType" type="string" length="16" category="Ogólne" caption="Typ wiersza wykonawcy" description="Typ wiersza wykonawcy zadania" readonly="set" modifier="protected"/>
+    <col name="ExecutorId" type="int" category="Ogólne" caption="ID wiersza wykonawcy" description="ID wiersza wykonawcy zadania" readonly="set" modifier="protected"/>
+    <col name="ExecutionTime" type="datetime" category="Ogólne" caption="Data i czas wykonania zadania" description="Data i czas wykonania zadania" readonly="set"/>
+    <col name="Subprocess" type="IWFWorkflow" category="Workflow" caption="Podproces" description="Określa podproces"/>
+
+	</table>
+
+
+	<table name="TaskLinkedObj" tablename="TaskLinkedObjs" caption="Wielowidoczność tasków" tablecaption="Kolekcja obiektów do których task będzie podpięty.">
+		<col name="Task" type="Task" required="true" category="Ogólne" caption="Obiekt taska" description="Task do którego podpinane są obiekty."
+         delete="cascade"
+         children="LinkedObjects"
+         relname="Obiekty przypięte do taska"
+         />
+		<col name="LinkedObject" type="IGuidedRow" required="true" category="Ogólne" caption="Obiekt typu GuidedRow" description="Obiekt typu GuidedRow podpięty do taska."
+          keyprimary="true" delete="notify"
+         />
+		<col name="IsParent" type="boolean" category="Ogólne"  caption="" description="Określa czy obiekt podpięty do taska jest obiektem głównym taska."/>
+	</table>
+
+
+	<!-- ====================================================================================== -->
+	<!-- ATTACHMENTS -->
+
+	<enum name="AttachmentType"/>
+	<enum name="SubTypeType"/>
+	<enum name="AttachmentEditMode"/>
+	<enum name="AttachmentStorage"/>
+	<interface name="IAttachmentFolder"/>
+
+	<table name="Attachment" tablename="Attachments" caption="Załącznik" tablecaption="Załączniki" guided="None">
+
+		<interface>IPermissionClient</interface>
+
+		<col name="Parent" type="IGuidedRow" readonly="set" keyunique="true" caption="Nadrzędny"
+			  keyprimary="true"
+        relright="true"
+			  delete="cascade"
+			  description="Zapis, do którego przypisany jest załącznik.">
+			<keycol name="Type"/>
+			<keycol name="Name"/>
+		</col>
+		<col name="Type" type="AttachmentType" caption="Typ" readonly="true" required="true"
+      description="Określa zastosowanie danego załącznika."/>
+		<col name="Name" type="string" length="255" required="true" caption="Nazwa" modifier="public virtual"
+			description="Nazwa załącznika.">
+			<verifier name="AttachmentVerifier" onadded="true"/>
+		</col>
+		<col name="Description" type="string" length="255" caption="Opis"
+			description="Opis zawartości załącznika." />
+
+		<col name="Data" type="binary" caption="Dane" modifier="internal"
+			description="Binarna wartość przechowywanego pliku."/>
+		<col name="IsDataCompressed" type="boolean" caption="Dane skompresowane" readonly="set"
+			description="Określa, czy przechowywane dane są w wersji skompresowanej."/>
+		<col name="IsDefault" type="boolean" caption="Standardowy obrazek"
+			description="Określa, czy obrazek ma być standardowo użyty do reprezentacji obiektu."/>
+		<col name="Send" type="boolean" caption="Wysyłaj w mailu"
+			description="Określa, czy załącznik powinien być dołączany do wysyłanego maila."/>
+		<col name="Link" type="string" length="255" caption="Odnośnik" modifier="public virtual"
+			description="Ścieżka dostępu do wskazywanego pliku."/>
+
+		<col name="Modified" type="datetime" readonly="set" caption="Data modyfikacji"
+      description="Data ostatniej modyfikacji załącznika"/>
+
+		<col name="IconX" type="int" caption="X"
+			description="Współrzędna X ikonki"/>
+		<col name="IconY" type="int" caption="Y"
+			description="Współrzędna Y ikonki"/>
+		<col name="Icon" type="binary" caption="Ikona" modifier="internal"
+			description="Binarna informacja o wyglądzie ikony."/>
+
+		<col name="VisibleInNet" type="boolean" caption="Widoczny w Net" description="Czy załącznik jest widoczny z poziomu Net" />
+		<!-- Mateusz - task 11132 - 7.9 -->
+		<col name="Lp" type="int" batchfield="false" caption="Lp." description="Kolejność wyświetlania załącznika na liście." />
+		<col name="SubType" type="SubTypeType" caption="Podtyp załącznika" description="Określa typ danego załącznika." />
+		<!-- RobertS 8.0 -->
+		<col name="MimeType" type="string" length="100" caption="Typ MIME" description="Identyfikator formatu pliku publikowanego w internecie (Content-Type)." />
+
+		<col name="LockTime" type="datetime" caption="Czas zablokowania załącznika" description="Czas zablokowania załącznika." readonly="set" />
+		<col name="LockOperator" type="Operator" caption="Operator blokujący załącznik" description="Operator blokujący załącznik." readonly="set" />
+		<col name="OcrData" type="text" caption="Dane pochądzące z silnika OCR" description="Kolumna zawiera opcjonalne dane pochądzące z silnika OCR." category="OCR" />
+		<col name="OcrDataWithLayout" type="text" caption="Dane pochądzące z silnika OCR" description="Kolumna zawiera opcjonalne dane pochądzące z silnika OCR (dane te powinny zawierać opis szczegółowy położenia tekstu na obrazku/PDF)." category="OCR" />
+		<col name="IsFilePathSource" type="boolean" caption="Źródło ścieżki" description="Kolumna zawiera informację czy ścieżka do plików znajdujących się na dysku jest budowana z użyciem pola Folder" category="Dms" readonly="set"/>
+		<col name="Folder" type="IAttachmentFolder" caption="Folder" description="Kolumna zawiera opcjonalny element określający folder" category="Dms"/>
+		<col name="AttachmentFile" type="AttachmentFile" caption="Dane binarne załącznika" description="Kolumna zawiera dane binarne załącznika" category="Dane binarne" readonly="set" delete="cascade"/>
+		<col name="AttachmentStorage" type="AttachmentStorage" caption="Lokalizacja załącznika" description="Miejsce przechowywania załącznika"/>
+
+	</table>
+
+	<table name="AttachmentFile" tablename="AttachmentFiles" caption="Dane binarne załącznika" tablecaption="Dane binarne załączników">
+
+		<col name="Name" type="string" length="255" required="true" keyprimary="true" caption="Nazwa" description="Nazwa załącznika."/>
+		<col name="Description" type="string" length="255" caption="Opis" description="Opis zawartości załącznika." />
+		<col name="MimeType" type="string" length="100" caption="Typ MIME" description="Identyfikator formatu pliku publikowanego w internecie (Content-Type)." />
+		<col name="OcrData" type="text" modifier="public virtual"
+		     caption="Dane pochądzące z silnika OCR" category="OCR"
+		     description="Kolumna zawiera opcjonalne dane pochądzące z silnika OCR." />
+		<col name="OcrDataWithLayout" type="text" modifier="public virtual"
+		     caption="Dane pochądzące z silnika OCR" category="OCR"
+		     description="Kolumna zawiera opcjonalne dane pochądzące z silnika OCR (dane te powinny zawierać opis szczegółowy położenia tekstu na obrazku/PDF)." />
+		<col name="LockTime" type="datetime" caption="Czas zablokowania załącznika" description="Czas zablokowania załącznika." readonly="set" />
+		<col name="LockOperator" type="Operator" caption="Operator blokujący załącznik" description="Operator blokujący załącznik." readonly="set" />
+		<col name="Data" type="binary" caption="Dane" modifier="internal virtual"
+		     description="Binarna wartość przechowywanego pliku."/>
+		<col name="Icon" type="binary" caption="Ikona" modifier="internal" description="Binarna informacja o wyglądzie ikony."/>
+
+	</table>
+
+	<table name="RemoteFile" tablename="RemoteFiles"
+	       caption="Informacja o pliku zdalnym"
+	       tablecaption="Informacje o plikach zdalnych">
+		<col name="AttachmentFile" type="AttachmentFile" required="true"
+		     readonly="true" keyunique="true" caption="Plik załącznika"
+		     delete="cascade">
+			 <keycol name="RelatedField" />
+		</col>
+		<col name="RelatedField" type="string" length="255" required="true"
+		     readonly="true" caption="Pole w tabeli AttachmentFiles"
+		     description="Powiązane pole binarne w tabeli AttachmentFiles." />
+		<col name="ExternalID" type="string" length="255" required="true"
+			 readonly="set" caption="Zewnętrzny identyfikator"
+		     description="Identyfikator w zdalnym magazynie plików."/>
+		<col name="Handle" type="text" required="true" readonly="set"
+		     caption="Uchwyt do pliku zdalnego"
+		     description="Metadane pliku zapisanego w zdalnym magazynie plików."/>
+	</table>
+
+	<!-- ====================================================================================== -->
+	<!-- Databases -->
+	<interface name="IDBItemClient"/>
+	<enum name="ActivityType"/>
+
+	<table name="DBItem" tablename="DBItems" caption="Baza danych" tablecaption="Bazy danych" guided="Root" config="true">
+		<interface>IRightsSource</interface>
+		<key name="ByName" keyprimary="true" keyunique="true">
+			<keycol name="Name"/>
+		</key>
+		<key name="ByFirmName" keyunique="true">
+			<keycol name="FirmName"/>
+		</key>
+		<col name="Name" type="string" length="80" required="true" caption="Nazwa" description="Nazwa bazy danych" />
+		<col name="FirmName" type="string" length="80" required="true" caption="Nazwa firmy" description="Nazwa firmy" />
+		<col name="Client" type="IDBItemClient" caption="Klient" description="Klient powiązany z bazą danych" relname="DBItem client" children="DBItems"/>
+		<col name="ActivityType" type="ActivityType" caption="Rodzaj działalności" description="Rozdzaj prowadzonej działalności księgowej klienta" />
+		<col name="Information" type="string" length="120" caption="Informacje dla klienta" description="Dodatkowe informacje dla klienta biura rachunkowego" />
+	</table>
+
+	<table name="DBGroup" tablename="DBGroups" caption="Grupa baz danych" tablecaption="Grupy baz danych" guided="Root" config="true">
+		<key name="ByName" keyprimary="true" keyunique="true">
+			<keycol name="Name"/>
+		</key>
+		<col name="Name" type="string" length="80" required="true" caption="Nazwa" description="Nazwa grupy baz danych" />
+	</table>
+
+	<table name="DBGroupItem" tablename="DBGroupItems" caption="Pozycja grupy bazy danych" tablecaption="Pozycje grupy bazy danych" config="true">
+		<col name="DBItem" type="DBItem" required="true" readonly="true" caption="Baza danych" description="Bazy danych"
+				 children="DBGroupItems" delete="cascade"/>
+		<col name="DBGroup" type="DBGroup" required="true" readonly="true" caption="Grupa bazy danych" description="Grupa bazy danych"
+				 children="DBGroupItems" keyunique="true" keyprimary="true" delete="cascade">
+			<keycol name="DBItem"/>
+		</col>
+	</table>
+
+	<!--[11383][7.9][CRM 7.9]: Wizardy Etap 2-->
+
+	<enum name="WizardAlgorithm"/>
+
+	<table name="WizardDefinition" tablename="WizardDefs" caption="Definicja kreatora" tablecaption="Definicje kreatorów" guided="Root" config="true" namespace="Soneta.Business.Db.Wizard">
+
+		<key name="ByNameAndParentType" keyprimary="true" keyunique="true">
+			<keycol name="ParentType"/>
+			<keycol name="Name"/>
+		</key>
+
+		<key name="ByLp">
+			<keycol name="Lp"/>
+		</key>
+
+		<col name="Name" type="string" length="80" localization="dictionary" required="true" description="Nazwa definicji" caption="Nazwa" />
+		<col name="Description" type="string" length="200" localization="dictionary" category="Ogólne" caption="Opis" description="Opis definicji"/>
+		<col name="Locked" type="boolean" category="Ogólne" caption="Zablokowana" description="Czy definicja zablokowana"/>
+		<col name="ParentType" type="string" length="100" category="Ogólne" caption="Typ obiektu kreatora" description="Określa typ obiektu kreatora" required="true" readonly="true" />
+		<col name="Algorithm" type="WizardAlgorithm" category="Algorytm" caption="Algorytm"  description="Algorytm kalkulatora kroków kreatora"/>
+		<col name="Code" type="text" category="Algorytm" caption="Kod algorytmu" description="Kod algorytmu kalkulatora kreatora"/>
+
+		<!--[11584][8.0][CRM 8.0]: Kreatory - dodać LP na kreatorze-->
+		<col name="Lp" type="int" batchfield="false" category="Ogólne" caption="Lp." description="Liczba porządkowa kreatora" required="true" />
+	</table>
+
+	<enum name="WizardStepType"/>
+	<enum name="WizardStepOperatorType"/>
+
+	<table name="WizardStepDefinition" tablename="WizardStepDefs" caption="Definicja kroku kreatora" tablecaption="Definicje kroków kreatorów" guided="Root" config="true" namespace="Soneta.Business.Db.Wizard">
+
+		<key name="ByLpAndWizardDefinition">
+			<keycol name="Lp"/>
+			<keycol name="WizardDefinition"/>
+		</key>
+
+		<key name="ByName">
+			<keycol name="Name"/>
+		</key>
+
+		<col name="Name" type="string" length="80" localization="dictionary" required="true" description="Nazwa kroku kreatora" caption="Nazwa" />
+		<col name="Lp" type="int" batchfield="false" category="Ogólne" caption="Lp." description="Liczba porządkowa kroku kreatora" required="true"/>
+		<col name="Description" type="string" length="200" localization="dictionary" category="Ogólne" caption="Opis" description="Opis kroku kreatora"/>
+		<col name="Locked" type="boolean" category="Ogólne" caption="Zablokowany" description="Czy krok kreatora zablokowany"/>
+		<col name="DescriptionText" type="text" localization="dictionary" category="Ogólne" caption="Opis" description="Opis kroku kreatora"/>
+
+		<col name="WizardDefinition"
+         type="WizardDefinition"
+         category="Definicja"
+         required="true"
+         relname="Steps"
+         description="Definicja kreatora powiązana z krokiem"
+         relguided="inner"
+         delete="cascade"
+         children="Steps"
+         relright="false"
+         keyclass="Lp"
+         keyclasscol="Lp"
+         keyunique="true"
+         keyprimary="true"
+		/>
+
+		<col name="StepType" type="WizardStepType" category="Zakładki" caption="Typ"  description="Typ kroku kreatora"/>
+		<col name="Page" type="string" length="255" category="Zakładki" caption="Standardowa zakładka" description="Określa typ zakładki opisującej krok">
+			<verifier name="WizardStepDefinition.PageVerifier" onadded="true" />
+		</col>
+		<col name="PageDesc" type="string" length="100" category="Zakładki" caption="Dodatkowy opis standardowej zakładki" description="Określa dodatkowy opis standardowej zakładki"/>
+		<col name="DefinedPageXML" type="text" category="Zakładki" caption="Zakładka użytkownika" description="Określa typ zakładki definiowanej przez użytkownika opisującej krok (XML)"/>
+		<col name="Report" type="string" length="255" category="Zakładki" caption="Raportowa zakładka" description="Określa typ zakładki raportującej opisującej krok"/>
+		<col name="Collection" type="string" length="100" category="Zakładki" caption="Kolekcja zakładek" description="Określa typ zakładki przechowującej kolekcję zakładek opisujących krok"/>
+		<col name="Code" type="text" category="Algorytm" caption="Kod algorytmu" description="Kod algorytmu kalkulatora kroku kreatora"/>
+
+		<!--[11516][7.9][CRM 7.9]: Wizardy etap 2b-->
+		<col name="Save" type="boolean" category="Ogólne" caption="Zapis po kroku" description="Czy krok kreatora umożliwia zapis sesji"/>
+		<col name="ParentType" type="string" length="100" category="Ogólne" caption="Typ obiektu kroku kreatora" description="Określa typ obiektu kroku kreatora" />
+
+		<!--[12892][8.2][CRM 8.2]: Wykonujacy na wizard step-->
+		<col name="OperatorType" type="WizardStepOperatorType" category="Operator" caption="Typ operatora" description="Typ operatora wykonującego"/>
+		<col name="Operator" type="Operator" category="Operator" caption="Operator" description="Operator, który może wykonać krok" />
+		<col name="RoleGuid" type="guid" category="Operator" caption="Rola" description="Rola, która może wykonać krok" />
+
+		<!--[15036][9.1][Workflow 9.1]: Umożliwić ustawienie całego kroku kreatora w tryb tylko do odczytu-->
+		<col name="IsReadOnlyStep" type="boolean" category="Ogólne" caption="Krok tylko do odczytu" description="Czy krok kreatora ma być ustawiony jako tylko do odczytu"/>
+
+		<!--[16168][9.3][Workflow 9.3]: Możliwość wyciągnicia na zakładkę Workerów-->
+		<col name="WorkersTypes" type="text" category="Czynności" caption="Typy czynności dla kroku" description="Typy czynności jakie zostały zarejestrowane dla kroku"/>
+
+		<!--[16167][9.3][Workflow 9.3]: Zakładka kreatora typu RichEdit - RichDescriprion-->
+		<col name="RichEditStepInfo" type="text" category="Zakładki" caption="Opis kroku" description="Określa opis (informację) na kroku typu RichEdit">
+			<attribute>ControlEdit(ControlEditKind.ASPX)</attribute>
+		</col>
+
+		<!--[26015][10.5][Workflow 10.5]: Dodać pole na kroku kreatora " Podglad załaczników"-->
+		<col name="ShowPdfPreview" type="boolean" category="Ogólne" caption="Pokaż podgląd załączników PDF" description="Czy krok kreatora umożliwia wyświetlenie podglądu załączników PDF"/>
+
+	</table>
+
+	<!-- Runtime fields -->
+
+	<enum name="RuntimeRowRequired"/>
+	<enum name="RuntimeRowReadOnly"/>
+	<enum name="RuntimeFieldType"/>
+	<enum name="RuntimeRowType"/>
+	<interface name="IRuntimeRowDefinition"/>
+
+	<subrow name="RuntimeRowDefinitionTools">
+		<col name="Code" type="text"/>
+	</subrow>
+
+  <table name="RuntimeFieldDefinition" tablename="RuntimeFieldDefs" config="true"
+         caption="Definicja pola dynamicznego" tablecaption="Definicje pól dynamicznych" guided="Root" namespace="Soneta.Business.Runtime"
+    >
+		<key name="ByName" keyunique="true" keyprimary="true">
+			<keycol name="Definition"/>
+			<keycol name="Name"/>
+		</key>
+		<key name="ByNameOnly">
+			<keycol name="Name"/>
+		</key>
+		<col name="Type" type="RuntimeRowType" selector="true" readonly="true" required="true"
+         category="System"/>
+		<col name="Definition" type="IRuntimeRowDefinition" required="true" readonly="true"
+        children="Fields" relguided="inner" delete="cascade" keyclass="Lp"	keyclasscol="Lp" relname="Definicje pól dynamicznych"
+        category="Ogólne" caption="Definicja" description="Definicja zdarzenia"/>
+		<col name="Lp" type="int" batchfield="false"
+	    category="Ogólne" description="Liczba porządkowa pola w definicji"/>
+		<col name="Name" type="string" length="30" required="true" important="true"
+        category="Ogólne" caption="Nazwa" description="Nazwa pola" localization="dictionary">
+			<verifier name="RuntimeFieldDefinition.IdentifierNameVerifier" onadded="false"/>
+		</col>
+		<col name="FieldType" type="RuntimeFieldType" important="true"
+        category="Value" caption="Typ" description="Typ pola">
+			<verifier name="RuntimeFieldDefinition.TypeRequiredVerifier" />
+		</col>
+		<col name="TypeInformation" type="string" length="100" important="true" modifier="public" readonly="set"
+        category="Value" caption="Informacja" description="Informacja dodatkowa dla typu pola">
+			<verifier name="RuntimeFieldDefinition.TypeRequiredVerifier" />
+		</col>
+		<col name="FldCaption" type="string" length="30"
+        category="Value" caption="Etykieta" description="Domyślna etykieta"/>
+		<col name="FldDescription" type="string" length="60"
+        category="Value" caption="Opis" description="Opis pola"/>
+		<col name="IsFieldIndexed" type="boolean"
+         category="Ogólne" caption="Pole indeksowane" description="Określa czy pole jest indeksowane">
+      <verifier name="RuntimeFieldDefinition.FieldIndexedVerifier" onadded="true"/>
+      <verifier name="RuntimeFieldDefinition.NameVerifier" onadded="false"/>
+    </col>
+    <col name="FldRequired" type="RuntimeRowRequired"/>
+    <col name="FldReadOnly" type="RuntimeRowReadOnly"/>
+    <col name="FldMaxLen" type="int"/>
+	  <col name="FldSetOnlyNull" type="boolean"/>
+	  <col name="UpdateManagedState" type="boolean" modifier="public virtual"/>
+	  <col name="IsMultireferenceAsArray" type="boolean" category="Ogólne" caption="Typu tablicowego" description="Pole typu multireferencyjnego pokazywane, jako tablica">
+		  <verifier name="RuntimeFieldDefinition.MultireferenceAsArrayVerifier" onadded="true"/>
+	  </col>
+	</table>
+
+	<subrow name="RuntimeFields">
+		<col name="Code" type="text" modifier="internal"/>
+	</subrow>
+
+	<interface name="IRuntimeRow" />
+
+	<table name="RuntimeRowRelation" tablename="RuntimeRowRels" caption="Relacja wiersza runtime" tablecaption="Relacje wierszy runtime" namespace="Soneta.Business.Runtime">
+
+		<col name="RuntimeRowHost"
+         type="IRuntimeRow"
+         required="true"
+         readonly="true"
+         keyprimary="true"
+         children="Relations"
+         delete="cascade"
+         category="Ogólne"
+         caption="Wiersz runtime"
+         description="Wiersz runtime">
+			<keycol name="Definition"/>
+		</col>
+
+		<col name="Host" type="IGuidedRow" required="true" category="Ogólne" caption="Rekord powiązany" description="Rekord powiązany">
+			<keycol name="Primary"/>
+		</col>
+
+		<col name="Definition" type="RuntimeFieldDefinition" required="true" readonly="true" category="Ogólne" caption="Definicja" description="Definicja pola dokumentu"/>
+		<col name="Primary" type="boolean" readonly="true" category="Ogólne" caption="Podstawowa" description="Relacja podstawowa"/>
+
+	</table>
+
+	<interface name="IAuthorised"/>
+	<interface name="IPermissionClient"/>
+	<enum name="AccessRights"/>
+
+	<table name="RecordPermission" tablename="RecordPerms" tablecaption="Prawa rekordów" caption="Prawo rekordu" namespace="Soneta.Business.Db.Permissions">
+
+		<col name="PermissionClient"
+         type="IPermissionClient"
+         required="true"
+         keyprimary="true"
+         keyunique="true"
+         category="Ogólne"
+         caption="Klient uprawnienia"
+         description="Określa klienta uprawnienia"
+         children="Permissions"
+         relname="Permission client permissions"
+         delete="cascade">
+			<keycol name="Authorised"/>
+		</col>
+
+		<col name="Authorised"
+         type="IAuthorised"
+         required="true"
+         category="Ogólne"
+         caption="Uprawniony"
+         description="Określa upawnionego"
+         children="Permissions"
+         relname="Authorised permissions"
+         delete="cascade"/>
+
+		<col name="Permission" type="AccessRights" category="Ogólne" caption="Uprawnienie" description="Określa rodzaj uprawnienia"/>
+
+	</table>
+
+	<table name="UserGroup" tablename="UserGroups" caption="Grupa użytkowników" tablecaption="Grupy użytkowników" config="true" guided="Root" namespace="Soneta.Business.Db.Permissions">
+
+		<interface>IAuthorised</interface>
+
+		<key name="ByName" keyprimary="true" keyunique="true">
+			<keycol name="Name"/>
+		</key>
+
+		<col name="Name" type="string" length="255" required="true" category="Ogólne" caption="Nazwa" description="Określa nazwę grupy użytkowników"/>
+		<col name="Locked" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa czy grupa użytkowników jest zablokowana"/>
+
+	</table>
+
+	<table name="UserGroupMember" tablename="UserGroupMembers" caption="Członek grupy użytkowników" tablecaption="Członkowie grupy użytkowników" config="true" namespace="Soneta.Business.Db.Permissions">
+
+		<col name="UserGroup"
+         type="UserGroup"
+         required="true"
+         keyprimary="true"
+         keyunique="true"
+         category="Ogólne"
+         caption="Grupa użytkowników"
+         description="Określa grupę użytkowników"
+         children="Members"
+         relguided="inner"
+         relname="User group members">
+			<keycol name="Member"/>
+		</col>
+
+		<col name="Member"
+         type="IAuthorised"
+         required="true"
+         category="Ogólne"
+         caption="Członek"
+         description="Określa członka grupy użytkowników"
+         children="UserGroupMembers"
+         relname="Member members"/>
+
+		<col name="Locked" type="boolean" category="Ogólne" caption="Zablokowany" description="Określa czy członek grupy użytkowników jest zablokowany"/>
+
+	</table>
+
+	<enum name="SysNotificationFact"/>
+	<enum name="SysNotificationDelayUnit"/>
+	<enum name="SysNotificationRecipientType"/>
+	<enum name="SysNotificationErrorReactionType"/>
+
+	<table name="SysNotification" tablename="SysNotifications" caption="Powiadomienie" tablecaption="Powiadomienia" config="true" namespace="Soneta.Business.Db.Notifications" guided="Root">
+
+		<col name="TaskDefinition"
+         type="TaskDefinition"
+         required="true"
+         caption="Definizcja zadania"
+         setonlynull="true"
+         keyprimary="true"
+         relright="true"
+         category="General"
+         delete="cascade"
+         children="SysNotifications"
+         description="Definicja zadania, do której przypisane jest powiadomienie.">
+			<attribute>Context(Required = false)</attribute>
+		</col>
+
+		<col name="NotificationType"
+         type="TaskDefinition"
+         required="true"
+         caption="Typ powiadomienia"
+         category="General"
+         description="Definicja zadania określającego typ powiadomienia.">
+			<verifier name="Verifiers.TemplateVerifier"/>
+		</col>
+
+	    <col name="Locked" type="boolean" category="Ogólne" caption="Zablokowany" description=""/>
+    <col name="Fact" type="SysNotificationFact" category="General" caption="Okoliczność" description="Określa okoliczność wystąpienia powiadomienia"/>
+    <col name="DelayUnit" type="SysNotificationDelayUnit" category="Delay" caption="Typ opóźnienia" description="Określa typ opóźnienia"/>
+    <col name="DelayValue" type="int" category="Delay" caption="Wartość opóźnienia" description="Określa wartość opóźnienia"/>
+    <col name="RecipientType" type="SysNotificationRecipientType" caption="Typ odbiorcy" description="Określa typ odbiorcy"/>
+    <col name="Role" type="string" length="50" caption="Typ odbiorcy - rola" description="Określa typ odbiorcy jako rola"/>
+    <col name="Group" type="string" length="50" caption="Typ odbiorcy - grupa" description="Określa typ odbiorcy jako grupa"/>
+		<col name="Template" type="ITemplate" category="General" caption="Szablon powiadomienia" description="Określa szablon powiadomienia">
+			<verifier name="Verifiers.TemplateVerifier" />
+		</col>
+    <col name="CanCreateSysNotificationCode" type="AlgorithmColumn" category="Algorytm" caption="Kod metody CanCreateSysNotification" description="Określa algorytm metody CanCreateSysNotification"/>
+    <col name="GetSysNotificationContentCode" type="AlgorithmColumn" category="Algorytm" caption="Kod metody GetSysNotificationContent" description="Określa algorytm metody GetSysNotificationContent"/>
+    <col name="GetRecipientsExpressionCode" type="AlgorithmColumn" category="Algorytm" caption="Kod metody GetRecipientsExpression" description="Określa algorytm metody GetRecipientsExpression"/>
+	<col name="WfDefinition" type="IWFDefinition" category="Ogólne" caption="Definicja procesu" description="Określa definicję procesu">
+		<verifier name="Verifiers.WfDefOnSysNotificationVerifier" />
+	</col>
+	<col name="ErrorReaction" type="SysNotificationErrorReactionType" caption="Reakcja na błąd" description="Określa sposób reakcji na błąd w wysyłce powiadomienia"/>
+	</table>
+
+	<subrow name="AlgorithmColumn">
+		<col name="Code" type="text">
+			<attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+		</col>
+	</subrow>
+
+	<!--
+		DASHBOARDS
+	-->
+
+	<enum name="DashboardViewType"/>
+	<enum name="DashboardViewLayoutMode"/>
+
+  <table name="DashboardArea" tablename="DashbrdAreas" guided="Root" config="true"
+				 caption="Obszar" tablecaption="Obszary" namespace="Soneta.Business.Db">
+
+    <col name="Parent" type="DashboardArea" children="Children" modifier="public virtual"
+         caption="Nazwa" category="Ogólne" description="Obszar nadrzędny do kategorii.">
+        <keycol name="Order"/>
+        <keycol name="Name" />
+    </col>
+
+    <col name="Name" type="string" length="40" required="true" important="true" localization="dictionary" modifier="public virtual"
+         caption="Nazwa" category="Ogólne" description="Nazwa obszaru/kategorii wyświetlana w drzewie folderów."/>
+    <col name="Description" type="string" length="200" localization="dictionary"
+         caption="Opis" category="Ogólne" description="Opisuje zawartość i zastosowanie."/>
+    <col name="IconName" type="string" length="40"
+         caption="Ikona" category="Ogólne" description="Nazwa ikony wyświetlanej w folderze."/>
+    <col name="Order" type="int" caption="Kolejność" category="Ogólne" description="Kolejność wyświetlnia obszaru/kategorii" />
+
+  </table>
+
+  <table name="DashboardView" tablename="DashbrdViews" guided="Root" config="true"
+				 caption="Panel" tablecaption="Panele" namespace="Soneta.Business.Db">
+
+		<interface>IRightsSource</interface>
+
+		<key name="ByName" keyunique="true" keyprimary="true">
+			<keycol name="ViewType"/>
+			<keycol name="Name"/>
+			<keycol name="IndividualGuid"/>
+		</key>
+
+		  <key name="ByOrderNameCol">
+			  <keycol name="ViewType"/>
+			  <keycol name="Order"/>
+			  <keycol name="Name"/>
+			  <keycol name="IndividualGuid"/>
+		  </key>
+
+		<col name="ViewType" type="DashboardViewType" selector="true" required="true" readonly="true" important="true"
+				 caption="Type" category="Ogólne" description="Typu pulpitu określający jego wykorzystanie."/>
+
+		<col name="Name" type="string" length="40" required="true" important="true" localization="dictionary" modifier="public virtual"
+         caption="Nazwa" category="Ogólne" description="Nazwa pulpitu wyświetlana w drzewie folderów."/>
+
+		<col name="DashboardArea" type="DashboardArea" children="Views" modifier="public virtual"
+		  caption="Obszar" category="Ogólne" description="Obszar i kategoria funkcjonalna."/>
+
+		<col name="Description" type="string" length="200" localization="dictionary"
+         caption="Opis" category="Ogólne" description="Opisuje zawartość i zastosowanie."/>
+		<col name="IconName" type="string" length="40"
+         caption="Ikona" category="Ogólne" description="Nazwa ikony wyświetlanej w folderze."/>
+		<col name="Order" type="int" caption="Kolejność" category="Ogólne" description="Kolejność wyświetlnia pulpitu" />
+
+		<col name="Editable" type="boolean"
+				 caption="Edytowalny" category="Ogólne" description="Wskazuje możliwość edycji danych na pulpicie."/>
+
+		<col name="Locked" type="boolean"
+				 caption="Zablokowany" category="Dostępność" description="Określa, czy widok pulpitu jest aktualnie zablokowany."/>
+		<col name="LayoutMode" type="DashboardViewLayoutMode" modifier="public virtual"
+         caption="Interface" category="Dostępność" description="Widoczność na interfejsie użytkownika"/>
+		<col name="IndividualGuid" type="guid"
+         caption="Identyfikator operatora" category="Dostępność" description="Unikalny identyfikator indywidualnego panelu operatora."/>
+
+
+	</table>
+
+	<table name="DashboardViewTile" tablename="DashbrdViewTiles" config="true"
+				 caption="Kafelek pulpitu" tablecaption="Kafelki pulpitów" namespace="Soneta.Business.Db">
+
+		<col name="Dashboard" type="DashboardView" caption="Pulpit"
+				 readonly="set"
+				 required="true"
+				 relguided="inner"
+				 relname="Kafelki pulpitu"
+				 children="Tiles"
+				 delete="cascade"
+				 keyprimary="true">
+			<keycol name="Priority"/>
+			<keycol name="Name"/>
+		</col>
+
+		<col name="Definition" type="string" length="40" readonly="true" required="true" important="true"
+         caption="Definicja" category="Ogólne" description="Nazwa definicji danego kafelka pulpitu" />
+
+		<col name="TileGuid" type="guid" required="true"
+         caption="Identyfikator" category="Ogólne" description="Unikalny identyfikator kafelka na pulpicie."/>
+		<col name="ParentGuid" type="guid"
+         caption="Identyfikator nadrzędny" category="Ogólne" description="Identyfikator nadrzędnego kafelka."/>
+
+		<col name="Name" type="string" length="60" required="true" localization="dictionary"
+         caption="Tytuł" category="Ogólne" description="Tytuł wyświetlany w nagłówku kafelka."/>
+		<col name="Description" type="string" length="200" localization="dictionary"
+         caption="Opis" category="Ogólne" description="Szczegółowy opis działania kafelka."/>
+		<col name="IconName" type="string" length="40"
+         caption="Ikona" category="Ogólne" description="Nazwa ikony wyświetlanej w kafelku."/>
+		<col name="BackColor" type="string" length="20"
+         caption="Kolor" category="Ogólne" description="Kolor tła kafelka.">
+			<attribute>ControlEdit(ControlEditKind.Color)</attribute>
+		</col>
+
+		<col name="Priority" type="int"
+         caption="Priorytet" category="Położenie" description="Kolejność, wg której układane są klocki na siatce."/>
+		<col name="Column" type="int"
+         caption="Kolumna" category="Położenie" description="Położenie X w jednostkach siatki na pulpicie (-1 brak)."/>
+		<col name="Row" type="int"
+         caption="Wiersz" category="Położenie" description="Położenie Y w jednostkach siatki na pulpicie (-1 brak)."/>
+		<col name="Width" type="int"
+         caption="Szerokość" category="Położenie" description="Szerokość w jednostkach siatki elementu pulpitu jeżeli definiowalna."/>
+		<col name="Height" type="int"
+         caption="Wysokość" category="Położenie" description="Wysokość w jednostkach siatki elementu pulpitu jeżeli definiowalna."/>
+
+		<col name="FolderPath" type="string" length="100"
+         caption="Ścieżka folderu" category="Parametry" description="Folder, do którego odnosi się kafelek."/>
+		<col name="OpenInNewTab" type="boolean"
+				 caption="W nowej zakładce" category="Parametry" description="Określa, czy otwarcie formularza ma odbywać się w nowej zakładce programu."/>
+		<col name="ContextName" type="string" length="20"
+				 caption="Kontekst danych" category="Parametry" description="Określa kontekst danych na pulpicie" />
+
+		<col name="Arg0" type="string" length="100" caption="Argument 0" category="Parametry" />
+		<col name="Arg1" type="string" length="100" caption="Argument 1" category="Parametry" />
+		<col name="Arg2" type="string" length="100" caption="Argument 2" category="Parametry" />
+		<col name="Arg3" type="string" length="100" caption="Argument 3" category="Parametry" />
+
+		<col name="Memo0" type="text" caption="Argument tekstowy 0" category="Parametry" />
+		<col name="Memo1" type="text" caption="Argument tekstowy 1" category="Parametry" />
+
+	</table>
+
+	<enum name="SystemRoleDestiny"/>
+	<table name="SystemRole" tablename="SystemRoles" caption="Rola systemowa" tablecaption="Role systemowe" config="true" guided="Root">
+		<interface>IEntitle</interface>
+		<key name="ByName" keyunique="true" keyprimary="true">
+			<keycol name="Name"/>
+		</key>
+		<col name="Name" type="string" length="40" required="true" important="true" modifier="public virtual" caption="Nazwa" description="Nazwa roli" localization="dictionary"/>
+		<col name="Locked" type="boolean" caption="Blokada" modifier="public virtual"/>
+		<col name="Partial" type="boolean" caption="Cząstkowa" modifier="public virtual"/>
+		<col name="System" type="boolean" caption="Systemowa" readonly="true"/>
+		<col name="Destiny" type="SystemRoleDestiny" caption="Przeznaczenie" modifier="public virtual"/>
+		<col name="Generation" type="int" caption="Generacja" readonly="set"/>
+		<col name="RoleText" type="text" readonly="set"/>
+	</table>
+
+	<table name="SystemRoleRef" tablename="SystemRoleRefs"
+		caption="Referencja roli"
+	tablecaption="Referencje roli"
+  >
+		<col name="Role" type="SystemRole"
+			caption="Rola"
+      keyprimary="true"
+      readonly="true"
+			required="true"
+			relguided="inner"
+			delete="cascade"
+      children="Powiazane"
+			relname="Role powiązane"
+      relright="true"
+			keyunique="true"
+		>
+			<keycol name="Connected"/>
+		</col>
+		<col name="Connected" type="SystemRole" required="true" readonly="true" caption="Powiązana rola" children="Parents"/>
+	</table>
+
+	<table name="EntitleRef" tablename="EntitleRefs"
+		caption="Referencja uprawnienia"
+		tablecaption="Referencjie uprawnień"
+  >
+		<col name="Entitle" type="Entitle"
+			caption="Uprawnienie"
+      keyprimary="true"
+			keyunique="true"
+      readonly="true"
+			required="true"
+			relguided="inner"
+			delete="cascade"
+      children="ConnectedRoles"
+			relname="Role powiązane"
+      relright="true"
+		>
+			<keycol name="Role"/>
+		</col>
+		<col name="Role" type="SystemRole" required="true" readonly="true" caption="Powiązana rola" children="Entitles"/>
+	</table>
+
+</module>

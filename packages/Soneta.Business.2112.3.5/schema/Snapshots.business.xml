@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd"
+				xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd"
+				xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+				xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+				name="Snapshots"
+				namespace="Soneta.Business.Snapshots"
+        versionName="snapshots"
+				versionNumber="21060000"
+				snapshotsDb="true"
+				internal="true">
+
+  <import>..</import>
+  <using>Soneta.Config</using>
+  <using>Soneta.Business.Db</using>
+
+  <table name="System2Info" tablename="System2Infos" name8="Sys2Infs" guided="None" caption="Informacja systemowa 2">
+    <key name="ByIdent" keyprimary="true" keyunique="true">
+      <keycol name="Ident"/>
+    </key>
+    <col name="Ident" type="SysInfoIdentifier" required="true" readonly="true"/>
+    <col name="Value" type="string" length="40"/>
+    <col name="Data" type="text" />
+  </table>
+
+</module>

@@ -1,0 +1,1075 @@
+﻿<?xml version = "1.0" encoding = "utf-8" ?>
+
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Kasa" namespace="Soneta.Kasa" versionName="soneta" >
+
+	<import>..</import>
+
+	<!-- USINGS -->
+	<using>Soneta.Business.App</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Core</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.Windykacja</using>
+	<using>Soneta.Kasa.BankowoscElektroniczna</using>
+
+
+	<!-- ENUMS -->
+	<enum name="IdentyfikacjaWgPolaPodmiot" />
+	<enum name="InformacjaOZwrocie" /> 
+	<enum name="MagazynWalut" />
+	<enum name="MetodaWeryfikacjiBialaLista" />
+	<enum name="ObrótMWWedług" />
+	<enum name="OdsetkiRozpoczecie" />
+	<enum name="OdsetkiStopa" />
+	<enum name="OkresRaportuESP" />
+	<enum name="PlatnoscStanNoty" />
+	<enum name="PreliminarzKierunek" />
+	<enum name="PreliminarzTypPozycji" />
+	<enum name="PrzelewWalutowyKodOplaty" />
+	<enum name="RodzajRaportuESP" />
+	<enum name="RodzajSkladkiZUS" /> 
+	<enum name="SposóbIdentyfikacjiPodmiotu" />
+	<enum name="StanNotyOdsetkowej" />
+	<enum name="StanOperacjiBankowej" />
+	<enum name="StanPrzelewu" /> 
+	<enum name="StanZapłaty" />
+	<enum name="StatusBialaLista" />
+	<enum name="StatusPrzelewuOnline" />
+	<enum name="StatusRoznicyKursowejESP" />
+	<enum name="TypDanychESP" />
+	<enum name="TypDokumentuKasowego" />
+	<enum name="TypDokumentuPreliminarza" />
+	<enum name="TypEwidencjiSP" />
+	<enum name="TypFormatuWymianyElektronicznej" />
+	<enum name="TypIdentyfikatoraPłatnika" />
+	<enum name="TypKsiegowaniaObrotuMW" />
+    <enum name="TypPrzelewu" />
+    <enum name="TypPrzelewu2" />
+	<enum name="TypRachunkówWirtualnych" />
+	<enum name="TypRachunkuBankowego" />
+	<enum name="TypRozliczeniaSP" />
+	<enum name="TypRoznicyKursowej" />
+	<enum name="TypRozrachunku" />
+	<enum name="TypySposobowZaplaty" />
+	<enum name="WynagrodzenieMetoda" />
+
+
+	<!-- INTERFACES -->
+	<interface name="IDokumentPreliminarza" />
+	<interface name="IElementKsiegowalny" />
+	<interface name="IPodmiotKasowy" />
+	<interface name="IRozliczalny" />
+	<interface name="IRozliczenie" />
+
+
+	<!-- ....... -->
+	<!-- SUBROWS -->
+	<!-- ....... -->
+
+
+	<!-- NUMER RACHUNKU -->
+	<subrow name="NumerRachunku" >
+		<col name="Kraj" type="string" length="2" >
+			<verifier name="NumerRachunku.IBANVerifier" />
+		</col>
+		<col name="CS" type="string" length="2" >
+			<verifier name="NumerRachunku.IBANVerifier" />
+		</col>
+		<col name="Kierunek" type="string" length="8" >
+			<verifier name="NumerRachunku.IBANVerifier" />
+		</col>
+		<col name="Numer" type="string" length="40" >
+			<verifier name="NumerRachunku.IBANVerifier" />
+			<verifier name="NumerRachunku.NumerRequiredVerifier" onadded="true" />
+			<verifier name="NumerRachunku.NumerKontrahenciDuplicateVerifier" />
+		</col>
+	</subrow>
+
+
+	<!-- RACHUNEK BANKOWY -->
+	<subrow name="RachunekBankowy" >
+		<col name="Bank" type="Bank" cstype="IBank" relname="Bank rachunku" />
+		<col name="SWIFT" name12="SW" type="string" length="16" />
+		<col name="Numer" name12="Nr" type="NumerRachunku" />
+	</subrow>
+
+
+	<!-- KARTA PLATNICZA -->
+	<subrow name="KartaPlatnicza" >
+		<col name="Nazwa" type="string" length="20" >
+			<attribute>Dictionary("Nazwa karty")</attribute>
+		</col>
+		<col name="Numer" type="string" length="30" />
+		<col name="WaznaDo" name12="Do" type="YearMonth" />
+	</subrow>
+
+
+	<!-- ELIXIR INFO -->
+	<subrow name="ElixirInfo" >
+		<col name="Kierunek" type="string" length="8" />
+		<col name="Numer" type="string" length="40" />
+	</subrow>
+
+
+	<!-- PARTIA MW -->
+	<subrow name="PartiaMW" >
+		<col name="Data" type="date" required="true" readonly="set" />
+		<col name="Czas" type="time" readonly="set" />
+		<col name="Kurs" type="double" />
+		<col name="Wartosc" type="decimal" caption="Wartość" />
+	</subrow>
+
+
+	<!-- ODSETKI KARNE -->
+	<subrow name="OdsetkiKarne" >
+		<col name="Indywidualne" type="boolean" caption="Ustawienia domyślne" description="Odsetki karne naliczane będą wg ustawien globalnych w konfiguracji." />
+		<col name="RozpoczecieTyp" type="OdsetkiRozpoczecie" caption="Typ rozpoczęcia" description="Determinująca sposób wyznaczenia początku naliczania odsetek." />
+		<col name="RozpoczecieDni" type="int" caption="Dni rozpoczęcia" description="Ilość dni od daty wystawienia dokumentu do rozpoczęcia naliczania odsetek w metodzie indywidualnej." />
+		<col name="Zwloka" type="int" caption="Dopuszczalna zwłoka" description="Dopuszczalne przekroczenie terminu płatności, które nie powoduje naliczania odsetek." />
+		<col name="Stopa" type="OdsetkiStopa" caption="Stopa odsetkowa" description="Stopa determinujaca wysokość naliczanych odsetek karnych." />
+		<col name="OdsIndHist" type="text" modifier="protected" description="Pole do przechowywania historii odsetek indywidualnych." />
+	</subrow>
+
+
+	<!-- CERTYFIKAT BANKOWOSCI ON-LINE -->
+	<subrow name="BankOnlineCert" >
+		<col name="Name" type="string" length="80" readonly="set" caption="Nazwa certyfikatu" category="Certificate" />
+		<col name="Issuer" type="string" length="80" readonly="set" caption="Wystawca certyfikatu" category="Certificate" />
+		<col name="Pass" type="string" length="200" readonly="set" caption="Hasło certyfikatu" category="Certificate" />
+		<col name="Body" type="text" readonly="set" caption="Certyfikat" category="Certificate" />
+	</subrow>
+
+
+	<!-- ...... -->
+	<!-- TABLES -->
+	<!-- ...... -->
+
+
+	<!-- IDENTYFIKACJA PŁATNIKA -->
+	<table name="IdentyfikacjaPlatnika" tablename="IdentPlatnikow" name8="IdentPlt" guided="None" caption="Identyfikacja płatnika" tablecaption="Identyfikacje płatników" >
+
+		<key name="WgIdent" keyunique="true" keyprimary="true" >
+			<keycol name="Typ" />
+			<keycol name="Identyfikator" />
+			<keycol name="Oddzial" />
+		</key>
+
+		<col name="Podmiot" type="IPodmiotKasowy" required="true" readonly="true" children="Identyfikacje" relname="Identyfikacje podmiotów kasowych" delete="cascade" />
+		<col name="Typ" type="TypIdentyfikatoraPłatnika" required="true" readonly="true" />
+		<col name="Identyfikator" type="string" length="240" required="true" />
+		<col name="Konfiguracja" type="text" modifier="private" />
+		<col name="Oddzial" type="OddzialFirmy" readonly="set" children="Identyfikacje" relname="Identyfikacje podmiotów oddziały" delete="cascade" />
+	</table>
+
+
+	<!-- FORMAT WYMIANY ELEKTRONICZNEJ -->
+	<table name="FormatWymianyElektronicznej" tablename="FormatyWymElektr" guided="Root" config="true" caption="Format wymiany elektronicznej" tablecaption="Rachunki bankowe" >
+
+		<key name="WgNazwy" keyunique="true" keyprimary="true" >
+			<keycol name="Typ" />
+			<keycol name="Nazwa" />
+		</key>
+
+		<col name="Typ" type="TypFormatuWymianyElektronicznej" selector="true" readonly="true" required="true" />
+		<col name="Nazwa" type="string" length="30" required="true" />
+		<col name="NazwaSerializera" type="string" length="80" modifier="protected" required="true" />
+		<col name="ParametrySerializera" type="text" readonly="set" />
+	</table>
+
+
+	<!-- KONTO BANKOWE PODMIOTU -->
+	<table name="RachunekBankowyPodmiotu" tablename="RachBankPodmiot" name8="RachPodm" guided="Root" caption="Rachunek bankowy" tablecaption="Rachunki bankowe" >
+		<col name="Podmiot" type="IPodmiotKasowy" readonly="true" category="Rachunek" children="Rachunki" relname="Konta bankowe podmiotu" delete="cascade" relright="true" keyprimary="true" >
+			<keycol name="Typ" />
+			<keycol name="Priorytet" />
+		</col>
+		<col name="Typ" type="TypRachunkuBankowego" selector="true" readonly="true" required="true" category="Rachunek" />
+		<col name="Priorytet" type="int" category="Rachunek" />
+		<col name="Rachunek" type="RachunekBankowy" category="Rachunek" />
+		<col name="Ewidencja" type="EwidencjaSP" category="Rachunek" >
+			<keycol name="Typ" />
+		</col>
+		<col name="Nazwa1" type="string" length="53" category="Przelew" description="Pierwsza linia informacji do umieszczenia na przelewie" />
+		<col name="Nazwa2" type="string" length="53" category="Przelew" description="Druga linia informacji do umieszczenia na przelewie" />
+		<col name="Kwota" type="currency" modifier="private" category="Dodatkowe" description="Pole nieużywane od wersji 12.3"/>
+		<col name="Procent" type="percent" modifier="private" category="Dodatkowe" description="Pole nieużywane od wersji 12.3"/>
+		<col name="Blokada" type="boolean" modifier="public virtual" category="Ogólne" />
+		<col name="Waluta" type="Waluta" category="Ogólne" relname="Rachunek w walucie" />
+		<!-- BIAŁA LISTA -->
+		<col name="StatusBL" type="StatusBialaLista" caption="Status w Wykazie" category="Wykaz" />
+		<col name="DataSprawdzeniaBL" type="date" caption="Data sprawdzenia w Wykazie" category="Wykaz" />
+	</table>
+
+	<!-- HISTORIA RACHUNKU BIAŁA LISTA -->
+	<table name="HistoriaStatusuBL" tablename="StatusBLHist" name8="StsBLHis" caption="Historia statusu Biała lista" tablecaption="Historia statusów Biała lista">
+		<col name="RachunekBankowyPodmiotu" type="RachunekBankowyPodmiotu" keyprimary="true" delete="cascade" children="StatusyBL">
+			<keycol name="Data" />
+		</col>
+		<col name="StatusBL" type="StatusBialaLista" caption="Status" />
+		<col name="Data" type="datetime" caption="Data sprawdzenia" />
+		<col name="ZweryfikowanyNumer" type="string" length="26" category="Ogólne" caption="Zweryfikowany numer konta" />
+		<col name="IdentyfikatorZapytania" type="string" length="128" category="Ogólne" caption="Identyfikator zapytania" />
+		<col name="Aktualnosc" type="date" category="Ogólne" caption="Data aktualności" />
+		<col name="MetodaWeryfikacji" type="MetodaWeryfikacjiBialaLista" category="Ogólne" caption="Metoda weryfikacji" />
+	</table>
+
+	<!-- SPOSOBY ZAPŁATY -->
+	<table name="SposobZaplaty" tablename="SposobyZaplaty" name8="SpZapl" guided="Root" config="true" caption="Sposób zapłaty" tablecaption="Sposoby zapłaty" >
+
+		<key name="WgNazwy" keyunique="true" keyprimary="true" >
+			<keycol name="Nazwa" />
+		</key>
+
+		<col name="Nazwa" type="string" length="30" localization="dictionary" required="true" category="Ogólne" />
+		<col name="Typ" type="TypySposobowZaplaty" required="true" category="Ogólne" />
+		<col name="Odroczony" type="boolean" category="Ogólne" />
+		<col name="LimitKredytowy" type="boolean" category="Ogólne" />
+		<col name="Blokada" type="boolean" category="Ogólne" />
+		<col name="TerminalPlatniczy" type="boolean" category="Ogólne"/>
+		<col name="Biernik" type="string" length="30" localization="dictionary" required="true" category="Wydruki" />
+		<col name="Platnik" type="IPodmiotKasowy" category="Ogólne" relname="Platnik sposobu zaplaty" description="Płatnik powiązany ze sposobem zapłaty." />
+        <col name="MPP" type="boolean" category="Ogólne" description="Metoda podzielonej płatności." modifier="public virtual" />
+        <col name="CechaESP" type="FeatureDefinition" category="Ogólne" description="Cecha wyliczająca ESP na płatnosci." modifier="public virtual" />
+	</table>
+
+
+	<!-- FORMA PŁATNOŚCI -->
+	<table name="FormaPlatnosci" tablename="FormyPlatnosci" name8="DefZob" guided="Root" config="true" caption="Definicja płatności" tablecaption="Definicje płatności" >
+
+		<key name="WgNazwy" keyunique="true" keyprimary="true" >
+			<keycol name="Nazwa" />
+		</key>
+
+		<col name="Nazwa" type="string" length="30" localization="dictionary" required="true" category="Ogólne" />
+		<col name="SposobZaplaty" type="SposobZaplaty" required="true" category="Ogólne" />
+		<col name="EwidencjaSP" type="EwidencjaSP" required="true" category="Ogólne" relname="Ewidencja SP definicji zobowiązania" />
+		<col name="Termin" type="int" category="Ogólne" />
+		<col name="Blokada" type="boolean" category="Ogólne" />
+	</table>
+
+
+	<!-- PRZELEW -->
+	<table name="PrzelewBase" tablecaption="Przelewy" tablename="Przelewy" guided="Exported" >
+
+		<key name="WgData" >
+			<keycol name="Data" />
+		</key>
+		<key name="WgOnline" >
+			<keycol name="OnlineMgsId" />
+			<keycol name="OnlineTrnsId" />
+		</key>
+		<key name="WgOkresu" >
+			<keycol name="Podmiot" />
+			<keycol name="Okres.To" />
+		</key>
+
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" category="Ogólne" relname="Definicja przelewu" />
+		<col name="EwidencjaSP" type="EwidencjaSP" cstype="RachunekBankowyFirmy" required="true" readonly="set" category="Ogólne" relname="EwidencjaSP przelewu" relright="true" keyprimary="true" >
+			<keycol name="Data" />
+		</col>
+		<col name="Podmiot" name12="Odb" type="IPodmiotKasowy" required="true" category="Ogólne" relname="Podmiot przelewu" children="Przelewy" relright="true" >
+			<keycol name="Data" />
+			<verifier name="PrzelewBase.OkresVerifier" />
+			<verifier name="PrzelewBase.PodmiotVerifier" />
+		</col>
+		<col name="Rachunek" type="RachunekBankowyPodmiotu" category="Ogólne" relname="Rachunek bankowy przelewu" children="Przelewy" />
+        <col name="Typ" type="TypPrzelewu" selector="true" readonly="true" required="true" category="Dokument" />
+		<col name="Typ2" type="TypPrzelewu2" caption="Wariant" category="Dokument" description="Wariant przelewu standardowego" >
+			<verifier name="PrzelewBase.OkresVerifier" />
+			<verifier name="PrzelewBase.PodmiotVerifier" />
+			<verifier name="MppVerifiers.PrzelewMppKwotaPln" />
+			<verifier name="MppVerifiers.KwotaVATVerifierOnXml" />
+		</col>
+		<col name="Bufor" type="boolean" category="Dokument" />
+		<col name="Seria" type="string" length="12" category="Dokument" />
+		<col name="Numer" type="NumerDokumentu" category="Dokument" />
+		<col name="Data" type="date" category="Dokument" />
+		<col name="Okres" type="FromTo" category="Dokument" >
+			<verifier name="PrzelewBase.OkresVerifier" />
+		</col>
+		<col name="NazwaOdbiorcy1" name12="Odbiorca1" type="string" length="53" category="Przelew" >
+			<verifier name="PrzelewBase.NazwaOdbiorcyRequiredVerifier" onadded="true" />
+		</col>
+		<col name="NazwaOdbiorcy2" name12="Odbiorca2" type="string" length="53" category="Przelew" >
+			<verifier name="PrzelewBase.NazwaOdbiorcyRequiredVerifier" />
+		</col>
+		<col name="RachunekOdbiorcy" name12="RO" type="NumerRachunku" category="Przelew" />
+		<col name="NazwaZleceniodawcy1" name12="Zleceniodaw1" type="string" length="53" category="Przelew" >
+			<verifier name="PrzelewBase.NazwaZleceniodawcyRequiredVerifier" onadded="true" />
+		</col>
+		<col name="NazwaZleceniodawcy2" name12="Zleceniodaw2" type="string" length="53" category="Przelew" >
+			<verifier name="PrzelewBase.NazwaZleceniodawcyRequiredVerifier" />
+		</col>
+		<col name="RachunekZleceniodawcy" name12="RZ" type="NumerRachunku" category="Przelew" />
+		<col name="Kwota" type="currency" category="Przelew" >
+			<verifier name="MppVerifiers.PrzelewMppKwotaPln" />
+			<verifier name="MppVerifiers.KwotaVATVerifierOnXml" />
+			<verifier name="PrzelewBase.KwotaVerifierOnXml" onadded="true" />
+		</col>
+		<col name="KwotaVAT" type="currency" category="Przelew" modifier="internal" >
+			<verifier name="MppVerifiers.KwotaVATVerifierOnXml" />
+		</col>
+		<col name="Tytulem1" type="string" length="70" category="Przelew" >
+			<attribute>Dictionary("Przelew.Tytulem1", ManualList=true)</attribute>
+			<verifier name="PrzelewBase.TytulemRequiredVerifier" onadded="true" />
+		</col>
+		<col name="Tytulem2" type="string" length="70" category="Przelew" >
+			<attribute>Dictionary("Przelew.Tytulem2", ManualList=true)</attribute>
+			<verifier name="PrzelewBase.TytulemRequiredVerifier" />
+		</col>
+		<!-- PRZELEW WALUTOWY -->
+		<col name="KodOplaty" type="PrzelewWalutowyKodOplaty" category="Walutowy" description="Kto ponosi koszty przelewu" />
+		<col name="KodStatystyczny" type="string" length="3" readonly="set" category="Walutowy" description="Kod statystyczny operacji (3-literowy)" />
+		<col name="KodStatystycznyOpis" type="text" category="Walutowy" description="Objaśnienie kodu statystycznego" modifier="public virtual" />
+		<!-- EXPORT ONLINE -->
+		<col name="OnlineMgsId" type="string" length="32" readonly="set" caption="Numer komunikatu" category="Eksport online" description="Identyfikator komunikatu" />
+		<col name="OnlineTrnsId" type="string" length="32" readonly="set" caption="Numer transakcji" category="Eksport online" description="Identyfikator przelewu" />
+		<col name="OnlineStatus" type="StatusPrzelewuOnline" readonly="set" caption="Status online" category="Eksport online" description="Status przelewu" />
+		<col name="OnlineStatusTxt" type="string" length="128" readonly="set" caption="Status online TXT" category="Eksport online" description="Status przelewu tekstowy" />
+
+	</table>
+
+
+	<!-- POZYCJA PRZELEWU -->
+	<table name="PozycjaPrzelewu" tablename="PozycjePrzelewow" name8="PozPzl" caption="Pozycja przelewu" tablecaption="Pozycje przelewów" warnings="Off" >
+		<col name="Przelew" type="PrzelewBase" required="true" readonly="true" category="Ogólne" children="Pozycje" relname="Pozycje przelewu" delete="cascade" relguided="inner" keyprimary="true" keyclass="Lp" keyclasscol="Lp" />
+		<col name="DokPrzelew" type="IRozliczalny" cstype="IDokPrzelewowy" required="true" readonly="true" category="Ogólne" children="PozycjePrzelewu" relname="Pozycje przelewu płatności lub zapłaty" >
+			<keycol name="DataPrzelewu" />
+		</col>
+		<col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" />
+		<col name="DataPrzelewu" type="date" required="true" category="Ogólne" />
+		<col name="Kwota" type="currency" category="Ogólne" />
+	</table>
+
+
+	<!-- PLATNOSC -->
+	<table name="Platnosc" tablename="Platnosci" name8="Platn" caption="Płatność" tablecaption="Płatności" guided="Root" >
+
+		<interface>IRozliczalny</interface>
+		<interface>IElementKsiegowalny</interface>
+		<interface>IZrodloOpisuAnalitycznego</interface>
+
+		<key name="WgData" keyprimary="true" >
+			<keycol name="DataDokumentu" />
+		</key>
+		<key name="WgNumer" >
+			<keycol name="NumerDokumentu" />
+		</key>
+		<key name="WgTermin" >
+			<keycol name="Termin" />
+		</key>
+		<key name="WgTerminPlanowany" >
+			<keycol name="TerminPlanowany" />
+		</key>
+		<key name="WgPodmiotTermin" >
+			<keycol name="Podmiot" />
+			<keycol name="Termin" />
+		</key>
+		<key name="WgEwidencjaSPTermin" >
+			<keycol name="EwidencjaSP" />
+			<keycol name="Termin" />
+		</key>
+		<key name="WgRachunekWirtualny" >
+			<keycol name="RachunekWirtualny" />
+			<keycol name="DataRozliczenia" />
+		</key>
+		<key name="WgStanuNoty" >
+			<keycol name="StanNoty" />
+			<keycol name="DataDokumentu" />
+		</key>
+
+		<col name="Podmiot" type="IPodmiotKasowy" required="true" category="Dokument" children="Platnosci" relname="Podmiot płatności" relright="true" >
+			<keycol name="DataDokumentu" />
+			<verifier name="Platnosc.RachunekPodmiotuVerifier" />
+		</col>
+		<col name="Dokument" type="IDokumentPlatny" readonly="true" required="true" category="Ogólne" children="Platnosci" relguided="inner" relname="Dokument płatności" delete="cascade" relright="true" />
+		<col name="EwidencjaSP" type="EwidencjaSP" required="true" category="Płatność" relname="EwidencjaSP płatności" relright="false" >
+			<keycol name="DataDokumentu" />
+		</col>
+		<col name="Rachunek" type="RachunekBankowyPodmiotu" category="Ogólne" children="Platnosci" relname="Rachunek bankowy płatności" >
+			<verifier name="Platnosc.RachunekVerifier" />
+			<verifier name="Platnosc.RachunekPodmiotuVerifier" />
+		</col>
+		<col name="Bufor" type="boolean" category="Dokument" />
+		<col name="Rozliczana" type="boolean" modifier="protected" category="Dokument" />
+		<col name="Kierunek" type="KierunekPlatnosci" selector="true" readonly="true" category="Zobowiązanie" />
+		<col name="SposobZaplaty" type="SposobZaplaty" required="true" modifier="public virtual" category="Ogólne" >
+			<verifier name="Platnosc.RachunekVerifier" />
+			<verifier name="MppVerifiers.SposobZaplatyAdekwatnyMPP" />
+		</col>
+		<col name="TypPrzelewu" type="TypPrzelewu" modifier="public virtual" category="Ogólne" />
+		<col name="RodzajSkladkiZUS" type="RodzajSkladkiZUS" modifier="public virtual" category="Ogólne" />
+		<col name="Termin" type="date" category="Zobowiązanie" >
+			<verifier name="Platnosc.TerminRequiredVerifier" onadded="true" />
+		</col>
+		<col name="TerminLiczonyOd" type="date" category="Zobowiązanie" readonly="set" description="Data odniesienia do wyliczenia terminu płatności" />
+		<col name="Kwota" type="currency" modifier="public virtual" category="Zobowiązanie" >
+			<verifier name="Platnosc.KwotaRequiredVerifier" onadded="true" />
+            <verifier name="MppVerifiers.KwotaMPP" />
+		</col>
+		<col name="KwotaMPP" caption="Kwota VAT/MPP" type="currency" modifier="public virtual" category="Zobowiązanie" >
+			<verifier name="MppVerifiers.SposobZaplatyAdekwatnyMPP" />
+			<verifier name="MppVerifiers.KwotaMPP" />
+		</col>
+	    <col name="Priorytet" type="int" modifier="public virtual" />
+		<col name="TabelaKursowa" type="TabelaKursowa" category="Księgowość" relname="Tabela kursowa płatności" />
+		<col name="Kurs" type="double" category="Księgowość" />
+		<col name="KwotaKsiegi" name12="KwtKsi" type="currency" category="Księgowość" />
+        <col name="KsiegujZbiorczo" type="boolean" name12="KsiZbior" category="Dokument" />
+		<col name="ZwrotInfo" type="InformacjaOZwrocie" modifier="protected" category="Ogólne" />
+		<col name="Opis" type="string" length="80" category="Dokument" >
+			<verifier name="Platnosc.OpisRequiredVerifier" onadded="true" />
+		</col>
+		<col name="Windykacja" type="WindykacjaInfo" />
+		<col name="NumerDokumentu" type="string" length="40" required="true" category="Dokument" />
+		<col name="DataDokumentu" type="date" required="true" category="Dokument" />
+		<col name="Automatyczne" type="boolean" readonly="true" category="System" />
+		<col name="DataRozliczenia" type="date" required="true" specialaccess="true" category="System" />
+		<col name="KwotaRozliczona" name12="KwtRoz" specialaccess="true" type="currency" category="System" />
+		<col name="Info" type="int" category="Dodatkowe" />
+		<col name="RachunekWirtualny" type="string" length="60" category="Dodatkowe" />
+		<!-- PRELIMINARZ -->
+		<col name="TerminPlanowany" type="date" category="Preliminarz" />
+		<col name="PreliminarzPoz" type="PreliminarzPozycja" category="Preliminarz" relname="Rozliczana przez płatność pozycja preliminarza" children="RozliczeniePlatnosci" />
+		<!-- NOWE NOTY ODSETKOWE-->
+		<col name="StanNoty" type="PlatnoscStanNoty" category="Nota" description="Stan płatności z punktu widzenia naliczania not odsetkowych" specialaccess="true" modifier="protected" />
+	    <col name="NieWindykowac" type="boolean" category="Windykacja" description="Wyłącza płatność z procesu windykacji" />
+	</table>
+
+
+	<!-- EWIDENCJA SP -->
+	<table name="EwidencjaSP" tablename="EwidencjeSP" guided="Root" config="true" caption="Ewidencja ŚP" tablecaption="Ewidencje ŚP" >
+
+		<interface>IElementSlownika</interface>
+		<interface>IRightsSource</interface>
+
+		<key name="WgNazwy" keyunique="true" keyprimary="true" >
+			<keycol name="Nazwa" />
+		</key>
+		<key name="WgSymbolu" >
+			<keycol name="Symbol" />
+		</key>
+
+		<col name="Nazwa" type="string" length="30" required="true" category="Ogólne" localization="dictionary" />
+		<col name="Symbol" type="string" length="12" required="true" category="Ogólne" />
+		<col name="Typ" type="TypEwidencjiSP" selector="true" readonly="true" required="true" category="Ogólne" />
+		<col name="Waluta" type="Waluta" required="true" category="Ogólne" relname="Ewidencje w walucie" />
+		<col name="Operator" type="Operator" category="Ogólne" readonly="set" relname="Ewidencje operatora" />
+		<col name="TabelaKursowa" type="TabelaKursowa" category="Ogólne" relname="Tabela kursowa ewidencji" />
+		<col name="Karta" name12="Krt" type="KartaPlatnicza" category="Ogólne" />
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne" relname="Oddział firmy do którego należy ewidencja" />
+		<col name="Domyslny" type="boolean" category="Ogólne" relname="Domyślna ewidencja dla wybranego oddziału" />
+		<col name="TypDanych" type="TypDanychESP" required="true" category="Raport" >
+			<verifier name="EwidencjaSP.DefinicjaRequiredVerifier" onadded="true" />
+		</col>
+		<col name="RodzajRaportow" type="RodzajRaportuESP" category="Raport" modifier="protected" />
+		<col name="OkresRaportow" type="OkresRaportuESP" category="Raport" />
+		<col name="Auto" type="boolean" category="Raport" modifier="protected" />
+		<col name="Definicja" type="DefinicjaDokumentu" category="Raport" relname="Definicja raportu w rejestrze SP" description="Definicja dokumentu dla raportów SP" >
+			<verifier name="EwidencjaSP.DefinicjaRequiredVerifier" />
+		</col>
+		<col name="DefinicjaED" type="DefinicjaDokumentu" category="Raport" relname="Definicja dokumentu w ewidencji dokumentów" description="Definicja dokumentu w ewidencji dokumentów" />
+		<col name="SaldoBO" type="currency" category="Raport" />
+		<col name="Blokada" type="boolean" category="Dodatkowe" />
+		<col name="MagazynWalut" type="boolean" category="Dodatkowe" />
+		<col name="RozliczenieWyplatMW" type="MagazynWalut" category="MagazynWalut" />
+		<!-- EKSPORT PRZELEWÓW -->
+		<col name="EksportPrzelewow" type="FormatWymianyElektronicznej" category="Eksport przelewów" />
+		<col name="EksportPrzelewowWal" type="FormatWymianyElektronicznej" category="Eksport przelewów" />
+		<col name="Elixir" type="ElixirInfo" category="Dodatkowe" />
+		<!-- FILTRY IMPORTU/EXPORTU EKSPORTU -->
+		<col name="FiltrImportu" type="string" length="40" modifier="protected" category="Import wyciągów" />
+		<col name="FiltrImportuExt" type="text" modifier="protected" category="Import wyciągów" description="Pole dla konfiguracji robionej przez Soneta.Banki v2" />
+		<col name="RachunkiWirtualne" type="TypRachunkówWirtualnych" category="Import wyciągów" />
+		<col name="ScisleRozliczanieMPP" type="boolean" category="Import wyciągów" description="Ścisłe rozliczanie dokumentów MPP po imporcie wyciągów" caption="Ścisłe rozliczanie MPP" />
+		<col name="AutomatyczneRozliczanie" type="boolean" category="Import wyciągów" />
+		<col name="AutoRozliczanieWgPrzelewow" name12="AutRozPrzel" type="boolean" category="Import wyciągów" description="Automatyczne rozliczanie wypłat wg przelewów po imporcie wyciągów." />
+		<col name="AutoRozliczanieWgNumerow" name12="AutRozWgNum" type="boolean" category="Import wyciągów" description="Automatyczne rozliczanie zapłat wg numerów po imporcie wyciągów." />
+		<col name="KasowanieOperacji" name12="KasowanieOp" type="boolean" category="Import wyciągów" description="Czy z wyciągu można kasować operacje bankowe." />
+		<col name="Code" type="text" description="Algorytm (C#) wyliczenia numeru rachunku" category="Import wyciągów" >
+			<attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+		</col>
+		<col name="ProcesorWyciaguWlaczony" type="boolean" category="Import wyciągów" description="Włącznik kodu obróbki wyciagów" />
+		<col name="ProcesorWyciaguKod" type="text" category="Import wyciągów" description="Kod obróbki wyciągów" >
+			<attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+		</col>
+		<col name="IdentyfikacjaWgPolaPodmiot" type="IdentyfikacjaWgPolaPodmiot" category="Import Wyciągów" description="Sposób wykorzystania tabeli identyfikacji podmiotów" />
+		<col name="NiestandardowyFiltrImportu" type="text" modifier="protected" category="Import Wyciągów" description="Filtr importu utworzony za pomocą kreatora" />
+		<!-- BANKOWOŚĆ ON-LINE -->
+		<col name="BankOnline" type="SerwisBankowy" category="Bank Online" description="Webserwis obsługujący tą ewidencję" />
+		<col name="BankOnlineConfig" type="text" category="Bank Online" description="Konfiguracja bankowości online" modifier="protected" />
+	    <!-- SPLIT-PAYMENT -->
+        <col name="RachunekVAT" type="boolean" caption="Rachunek VAT" category="Płatność podzielona" modifier="public virtual" />
+        <col name="PowiazanyRachunekVAT" type="EwidencjaSP" caption="Powiązany rachunek VAT" category="Płatność podzielona" modifier="public virtual" children="PowiazaneRachunkiRozliczeniowe" />
+	</table>
+
+
+	<!-- SUBEWIDENCJA SP -->
+	<table name="SubEwidencjaSP" tablename="SubEwidencjeSP" config="true" caption="Ewidencja zależna" tablecaption="Subewidencje" >
+		<col name="Nadrzedna" type="EwidencjaSP" readonly="true" required="true" category="Ogólne" caption="Nadrzędna" relname="Nadrzędna subewidencji SP" children="Podrzędne" keyprimary="true" keyunique="true" >
+			<keycol name="SposobZaplaty" />
+		</col>
+		<col name="SposobZaplaty" type="SposobZaplaty" required="true" category="Ogólne" caption="Sposób zapłaty" />
+		<col name="Podrzedna" type="EwidencjaSP" required="true" caption="Podrzędna" relname="Podrzędne subewidencji SP" children="Nadrzędne" />
+	</table>
+
+
+	<!-- RAPORT ESP -->
+	<table name="RaportESP" tablename="RaportyESP" guided="Root" caption="Raport ESP" tablecaption="Raport ESP" >
+
+		<interface>IDokumentKsiegowalny</interface>
+		<interface>IRaportEwidencjiSP</interface>
+
+		<key name="WgOkres" >
+			<keycol name="Okres.To" />
+		</key>
+		<key name="WgKasaNumer" keyunique="true" >
+			<keycol name="Kasa" />
+			<keycol name="Numer.Pelny" />
+		</key>
+
+		<col name="Kasa" type="EwidencjaSP" readonly="true" required="true" category="Raport" relname="Raporty kasowe" keyprimary="true" keyunique="true" relright="true" >
+			<keycol name="Okres.To" />
+			<keycol name="NumerDzienny" />
+		</col>
+		<col name="Bufor" type="boolean" category="Ogólne" />
+		<col name="Numer" type="NumerDokumentu" category="Ogólne" />
+		<col name="RodzajRaportu" name12="RodzajRaport" type="RodzajRaportuESP" readonly="true" required="true" category="Ogólne" />
+		<col name="Okres" name12="Okr" type="FromTo" required="true" category="Raport" />
+		<col name="NumerDzienny" name12="NumerDzienny" type="int" required="true" category="Raport" />
+		<col name="SaldoPoczatkowe" name12="BO" type="currency" category="Raport" />
+		<col name="Wplaty" name12="Wpl" type="currency" category="Raport" />
+		<col name="Wyplaty" name12="Wyp" type="currency" category="Raport" />
+		<col name="GotowkaPoczatkowe" name12="GtBO" type="currency" category="Gotówka" />
+		<col name="GotowkaWplaty" name12="GtWpl" type="currency" category="Gotówka" />
+		<col name="GotowkaWyplaty" name12="GtWyp" type="currency" category="Gotówka" />
+		<col name="ZaimportowaneFragmenty" type="string" length="100" readonly="set" category="Import" />
+	</table>
+
+
+	<!-- OPERACJA BANKOWA -->
+	<table name="OperacjaBankowa" tablename="OperacjeBankowe" name8="OperBank" caption="Operacja bankowa" tablecaption="Operacje bankowe" warnings="Off" >
+
+		<key name="WgHash" >
+			<keycol name="Hash" />
+		</key>
+
+		<col name="WyciagBankowy" type="RaportESP" readonly="true" required="true" children="OperacjeBankowe" relname="Operacje na wyciągu bankowym" relright="true" relguided="inner" keyclass="Lp" keyclasscol="Lp" keyprimary="true" />
+		<col name="Lp" type="int" batchfield="false" />
+		<col name="Zaplata" type="Zaplata" readonly="set" children="OperacjeBankowe" relname="Operacje banowe zapłaty" />
+		<col name="Stan" type="StanOperacjiBankowej" required="true" />
+		<col name="IdentyfikacjaPodmiotu" type="SposóbIdentyfikacjiPodmiotu" readonly="set" />
+		<col name="DataOperacji" type="date" />
+		<col name="Data" type="date" />
+		<col name="Kierunek" type="KierunekPlatnosci" required="true" />
+		<col name="Zwrot" type="boolean" description="Czy z tej operacji bankowej ma powstać zapłata oznaczona jako zwrot" />
+		<col name="Handlowa" type="boolean" description="Czy operacja bankowa dotyczy operacji zakwalifikowanej jako handlowa" />
+		<col name="Kwota" type="currency" />
+		<col name="KwotaRaportu" name12="KwtRap" type="currency" />
+		<col name="NumerRachunku" type="string" length="60" />
+		<col name="RachunekWirtualny" type="string" length="60" />
+		<col name="Podmiot" type="string" length="255" modifier="public virtual" />
+		<col name="Opis" type="string" length="255" modifier="public virtual" />
+		<col name="Tekst" type="text" />
+		<col name="Hash" type="string" length="40" description="SHA-1 wyliczony dla operacji przez mechanizm importowy" />
+		<!-- BIAŁA LISTA -->
+		<col name="StatusBL" type="StatusBialaLista" caption="Status w Wykazie" category="Wykaz" modifier="protected" />
+		<col name="DataSprawdzeniaBL" type="date" caption="Data sprawdzenia w Wykazie" category="Wykaz" modifier="protected" />
+		<col name="IdentyfikatorZapytania" type="string" length="128" caption="Identyfikator zapytania" category="Wykaz" modifier="protected" />
+		<col name="MetodaWeryfikacji" type="MetodaWeryfikacjiBialaLista" caption="Metoda weryfikacji" category="Wykaz" modifier="protected" />
+	</table>
+
+
+	<!-- DOKUMENT KASOWY -->
+	<table name="DokKasowyBase" tablename="DokumentyKasowe" name8="DokKas" guided="Root" caption="Dokument kasowy" tablecaption="Dokumenty kasowe" >
+
+		<interface>IDokumentKasowy</interface>
+		<interface>IDokumentCRM</interface>
+
+		<key name="WgData" keyprimary="true" >
+			<keycol name="Data" />
+		</key>
+
+		<col name="Kasa" type="EwidencjaSP" cstype="Kasa" readonly="true" required="true" category="Ogólne" relname="Dokumenty kasowe ewidencji SP" relright="true" >
+			<keycol name="Data" />
+		</col>
+		<col name="Raport" type="RaportESP" readonly="true" required="true" category="Ogólne" children="Dokumenty" relname="Dokumenty raportu ESP" >
+			<keycol name="Data" />
+		</col>
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" category="Ogólne" relname="Definicja dokumentu kasowego" />
+		<col name="Bufor" type="boolean" category="Ogólne" />
+		<col name="Kierunek" type="KierunekPlatnosci" selector="true" readonly="true" category="Dokument" />
+		<col name="Seria" type="string" length="12" category="Dokument" />
+		<col name="Numer" type="NumerDokumentu" category="Dokument" />
+		<col name="Data" type="date" category="Dokument" />
+	</table>
+
+
+	<!-- ZAPŁATA -->
+	<table name="Zaplata" tablename="Zaplaty" caption="Wpłata/Wypłata" tablecaption="Wpłaty i wypłaty" guided="Root" >
+
+		<interface>IRozliczalny</interface>
+		<interface>IElementKsiegowalny</interface>
+		<interface>IZrodloOpisuAnalitycznego</interface>
+		<interface>IDaneKontrahentaHost</interface>
+		<interface>IDokumentCRM</interface>
+
+		<key name="WgData" keyprimary="true" >
+			<keycol name="DataDokumentu" />
+		</key>
+
+		<key name="WgEwidencjaData" >
+			<keycol name="EwidencjaSP" />
+			<keycol name="DataDokumentu" />
+		</key>
+
+		<key name="WgNumerDokumentu" >
+			<keycol name="NumerDokumentu" />
+		</key>
+
+		<col name="Podmiot" type="IPodmiotKasowy" category="Ogólne" children="Zaplaty" relname="Podmiot dokumentu SP" relright="other" >
+			<keycol name="DataDokumentu" />
+			<verifier name="Zaplata.PodmiotVerifier" onadded="true" />
+		</col>
+		<col name="Dokument" type="IDokumentKasowy" readonly="true" category="Ogólne" children="Zaplaty" relname="Dokument zapłaty" delete="cascade" relright="other" />
+		<col name="EwidencjaSP" type="EwidencjaSP" readonly="true" required="true" category="Ogólne" relname="EwidencjaSP zaplaty" relright="true" >
+			<keycol name="Kierunek" />
+			<keycol name="DataDokumentu" />
+		</col>
+		<col name="Raport" type="IRaportEwidencjiSP" readonly="true" required="true" category="Ogólne" children="Zaplaty" relname="Raport ESP zaplaty" keyclass="Lp" keyclasscol="Lp" />
+		<col name="Lp" type="int" batchfield="false" modifier="public virtual" />
+		<col name="Stan" type="StanZapłaty" readonly="set" category="Dokument" specialaccess="true" />
+		<col name="Kierunek" type="KierunekPlatnosci" selector="true" readonly="true" category="Dokument" />
+		<col name="SposobZaplaty" type="SposobZaplaty" category="Dokument" />
+		<col name="NumerDokumentu" type="string" length="40" required="true" category="Dokument" />
+		<col name="DataDokumentu" type="date" required="true" category="Dokument" />
+		<col name="Czas" type="time" readonly="set" category="Dokument" />
+		<col name="Kwota" type="currency" category="Dokument" >
+			<verifier name="Zaplata.KwotaVerifier" onadded="true" />
+		    <verifier name="MppVerifiers.ZaplataKwotaMPPVerifier" />
+		</col>
+		<col name="KwotaRaportu" name12="KwtRap" type="currency" category="Dokument" >
+			<verifier name="Zaplata.KwotaRaportuVerifier" onadded="true" />
+		    <verifier name="MppVerifiers.ZaplataKwotaMPPVerifier" />
+		</col>
+	    <col name="KwotaMPP" caption="Kwota VAT/MPP" type="currency" category="Dokument" >
+	        <verifier name="MppVerifiers.ZaplataKwotaMPPVerifier" />
+	    </col>
+		<col name="OkresVAT" caption="Okres VAT" type="FromTo" category="Dokument" >
+			<verifier name="MppVerifiers.ZaplataOkresVATVerifier" />
+		</col>
+		<col name="TabelaKursowa" type="TabelaKursowa" category="Księgowość" relname="Tabela kursowa zapłaty" />
+		<col name="Kurs" type="double" category="Dokument" />
+		<col name="WartoscWgKursu" type="currency" category="Dokument" />
+		<col name="WartoscWgMagazynuWalut" type="currency" category="Dokument" readonly="set" />
+		<col name="ZasobySkopiowaneZ" type="Zaplata" cstype="Wyplata" category="Dokument" readonly="set" />
+		<col name="KwotaKsiegi" name12="KwtKsi" type="currency" category="Dokument" readonly="set" >
+			<verifier name="Zaplata.KwotaKsiegiVerifier" onadded="true" />
+		</col>
+        <col name="KsiegujZbiorczo" type="boolean" name12="KsiZbior" category="Dokument" />
+		<col name="Rozliczana" type="boolean" category="Dokument" >
+			<verifier name="Zaplata.PodmiotVerifier" onadded="true" />
+		</col>
+		<col name="MagazynWalut" type="MagazynWalut" category="Dokument" description="Pole informujące, czy zapłata podlega rozliczaniu w magazynie walut. Może być wyłączone tylko dla zapisów nie podlegających rozliczeniu." />
+		<col name="Zwrot" type="boolean" category="Ogólne" />
+		<col name="NumeryDokumentow" type="string" length="255" category="Ogólne" />
+		<col name="Opis" type="string" length="255" required="true" category="Dokument" />
+		<col name="Windykacja" type="WindykacjaInfo" />
+		<col name="Rachunek" type="RachunekBankowy" category="Rachunek i karta" />
+		<col name="Karta" type="KartaPlatnicza" category="Rachunek i karta" />
+		<col name="DataRozliczenia" type="date" required="true" specialaccess="true" category="System" />
+		<col name="KwotaRozliczona" name12="KwtRoz" type="currency" specialaccess="true" category="System" />
+		<col name="WynagrodzenieMetoda" name12="WynagrodzMet" type="WynagrodzenieMetoda" category="Ogólne" description="Jak ma zostać ustalona wartość flagi 'Wynagrodzenie'." />
+		<col name="Wynagrodzenie" name12="Wynagrodz" type="boolean" readonly="set" category="Ogólne" description="Zapłata została zakwalifikowana jako odnosząca się do wynagrodzenia." />
+		<col name="Handlowa" type="boolean" category="Ogólne" description="Czy zapłata dotyczy operacji zakwalifikowanej jako handlowa" />
+		<!-- PRELIMINARZ -->
+		<col name="PreliminarzPoz" type="PreliminarzPozycja" category="Preliminarz" relname="Rozliczana przez zapłatę pozycja preliminarza" children="RozliczenieZaplaty" />
+	</table>
+
+
+	<!-- ROZLICZENIE SP -->
+	<table name="RozliczenieSP" tablename="RozliczeniaSP" name8="RozlSP" guided="Root" caption="Rozliczenie" tablecaption="Rozliczenia" >
+
+		<interface>IRozliczenie</interface>
+
+		<key name="WgStanuNoty" >
+			<keycol name="StanNoty" />
+			<keycol name="Data" />
+		</key>
+		<key name="WgStatusuRK" >
+			<keycol name="StatusRK" />
+			<keycol name="Data" />
+		</key>
+
+		<col name="Podmiot" type="IPodmiotKasowy" required="true" readonly="true" category="Ogólne" relname="Rozliczenia podmiotu" keyprimary="true" >
+			<keycol name="StanNoty" />
+			<keycol name="Data" />
+		</col>
+		<col name="Bufor" type="boolean" category="Ogólne" />
+		<col name="Data" type="date" required="true" category="Ogólne" />
+		<col name="DataKsi" type="date" readonly="set" specialaccess="true" category="Ogólne" description="Data odnośnego rozliczenia księgowego lub MAX w przypadku braku takiego rozliczenia" />
+		<col name="Zwloka" type="int" category="Ogólne" />
+		<col name="StanNoty" type="StanNotyOdsetkowej" required="true" category="Ogólne" />
+		<!-- DOKUMENT -->
+		<col name="Dokument" name12="Dok" type="IRozliczalny" required="true" readonly="true" category="Dokument" modifier="public virtual" children="Zaplaty" relname="Zaplaty dokumentow" relright="true" />
+		<col name="KwotaDokumentu" name12="KwDok" type="currency" category="Dokument" />
+		<!-- ZAPŁATA -->
+		<col name="Zaplata" name12="Zap" type="IRozliczalny" required="true" readonly="true" category="Zapłata" modifier="public virtual" children="Dokumenty" relname="Dokumenty zaplat" relright="other" />
+		<col name="KwotaZaplaty" name12="KZap" type="currency" category="Zapłata" />
+		<!-- DODATKOWE OGRANICZENIA DLA ODSETEK -->
+		<col name="DataOgraniczeniaNaliczaniaOdsetek" name12="DataONO" type="date" category="Dodatkowe" description="Górna (do) data ograniczenia naliczania odsetek." />
+		<col name="DataOgraniczeniaNaliczaniaOdsetekOd" name12="DataONOO" type="date" category="Dodatkowe" description="Dolna (od) data ograniczenia naliczania odsetek." />
+		<!-- RÓŻNICE KURSOWE KPiR -->
+		<col name="StatusRK" name12="StatusRK" type="StatusRoznicyKursowejESP" category="Różnice Kursowe KPiR" description="Status różnicy kursowej KPiR." readonly="set" >
+			<verifier name="RozliczenieSP.StatusRKVerifier" />
+		</col>
+		<col name="TypRK" name12="TypRK" type="TypRoznicyKursowej" category="Różnice Kursowe KPiR" description="Typ (kierunek) różnicy kursowej KPiR." readonly="set" />
+		<col name="KwotaRK" name12="KwotaRK" type="currency" category="Różnice Kursowe KPiR" description="Kwota różnicy kursowej KPiR." readonly="set" />
+		<col name="EwidencjaRK" name12="EwidencjaRK" type="DokEwidencji" category="Różnice Kursowe KPiR" description="Dokument ewidencji różnicy kursowej KPiR." readonly="set" relname="Rozliczenia RK KPiR" children="RozliczeniaRK" />
+	</table>
+
+
+	<!-- DOKUMENT ROZLICZENIOWY -->
+	<table name="DokRozliczBase" tablename="DokRozliczeniowe" name8="DokRozl" guided="Root"
+		 caption="Dokument rozliczeniowy" tablecaption="Dokumenty rozliczeniowe" >
+
+		<interface>IDokumentKsiegowalny</interface>
+		<interface>IDokumentPlatny</interface>
+		<interface>IDokumentCRM</interface>
+		<interface>IEmailElement</interface>
+
+		<key name="WgTypData" keyprimary="true" >
+			<keycol name="Typ" />
+			<keycol name="Data" />
+		</key>
+
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" category="Ogólne" relname="Definicja dokumentu rozliczeniowego" />
+		<col name="Stan" type="StanWindykacji" />
+		<col name="Podmiot" type="IPodmiotKasowy" required="true" category="Ogólne" relname="Podmiot dokumentu rozliczeniowego" children="DokumentyRozliczeniowe" relright="true" >
+			<keycol name="Typ" />
+			<keycol name="Data" />
+		</col>
+		<col name="Nadrzedny" type="DokRozliczBase" readonly="set" category="Ogólne" relname="Nadrzedny dokument rozliczeniowy" />
+		<col name="Oddzial" type="OddzialFirmy" caption="Oddział firmy" description="Oddział firmy" relright="true" >
+			<verifier name="OddzialRightsVerifier" onadded="true" />
+			<verifier name="OddzialRequiredVerifier" onadded="true" />
+		</col>
+		<col name="RachunekFirmy" type="EwidencjaSP" cstype="RachunekBankowyFirmy" caption="Rachunek firmowy" description="Numer rachunku firmowego skojarzony z dokumentem rozliczeniowym." />
+		<col name="Typ" type="TypDokumentu" selector="true" readonly="true" required="true" category="Ogólne" />
+		<col name="Seria" type="string" length="12" category="Ogólne" />
+		<col name="Numer" type="NumerDokumentu" category="Ogólne" />
+		<col name="NumerDruku" type="string" length="40" category="Ogólne" description="Numer druku na którym wystawiony został dokument." />
+		<col name="Data" type="date" required="true" modifier="public virtual" category="Ogólne" />
+		<col name="Opis" type="string" length="80" modifier="public virtual" category="Dokument" />
+		<col name="Bufor" type="boolean" modifier="public virtual" category="Dokument" />
+		<col name="Kwota1" type="currency" modifier="protected" category="Dokument" />
+		<col name="Kwota2" type="currency" modifier="protected" category="Dokument" />
+		<col name="Kwota3" type="currency" modifier="protected" category="Dokument" />
+		<col name="Kwota4" type="currency" modifier="protected" category="Dokument" />
+		<col name="Kwota5" type="currency" modifier="protected" category="Dokument" />
+		<!-- ISO -->
+		<col name="NumerProceduryISO" type="string" length="20" readonly="set" category="ISO" description="Numer procedury ISO" />
+		<!-- VIRTUAL PROPERTIES -->
+		<col name="Rozszerzenie" type="text" modifier="protected" category="Definicja" />
+		<!-- WIELOWALUTOWOSC -->
+		<col name="Wielowalutowy" type="boolean" category="Wielowalutowość" description="Czy dokument jest wielowalutowy" >
+			<verifier name="DokRozliczBase.RequiredTabelaKursowaVerifier" />
+			<verifier name="DokRozliczBase.RequiredDataKursuVerifier" />
+		</col>
+		<col name="TabelaKursowa" type="TabelaKursowa" category="Wielowalutowość" description="Tabela kursowa do przeliczeń walutowych" relname="Tabela kursowa dokumentu rozliczeniowego" >
+			<verifier name="DokRozliczBase.RequiredTabelaKursowaVerifier" />
+		</col>
+		<col name="DataKursu" type="date" category="Wielowalutowość" description="Data do przeliczeń z tabeli kursowej" >
+			<verifier name="DokRozliczBase.RequiredDataKursuVerifier" />
+		</col>
+		<!-- CUSTOM FIELDS -->
+		<col name="InternalDesc" type="text" modifier="protected" category="Custom" description="Wewnętrzny opis dokumentu do wykorzystania przez poszczególne rodzaje." />
+		<col name="InternalInt1" type="int" modifier="protected" category="Custom" description="Wewnętrzne pole INT do wykorzystania przez poszczególne rodzaje." />
+	</table>
+
+
+	<!-- POZYCJE DOKUMENTU ROZLICZENIOWEGO -->
+	<table name="PozycjaDokRozlicz" tablename="PozDokRozlicz" name8="PzDokRoz" caption="Pozycja dokumentu rozliczeniowego">
+		<col name="Dokument" type="DokRozliczBase" readonly="true" required="true" category="Ogólne" relname="Pozycje dokumentu rozliczeniowego" children="Pozycje" relright="true" relguided="inner" keyprimary="true" />
+		<col name="Rozliczenie" type="RozliczenieSP" category="Ogólne" relname="Rozliczenia związane z pozycjami dokumentu rozliczeniowego" children="PozycjeDokRozlicz" >
+			<keycol name="Typ" />
+			<verifier name="PozycjaDokRozlicz.RozliczenieVerifier" />
+		</col>
+		<col name="Platnosc" type="IRozliczalny" category="Ogólne" children="PozycjeDokRozlicz" relname="Płatności i zapłaty związane z pozycjami dokumentu rozliczeniowego" />
+		<col name="Typ" type="TypDokumentu" selector="true" readonly="true" required="true" category="Ogólne" />
+		<col name="Utworzone" type="boolean" modifier="protected" />
+		<col name="NumerDokumentu" type="string" length="40" required="true" />
+		<col name="DataDokumentu" type="date" required="true" />
+		<col name="TerminZaplaty" type="date" modifier="public virtual" />
+		<col name="DataZaplaty" type="date" modifier="public virtual" />
+		<col name="Okres" type="FromTo" modifier="protected" />
+		<col name="Procent" type="percent" modifier="public virtual" />
+		<col name="Kwota1" type="currency" modifier="protected" />
+		<col name="Kwota2" type="currency" modifier="protected" />
+		<col name="Kwota3" type="currency" modifier="protected" />
+		<col name="Opis" type="string" length="80" category="Dokument" />
+	</table>
+
+
+	<!-- NUMERY RACHUNKÓW WIRTUALNYCH -->
+	<table name="RachunekWirtualny" tablename="RachWirtualne" tablecaption="Rachunki wirtualne" >
+		<key name="WgNumer" keyunique="true" >
+			<keycol name="Numer" />
+		</key>
+		<col name="Podmiot" type="IPodmiotKasowy" required="true" readonly="true" category="Ogólne" children="RachunkiWirtualne" relname="Rachunek wirtualny podmiotu" keyunique="true" relright="true" keyprimary="true" >
+			<keycol name="EwidencjaSP" />
+		</col>
+		<col name="EwidencjaSP" type="EwidencjaSP" required="true" readonly="true" category="Ogólne" relname="Ewidencja rachunku wirtualnego" relright="false" />
+		<col name="Numer" type="string" length="60" required="true" category="Ogólne" >
+			<verifier name="RachunekWirtualny.IBANVerifier" />
+		</col>
+	</table>
+
+
+	<!-- ROZRACHUNKI IDX -->
+	<table name="RozrachunekIdx" tablename="RozrachunkiIdx" name8="RozrIdx" guided="None" tablecaption="Rozrachunki" >
+
+		<key name="WgData" keyprimary="true" >
+			<keycol name="Data" />
+		</key>
+		<key name="WgTermin" >
+			<keycol name="Termin" />
+		</key>
+		<key name="WgTerminPlanowany" >
+			<keycol name="TerminPlanowany" />
+		</key>
+		<key name="WgDataPierwszego" >
+			<keycol name="DataPierwszego" />
+		</key>
+		<key name="WgDataPierwszegoKsi" >
+			<keycol name="DataKsiegowania" />
+			<keycol name="DataPierwszegoKsi" />
+		</key>
+		<key name="WgDataOstatniegoKsi" >
+			<keycol name="DataKsiegowania" />
+			<keycol name="DataOstatniegoKsi" />
+		</key>
+		<key name="WgDataRozliczenia" >
+			<keycol name="DataRozliczenia" />
+			<keycol name="Data" />
+		</key>
+		<key name="WgDataKsiegowania" >
+			<keycol name="DataKsiegowania" />
+			<keycol name="Data" />
+		</key>
+		<key name="WgPodmiotData" >
+			<keycol name="Podmiot" />
+			<keycol name="Data" />
+		</key>
+		<key name="WgPodmiotDataRozliczenia" >
+			<keycol name="Podmiot" />
+			<keycol name="DataRozliczenia" />
+			<keycol name="Data" />
+		</key>
+		<key name="WgPodmiotDataKsiegowania" >
+			<keycol name="Podmiot" />
+			<keycol name="DataKsiegowania" />
+			<keycol name="Data" />
+		</key>
+
+		<col name="Typ" type="TypRozrachunku" readonly="true" required="true" />
+		<col name="EwidencjaSP" type="EwidencjaSP" caption="Ewidencja SP" required="true" category="Płatność" relname="EwidencjaSP płatności" relright="false" />
+		<!-- DOKUMENT -->
+		<col name="Dokument" type="IRozliczalny" readonly="true" required="true" children="Rozrachunki" keyunique="true" relname="Rozrachunki dokumentu" delete="cascade" relright="true" />
+		<col name="Podmiot" type="IPodmiotKasowy" relname="Rozrachunki podmiotu" children="Rozrachunki" >
+			<keycol name="DataPierwszego" />
+		</col>
+		<col name="Numer" type="string" length="40" required="true" />
+		<col name="Data" type="date" required="true" />
+		<col name="Kwota" type="currency" readonly="set" specialaccess="true" />
+		<col name="Opis" type="string" length="255" readonly="set" specialaccess="true" />
+		<col name="Termin" type="date" />
+		<col name="TerminPlanowany" type="date" />
+		<col name="Zwrot" type="boolean" />
+		<!-- ROZLICZENIE -->
+		<col name="DataPierwszego" type="date" specialaccess="true" required="true" />
+		<col name="DataRozliczenia" name12="DataRoz" type="date" specialaccess="true" required="true" />
+		<col name="KwotaRozliczona" readonly="set" name12="KwotaRoz" type="currency" specialaccess="true" />
+		<col name="DoRozliczenia" readonly="set" name12="KwotaDoRoz" type="currency" specialaccess="true" />
+		<!-- KSIEGOWANIE -->
+		<col name="DataKsiegowania" name12="DataKs" type="date" specialaccess="true" category="Księgowe" />
+		<col name="DataPierwszegoKsi" name12="DataPierwKsi" type="date" readonly="set" specialaccess="true" category="Księgowe" description="Data pierwszego rozliczenia księgowego" />
+		<col name="DataOstatniegoKsi" name12="DataOstatKsi" type="date" readonly="set" specialaccess="true" category="Księgowe" description="Data ostatniego rozliczenia księgowego" />
+		<col name="SymbolKontaKsi" name12="SymbolKonKsi" type="string" length="128" readonly="set" specialaccess="true" category="Księgowe" description="Oznaczenie konta księgowania" >
+			<attribute>Browsable(false)</attribute>
+		</col>
+	</table>
+
+
+	<!-- OKRES MAGAZYNU WALUT -->
+	<table name="OkresMW" tablename="OkresyMW" guided="Root" config="true" caption="Okres magazynu walut" tablecaption="Okresy magazynu walut" >
+
+		<key name="WgSymbolu" keyunique="true" keyprimary="true" >
+			<keycol name="Symbol" />
+		</key>
+		<key name="WgOkres" keyunique="true" >
+			<keycol name="Okres.To" />
+		</key>
+
+		<col name="OkresObrachunkowy" type="OkresObrachunkowy" cstype="Row" readonly="true" required="true" keyunique="true" />
+		<col name="Symbol" type="string" length="6" required="true" description="Symbol okresu magazynu walut" />
+		<col name="Okres" type="FromTo" required="true" />
+	</table>
+
+
+	<!-- ZASÓB MAGAZYNU WALUT -->
+	<table name="ZasobMW" tablename="ZasobyMW" guided="None" caption="Zasób" tablecaption="Zasoby" >
+		<col name="Okres" type="OkresMW" required="true" readonly="true" relname="Zasoby okresu magazynu walut" description="Okres magazynu walut, do którego został naliczony zasób." keyprimary="true" >
+			<keycol name="Partia.Data" />
+			<keycol name="Partia.Czas" />
+		</col>
+		<col name="Ewidencja" type="EwidencjaSP" required="true" readonly="true" relname="Zasoby walutowe ewidencji środków pienieżnych" >
+			<keycol name="Okres" />
+			<keycol name="Partia.Data" />
+			<keycol name="Partia.Czas" />
+		</col>
+		<col name="Zaplata" type="Zaplata" required="true" readonly="true" keyunique="true" children="Zasoby" relname="Zasoby walutowe wpłaty lub wypłaty w ewidencji środków pienieżnych" >
+			<keycol name="Okres" />
+			<keycol name="Partia.Kurs" />
+		</col>
+		<col name="DokEwidencji" type="DokEwidencji" readonly="set" />
+		<col name="Kierunek" type="KierunekPlatnosci" required="true" readonly="true" />
+		<col name="Kwota" type="currency" modifier="internal" />
+		<col name="Partia" type="PartiaMW" />
+	</table>
+
+
+	<!-- OBRÓT MAGAZYNU WALUT -->
+	<table name="ObrotMW" tablename="ObrotyMW" guided="None" caption="Obrót" tablecaption="Obroty" >
+		<col name="Okres" type="OkresMW" required="true" readonly="true" keyunique="true" relname="Obroty okresu magazynu walut" description="Okres magazynu walut, do którego został naliczony obrót." keyprimary="true" >
+			<keycol name="Wplata" />
+			<keycol name="Wyplata" />
+			<keycol name="Przychod.Kurs" />
+		</col>
+		<col name="Ewidencja" type="EwidencjaSP" required="true" readonly="true" relname="Obroty walutowe ewidencji środków pienieżnych" >
+			<keycol name="Okres" />
+			<keycol name="Rozchod.Data" />
+			<keycol name="Rozchod.Czas" />
+		</col>
+		<col name="Wplata" type="Zaplata" cstype="Wplata" required="true" readonly="true" relname="Obroty wpłat do ewidencji środków pienieżnych" >
+			<keycol name="Okres" />
+			<keycol name="Rozchod.Data" />
+			<keycol name="Rozchod.Czas" />
+		</col>
+		<col name="Wyplata" type="Zaplata" cstype="Wyplata" required="true" readonly="true" relname="Obroty wypłat z ewidencji środków pienieżnych" >
+			<keycol name="Okres" />
+			<keycol name="Rozchod.Data" />
+			<keycol name="Rozchod.Czas" />
+		</col>
+		<col name="DokEwidencji" type="DokEwidencji" readonly="set" children="ObrotyMW" relname="Oborty MW zaewidencjonowane na potrzeby różnic kursowych" >
+			<keycol name="Okres" />
+			<keycol name="Rozchod.Data" />
+		</col>
+		<col name="Ksiegowanie" type="TypKsiegowaniaObrotuMW" readonly="set" />
+		<col name="Kwota" type="currency" modifier="internal" />
+		<col name="Przychod" type="PartiaMW" />
+		<col name="Rozchod" type="PartiaMW" />
+		<col name="RozchodWgKursu" type="PartiaMW" />
+		<col name="ObrotWedlug" type="ObrótMWWedług" readonly="set" />
+	</table>
+
+
+	<!-- PRELIMINARZ DOKUMENT -->
+	<table name="PreliminarzDokument" tablename="PreliminarzDok" name8="PreliDok" guided="Root" caption="Dokument preliminarza" tablecaption="Dokumenty preliminarza" >
+		<interface>IDokumentPreliminarza</interface>
+
+		<key name="WgDaty" keyprimary="true" >
+			<keycol name="Data" />
+		</key>
+
+		<col name="Data" type="date" required="true" category="Dokument" description="Data dokumentu" />
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" category="Dokument" description="Definicja dokumentu" relname="Definicja dokumentu preliminarza" />
+		<col name="Bufor" type="boolean" modifier="public virtual" category="Dokument" description="Czy dokument w buforze" />
+		<col name="Seria" type="string" length="12" category="Dokument" description="Seria dokumentu" />
+		<col name="Numer" type="NumerDokumentu" category="Dokument" description="Numer dokumentu" />
+		<col name="Opis" type="string" length="80" category="Dokument" description="Opis dokumentu" />
+		<col name="Podmiot" type="IPodmiotKasowy" category="Dokument" relname="Podmiot dokumentu preliminarza" children="DokumentyPreliminarza" relright="true" description="Podmiot dokumentu" />
+
+		<!-- ODDZIALOWOSC -->
+		<col name="Oddzial" type="OddzialFirmy" caption="Oddział firmy" category="Oddziałowość" description="Oddział firmy" relright="true" >
+			<verifier name="OddzialRightsVerifier" onadded="true" />
+			<verifier name="OddzialRequiredVerifier" onadded="true" />
+		</col>
+
+		<!-- ISO -->
+		<col name="NumerProceduryISO" type="string" length="20" readonly="set" category="ISO" description="Numer procedury ISO" />
+		<!-- VIRTUAL PROPERTIES -->
+		<col name="VirtualEx" type="text" modifier="protected" category="System" />
+	</table>
+
+
+	<!-- PRELIMINARZ POZYCJA -->
+	<table name="PreliminarzPozycja" tablename="PreliminarzPoz" name8="PreliPoz" caption="Pozycja preliminarza" tablecaption="Pozycje preliminarza" >
+
+		<key name="WgTermin" >
+			<keycol name="Termin" />
+		</key>
+
+		<key name="WgNumeruDokumentu" >
+			<keycol name="NumerDokumentu" />
+			<keycol name="Termin" />
+		</key>
+
+		<key name="WgNumeruDodatkowego" >
+			<keycol name="NumerDodatkowy" />
+		</key>
+
+		<!-- TOŻSAMOŚĆ POZYCJI -->
+		<col name="Dokument" type="IDokumentPreliminarza" readonly="true" keyprimary="true" required="true" category="Pozycja" children="Pozycje" relguided="inner" relname="Dokument preliminarza" relright="true" >
+			<keycol name="Termin" />
+		</col>
+		<col name="NumerDokumentu" type="string" length="40" required="true" readonly="set" category="Pozycja" />
+		<col name="NumerDodatkowy" type="string" length="40" category="Pozycja" />
+		<!-- TOŻSAMOŚĆ POZYCJI -->
+		<col name="TypPozycji" type="PreliminarzTypPozycji" category="Pozycja" description="Typ pozycji preliminarza" />
+		<col name="Bufor" type="boolean" readonly="set" category="Pozycja" description="Pozycja w buforze" />
+		<col name="Anulowana" type="boolean" category="Pozycja" description="Czy pozycja jest anulowana" />
+		<!-- DANE DO PRELIMINARZA -->
+		<col name="Kierunek" type="PreliminarzKierunek" category="Preliminarz" description="Kierunek operacji" />
+		<col name="Kwota" type="currency" category="Preliminarz" >
+			<verifier name="PreliminarzPozycja.KwotaVerifier" onadded="true" />
+		</col>
+		<col name="Wielowalutowy" type="boolean" category="Preliminarz" description="Plan okresowy jest wielowalutowy" >
+			<verifier name="PreliminarzPozycja.WielowalutowyVerifier" />
+		</col>
+		<col name="KwotaPLN" name12="KwtPln" type="currency" category="Preliminarz" >
+			<verifier name="PreliminarzPozycja.KwotaPlnVerifier" onadded="true" />
+		</col>
+		<col name="Okres" type="FromTo" category="Preliminarz" />
+		<col name="Termin" type="date" category="Preliminarz" required="true" />
+		<col name="Podmiot" type="IPodmiotKasowy" category="Preliminarz" relname="Podmiot pozycji preliminarza" relright="false" />
+		<col name="EwidencjaSP" type="EwidencjaSP" category="Preliminarz" relname="Ewidencja pozycji preliminarza" relright="false" />
+		<!-- INNE -->
+		<col name="Nieaktywna" type="boolean" category="Pozycja" description="Czy pozycja jest nieaktywna" />
+		<col name="Opis" type="string" length="80" category="Pozycja" description="Opis pozycji preliminarza" />
+		<!-- VIRTUAL PROPERTIES -->
+		<col name="VirtualEx" type="text" modifier="protected" category="System" />
+	</table>
+
+
+	<table name="SerwisBankowy" tablename="SerwisyBankowe" name8="SerwBank" caption="Serwis bankowy" tablecaption="Serwis bankowy" config="true" guided="Root" >
+		<key name="WgServiceId" keyunique="true" keyprimary="true" >
+			<keycol name="ServiceId" />
+		</key>
+		<key name="WgNazwy" keyunique="true" >
+			<keycol name="Nazwa" />
+		</key>
+
+		<col name="ServiceId" type="guid" readonly="true" required="true" keyprimary="true" keyunique="true" category="Ogólne" />
+		<col name="Nazwa" type="string" length="40" readonly="true" required="true" caption="Nazwa usługi" category="Ogólne" />
+	</table>
+
+	<table name="ParametrySerwisuBankowego" tablename="ParametrySeBnk" name8="ParmSeBk" caption="Parametry serwisu bankowego" tablecaption="Parametry serwisów bankowych" config="true" >
+		<col name="SerwisBankowy" type="SerwisBankowy" required="true" keyprimary="true" keyunique="true" readonly="true" relname="SerwisBankowyParametrow" children="Parametry" category="System" description="Serwis bankowy" >
+			<keycol name="Operator" />
+		</col>
+		<col name="Operator" type="Operator" required="true" readonly="true" relname="OperatorParametrow" category="Ogólne" description="Operator parametrów" />
+		<col name="Value" type="text" category="System" />
+		<col name="ClientCert" type="BankOnlineCert" />
+	</table>
+</module>

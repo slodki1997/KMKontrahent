@@ -1,0 +1,1244 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="CRM" namespace="Soneta.CRM" versionName="soneta">
+  <import>..</import>
+  <using>Soneta.Business.App</using>
+  <using>Soneta.Business.Db</using>
+  <using>Soneta.Core</using>
+  <using>Soneta.Config</using>
+  <using>Soneta.Kasa</using>
+	<!-- TASK: 2690. [4.5] -->
+	<using>Soneta.Waluty</using>
+  <using>Soneta.Windykacja</using>
+  <using>Soneta.CRM.Osoba_Kontrahent</using>
+  <using>Soneta.CRM.Wizytowki</using>
+  <using>Soneta.CRM.Config</using>
+
+  <!-- ODDZIAŁ ZUS -->
+  <table name="OddziałZUS" tablename="OddzialyZUS" guided="Root"
+    caption="Oddział ZUS"
+		tablecaption="Oddziały ZUS"
+	>
+    <interface>IAdresHost</interface>
+    <key name="WgKodu" keyunique="true" keyprimary="true">
+      <keycol name="Kod" />
+    </key>
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Kod" type="string" length="20" required="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="240" required="true" category="Ogólne" />
+    <!-- KONTRAHENT -->
+    <col name="Kontakt" type="Kontakt" category="Kontrahent"/>
+    <col name="Osoba" type="Osoba" category="Kontrahent"/>
+    <!-- DODATKOWE -->
+    <col name="Uwagi" type="text" category="Dodatkowe"/>
+  </table>
+
+
+  <!-- BANK -->
+  <table name="Bank" tablename="Banki" guided="Root" tablecaption="Banki">
+    <interface>IPodmiot</interface>
+    <interface>IKontrahent</interface>
+    <interface>IPodmiotKasowy</interface>
+    <interface>IElementSlownika</interface>
+    <interface>IAdresHost</interface>
+    <interface>IAdresyWWWHost</interface>
+    <interface>IDaneKontaktoweHost</interface>
+    <key name="WgKodu" keyunique="true" keyprimary="true">
+      <keycol name="Kod" />
+    </key>
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgNIP" >
+      <keycol name="NIP" />
+    </key>
+    <key name="WgEuVAT" >
+      <keycol name="EuVAT" />
+    </key>
+    <key name="WgKierunek" >
+      <keycol name="Kierunek" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Kod" type="string" length="20" required="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="240" required="true" category="Ogólne" />
+    <col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual">
+      <verifier name="EuVatVerifier"/>
+      <verifier name="EuVatNipUniqueVerifier&lt;Bank&gt;"/>
+    </col>
+    <!-- KONTRAHENT -->
+    <col name="Kontakt" name12="Knt" type="Kontakt" category="Kontrahent"/>
+    <col name="Osoba" name12="Os" type="Osoba" category="Kontrahent"/>
+    <col name="SposobZaplaty" type="FormaPlatnosci" category="Kontrahent" required="true" />
+    <col name="Termin" type="int" category="Kontrahent"/>
+    <col name="Rabat"  type="percent" category="Kontrahent"/>
+    <col name="LimitKredytu" type="currency" name12="Kredyt" category="Kontrahent"/>
+	  <!-- BANK -->
+    <col name="Kierunek" type="string" length="8" category="Bank"/>
+    <col name="SWIFT" type="string" length="16" category="Bank"/>
+    <!-- DODATKOWE -->
+    <col name="Uwagi" type="text" category="Dodatkowe"/>
+    <col name="Blokada" type="boolean" category="Kontrahent" description="Określa, czy dany bank ma być widoczny na listach." />
+    <col name="OdsKarne" type="OdsetkiKarne" category="Kontrahent"/>
+  </table>
+
+  <!-- ZUS -->
+  <enum name="TypUrzędu"/>
+  <table name="ZUS" tablename="ZUSY" name8="ZUS" guided="Root"
+		caption="Urząd"
+		tablecaption="Urzędy"
+	>
+    <interface>IPodmiot</interface>    
+	<!--
+		[KK] TID: 4767; V.6.0.1
+		Po konsultacji z [MS]
+	-->
+	<!--  <interface>IKontrahent</interface> -->
+    
+	  <interface>IPodmiotKasowy</interface>
+    <interface>IAdresHost</interface>
+    <interface>IElementSlownika</interface>
+    <key name="WgKodu" keyunique="true" keyprimary="true">
+      <keycol name="Kod" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Typ" type="TypUrzędu" required="true" readonly="true" selector="true" category="Ogólne" />
+    <col name="Kod" type="string" length="20" required="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="100" required="true" category="Ogólne" />
+    <col name="SposobZaplaty" type="FormaPlatnosci" category="Ogólne" required="true" />
+  </table>
+
+  <!-- InstytucjaFinansowaPPK -->
+  <table name="InstytucjaFinansowaPPK" tablename="InstFinansowePPK" guided="Root"
+      caption="Instytucja finansowa PPK"
+      tablecaption="Instytucje finansowe PPK"
+	>
+    <interface>IPodmiot</interface>
+    <interface>IKontrahent</interface>
+    <interface>IPodmiotKasowy</interface>
+    <interface>IAdresHost</interface>
+    <interface>IElementSlownika</interface>
+    <interface>IAdresyWWWHost</interface>
+    <interface>IDaneKontaktoweHost</interface>
+    <key name="WgKodu" keyunique="true" keyprimary="true">
+      <keycol name="Kod" />
+    </key>
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgNIP" >
+      <keycol name="NIP" />
+    </key>
+    <key name="WgEuVAT" >
+      <keycol name="EuVAT" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Kod" type="string" length="20" required="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="100" required="true" category="Ogólne" />
+    <col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual">
+      <verifier name="EuVatVerifier"/>
+      <verifier name="EuVatNipUniqueVerifier&lt;InstytucjaFinansowaPPK&gt;"/>
+    </col>
+    <col name="REGON" type="string" length="14" caption="Regon" description="Rejestr Gospodarki Narodowej">
+      <verifier name="RegonVerifier"/>
+    </col>
+    <col name="KRS" type="string" length="10" category="Ogólne" />
+    <col name="Kontakt" type="Kontakt" category="Kontrahent"/>
+    <col name="Osoba" type="Osoba" category="Kontrahent"/>
+    <col name="Blokada" type="boolean" category="Kontrahent" description="Określa, czy dany urząd ma być widoczny na listach." />
+    <col name="SposobZaplaty" type="FormaPlatnosci" category="Kontrahent" required="true" />
+    <col name="Uwagi" type="text" category="Dodatkowe"/>
+  </table>
+
+  <!-- URZĄD SKARBOWY -->
+  <table name="UrzadSkarbowy" tablename="UrzedySkarbowe" name8="UrzSkarb" guided="Root"
+		caption="Urząd skarbowy"
+		tablecaption="Urzędy skarbowe"
+	>
+    <interface>IPodmiot</interface>
+    <interface>IKontrahent</interface>
+    <interface>IPodmiotKasowy</interface>
+    <interface>IAdresHost</interface>
+    <interface>IElementSlownika</interface>
+    <interface>IAdresyWWWHost</interface>
+    <interface>IDaneKontaktoweHost</interface>
+    <key name="WgKodu" keyunique="true" keyprimary="true">
+      <keycol name="Kod" />
+    </key>
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgNIP" >
+      <keycol name="NIP" />
+    </key>
+    <key name="WgEuVAT" >
+      <keycol name="EuVAT" />
+    </key>
+    
+    <key name="WgKoduUrzedu">
+      <keycol name="KodUrzeduSkarbowego" />
+    </key>
+    
+    <!-- OGÓLNE -->
+    <col name="Kod" type="string" length="20" required="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="240" required="true" category="Ogólne" />
+    <col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual">
+      <verifier name="EuVatVerifier"/>
+      <verifier name="EuVatNipUniqueVerifier&lt;UrzadSkarbowy&gt;"/>
+    </col>
+		<col name="KodUrzeduSkarbowego" type="string" length="6" category="Ogólne" />		
+    <!-- KONTRAHENT -->
+    <col name="Kontakt" name12="Knt" type="Kontakt" category="Kontrahent"/>
+    <col name="Osoba" name12="Os" type="Osoba" category="Kontrahent"/>
+    <col name="SposobZaplaty" type="FormaPlatnosci" category="Kontrahent" required="true" />
+    <col name="Termin" type="int" category="Kontrahent"/>
+    <col name="Rabat"  type="percent" category="Kontrahent"/>
+    <col name="LimitKredytu" type="currency" name12="Kredyt" category="Kontrahent"/>
+    <col name="Uwagi" type="text" category="Dodatkowe"/>
+    <col name="Blokada" type="boolean" category="Kontrahent" description="Określa, czy dany urząd ma być widoczny na listach." />
+    <col name="OdsKarne" type="OdsetkiKarne" category="Kontrahent"/>
+  </table>
+
+  <!-- URZĄD CELNY -->
+  <table name="UrzadCelny" tablename="UrzedyCelne" name8="UrzCelne" guided="Root"
+		caption="Urząd celny"
+		tablecaption="Urzędy celne"
+	>
+    <interface>IPodmiot</interface>
+    <interface>IKontrahent</interface>
+    <interface>IPodmiotKasowy</interface>
+    <interface>IAdresHost</interface>
+    <interface>IElementSlownika</interface>
+    <interface>IAdresyWWWHost</interface>
+    <interface>IDaneKontaktoweHost</interface>
+    <key name="WgKodu" keyunique="true" keyprimary="true">
+      <keycol name="Kod" />
+    </key>
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgNIP" >
+      <keycol name="NIP" />
+    </key>
+    <key name="WgEuVAT" >
+      <keycol name="EuVAT" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Kod" type="string" length="20" required="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="240" required="true" category="Ogólne" />
+    <col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual">
+      <verifier name="EuVatVerifier"/>
+      <verifier name="EuVatNipUniqueVerifier&lt;UrzadCelny&gt;"/>
+    </col>
+    <!-- KONTRAHENT -->
+    <col name="Kontakt" name12="Knt" type="Kontakt" category="Kontrahent"/>
+    <col name="Osoba" name12="Os" type="Osoba" category="Kontrahent"/>
+    <col name="SposobZaplaty" type="FormaPlatnosci" category="Kontrahent"
+			required="true"
+		/>
+    <col name="Termin" type="int" category="Kontrahent"/>
+    <col name="Rabat"  type="percent" category="Kontrahent"/>
+    <col name="LimitKredytu" type="currency" name12="Kredyt" category="Kontrahent"/>
+	  <!-- DODATKOWE -->
+    <col name="KodIzbyCelnej" type="string" length="6" category="Dodatkowe"/>
+    <col name="Uwagi" type="text" category="Dodatkowe"/>
+    <col name="Blokada" type="boolean" category="Kontrahent" description="Określa, czy dany urząd ma być widoczny na listach." />
+    <col name="OdsKarne" type="OdsetkiKarne" category="Kontrahent"/>
+  </table>
+
+  <!-- KONTRAHENT -->
+  <enum name="WyjątkiDlaPO" />
+  <enum name="RodzajPlatnosciKaucji"/>
+  <enum name="RodzajDokumentuKaucji"/>
+  <enum name="VatKontahentaLiczonyOd"/>
+  <enum name="TypLimituKredytowego" />
+  <enum name="EFaktura" />
+
+  <table name="DefKategKth" tablename="DefKategoriiKth" guided="Root" config="true" caption="Definicja kategorii kontrahentów" tablecaption="Definicje kategorii kontrahentów">
+    <interface>IRightsSource</interface>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" required="true" length="40" category="Ogólne" caption="Nazwa" localization="dictionary" description="Nazwa definicji kategorii" />
+    <col name="PokazJakoFolder" type="boolean" category="Ogólne" caption="Pokaż jako folder" description="Czy definicja będzie wyświetlana jako osobna kategoria w folderze." />
+    <col name="Opis" type="string" length="255" category="Ogólne" caption="Opis" localization="dictionary" description="Pole pozwalające dodać krótki opis kategorii, pobierane następnie do Description folderu. " />
+  </table>
+
+  <table name="KategoriaKth" tablename="KategorieKth" caption="Powiązanie kategorii z kontrahentami" tablecaption="Tabela powiązań kategorii z kontrahentami">
+    <col name="Kontrahent" type="Kontrahent" required="true" keyprimary="true" keyunique="true"
+      relname="Kontrahent powiązany z kategorią"
+      relguided="inner"
+      reldefault="true"
+      readonly="true"
+      relright="true"
+      delete="cascade"
+      children="Kategorie"
+    >
+      <keycol name="Kategoria"/>
+    </col>
+    <col name="Kategoria" type="DefKategKth" required="true" readonly="true" relright="true"/>
+  </table>
+
+
+	<table name="FormaPrawna" tablename="FormyPrawne" guided="Root" config="true" caption="Forma prawna" tablecaption="Formy prawne">
+		<key name="WgKodu" keyunique="true" keyprimary="true">
+			<keycol name="Kod"/>
+		</key>
+		<key name="WgNazwy">
+			<keycol name="Nazwa"/>
+		</key>
+		<col name="Kod" type="string" required="true" length="12" category="Ogólne" caption="Kod" description="Kod formy prawnej" />
+		<col name="Nazwa" type="string" required="true" length="60" category="Ogólne" caption="Nazwa" localization="dictionary" description="Nazwa formy prawnej" />
+		<col name="Blokada" type="boolean" category="Ogólne" caption="Blokada" description="Określa widoczność formy prawnej na listach" />
+		<col name="StatusPodmiotu" type="StatusPodmiotu" category="Ogólne" caption="Status podmiotu" description="Uszczegółowienie formy prawnej" />
+		<col name="Domyslna" type="boolean" category="Ogólne" caption="Domyślna" description="Oznaczenie domyślnej formy prawnej w obrębie statusu podmiotu" />
+		<col name="LogujReferencje" type="boolean" category="Ogólne" caption="Loguj referencje" description="Logowanie referencji do podmiotu" />
+		<col name="KodyGUS" type="string" length="255" category="Ogólne" caption="Kody GUS" description="Lista kodów GUS odpowiadających formie prawnej" />
+	</table>
+
+  
+  <table name="Kontrahent" tablename="Kontrahenci" guided="Root" tablecaption="Kontrahent" caption="Kontrahent">
+    <interface>IPodmiot</interface>
+    <interface>IKontrahent</interface>
+    <interface>IPodmiotKasowy</interface>
+    <interface>IElementSlownika</interface>
+    <interface>IAdresHost</interface>
+    <interface>IKodowany</interface>
+    <interface>IAdresyWWWHost</interface>
+    <interface>IDaneKontaktoweHost</interface>
+    <interface>IEmailElement</interface>
+    <interface>IDBItemClient</interface>
+    <interface>IRegonHost</interface>
+   
+    <!--[12228][8.1][Web 8.1]: [ZAM] Tabela do zapisywania ulubionych towarów-->
+    <interface>ITowaryUlubioneHost</interface>
+    
+    <!-- [15486][9.1][Net 9.1]: Obsługa GIODO -->
+    <interface>IGIODOZgodnyHost</interface>
+    <interface>IGIODOWymianaDanychHost</interface>
+    <interface>IGIODOOświadczenieHost</interface>
+
+    <key name="WgKodu" keyunique="true" keyprimary="true">
+      <keycol name="Kod" />
+    </key>
+    <key name="WgNazwy">
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgNIP" >
+      <keycol name="NIP" />
+    </key>
+    <key name="WgEuVAT" >
+      <keycol name="EuVAT" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Kod" type="string" length="20" required="true" category="Ogólne" important="true" />
+    <col name="Nazwa" type="string" length="240" required="true" category="Ogólne" important="true">
+      <verifier name="Kontrahent.NazwaUniqueVerifier"/>
+    </col>
+    <col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+    <col name="PodatnikVAT" type="boolean" category="Ogólne" modifier="public virtual"/>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual" important="true">
+      <verifier name="EuVatVerifier"/>
+      <verifier name="EuVatNipUniqueVerifier&lt;Kontrahent&gt;"/>
+      <verifier name="Kontrahent.KontrahentBezVatVerifier" onadded="true"/>
+    </col>
+    <col name="KRS" type="string" length="10" category="Ogólne" />
+    <col name="Blokada" type="boolean" category="Kontrahent" description="Określa, czy dany kontrahent ma być widoczny na listach." />
+    <!-- KONTRAHENT -->
+    <col name="Kontakt" name12="Knt" type="Kontakt" category="Kontrahent"/>
+    <col name="Osoba" name12="Os" type="Osoba" category="Kontrahent"/>
+    <col name="SposobZaplaty" type="FormaPlatnosci" category="Kontrahent"
+			required="true"
+		/>
+    <col name="Termin" type="int" category="Kontrahent"/>
+		<col name="TerminPlanowany" type="int" category="Kontrahent"
+				 description="Ilość dni po terminie"/>
+    <col name="LimitKredytu" type="currency" name12="Kredyt" category="Kontrahent"/>
+	  <col name="KontrolaDni" type="int"/>
+    <col name="KontrolaKwota" type="currency" />
+    <col name="RodzajPodmiotu" type="RodzajPodmiotu" name12="RodzajPod" category="Kontrahent" caption="Rodzaj VAT dla sprzedaży" description="Rodzaj VAT dla sprzedaży">
+      <verifier name="Kontrahent.KontrahentBezVatVerifier" onadded="true"/>
+    </col>
+    <col name="RodzajPodmiotuZakup" type="RodzajPodmiotu" name12="RodzajPodZ" category="Kontrahent" caption="Rodzaj VAT dla zakupu" description="Rodzaj VAT dla zakupu">
+      <verifier name="Kontrahent.KontrahentBezVatVerifier" onadded="true"/>
+    </col>
+	  <col name="StatusPodmiotu" type="StatusPodmiotu" name12="StatusPod" category="Kontrahent"/>
+	  <col name="FormaPrawna" type="FormaPrawna" caption="Forma prawna" required="true" description="Forma prawna podmiotu" category="Kontrahent"/>
+    <col name="Uwagi" type="text" category="Dodatkowe"/>
+    <!-- PŁATNOŚCI -->
+    <col name="VATLiczonyOd" type="VatKontahentaLiczonyOd" category="Płatności"
+			relname="Sposób liczenia VAT dla kontrahenta." />
+    <!-- HANDEL -->
+    <col name="Rabat"  type="percent" category="Handel" 
+			description="Rabat przepisywany do dokumentu handlowego po wyborze kontrahenta na tym dokumencie." />
+    <col name="RabatTowaru"  type="percent" category="Handel" 
+			description="Indywidyalny rabat wszystkich towarów do wykorzystania mechanizmach rabatowania cen." />
+    <col name="CenaTowaru" type="DefinicjaCeny" cstype="Row" category="Handel" 
+			relname="Ceny indywidualne kontrahenta" 
+			description="Indywidyalna cena wszystkich towarów do wykorzystania mechanizmach wyliczania ceny."
+		/>
+
+    <!-- HANDEL e-Faktura -->
+    <col name="EFaktura" type="EFaktura" caption="e-Faktura" description="Rodzaj e-faktury przypiasnej do kontrahenta."/>
+    <col name="EFakturaOkres" type="FromTo" caption="Okres zgody" description="Okres zgody na wysyłke e-dokumentów." />
+    
+    <!-- TASK: 2233. -->
+	<col name="BlokadaSprzedazy" type="boolean" category="Handel" 
+	  description="Blokada uniemożliwiająca wystawienie dokumentu o kierunku 'Rozchód'."/>
+
+		<!-- TASK: 2632. -->
+		<col name="CenaOdbiorcy" type="boolean" category="Handel"
+				 description="Umożliwia stosowanie cen odbiorcy." />
+		<!-- TASK: 2690. [4.5] -->
+		<col name="Waluta" type="Waluta" category="Handel"
+				 description="Domyślna waluta kontrahenta." />
+	  <!-- TASK: 3408. [5.2] -->
+      <col name="WyjatkiDlaPO" type="WyjątkiDlaPO" category="Handel"
+        description="Wyjątki dla przecen okresowych." />
+    <!-- TASK: 5364. [6.1] -->
+    <col name="Komunikat" type="string" length="200" category="Handel"
+        description="Komunikat o kontrahencie." />
+    <!-- TASK: 38101. [15.0] -->
+    <col name="KomunikatCRM" type="string" length="200" category="CRM"
+        description="Komunikat o kontrahencie." />
+
+    <col name="KomunikatKS" type="string" length="200" category="Ksiega"
+    description="Komunikat o kontrahencie." />
+
+    <!-- TASK: 6119. [7.1] -->
+    <col name="RodzajDokumentuKaucji" type="RodzajDokumentuKaucji" category="Handel"
+         description="Rodzaj dokumentu kaucji." />    
+    <!-- TASK: 6119. [7.1] -->
+    <col name="RodzajPlatnosciKaucji" type="RodzajPlatnosciKaucji" category="Handel"
+         description="Rodzaj płatności na dokumentach kaucji." />
+    <!-- TASK: 6119. [7.1] -->
+    <col name="TerminRozliczeniaKaucji" type="int" category="Handel"
+         description="Termin (ilość dni) rozliczenia dokumentu kaucji." />
+    <!-- 8.3 -->
+    <col name="TypLimituKredytowego" type="TypLimituKredytowego" category="Handel"  caption="Typ limitu kredytowego" 
+         description="Określa typ limitu kredytowego, kwota lub wartość nieograniczona."/>
+
+    <col name="TypPrzeterminowania" type="TypLimituKredytowego" category="Handel"  caption="Typ przeterminowania limitu kredytowego"
+         description="Określa typ przeterminowania limitu kredytowego, kwota lub wartość nieograniczona."/>
+    
+    <col name="OddzialFirmy" type="OddzialFirmy" caption="Odział firmy" description="Oddział firmy">
+      <verifier name="Kontrahent.OddzialVerifier" onadded="true" />
+    </col>
+
+    <col name="KorespondencjaOpis" type="text" description="Opis dla adresu do korespondencji" category="Adres"/>
+    
+    <!--[11239][7.9][CRM 7.9]: Dodać pole na Kontrahencie KorespondencjaNazwaFirmy-->
+    <col name="KorespondencjaNazwaFirmy" type="string" length="250" description="Nazwa firmy, na którą kierowana jest korespondencja" category="Adres"/>
+
+	  <col name="AktualizacjaPrzyImporcie" type="boolean" category="Kontrahent" description="Zezwala na aktualizację danych podczas importów" />
+	  <col name="OdsKarne" type="OdsetkiKarne" category="Kontrahent"/>
+    <col name="REGON" type="string" length="14" caption="Regon" description="Rejestr Gospodarki Narodowej">
+      <verifier name="RegonVerifier"/>
+    </col>
+    <col name="PESEL" type="string" length="11" caption="PESEL" >
+      <verifier name="Kontrahent.PeselVerifier"/>
+    </col>
+
+    <!--Windykacja-->
+    <col name="NieWindykowac" type="boolean" category="Windykacja" description="Wyłącza nowe należności kontrahenta z procesu windykacji" />
+    <col name="DefinicjaSprawyWindykacyjnej" type="DefinicjaSprawyWindykacyjnej" category="Windykacja" description="Domyślna definicja sprawy windykacyjnej" />
+  </table>
+
+  <enum name="StatusNumeruVAT"/>
+  <table name="StatusVAT" tablename="StatusyVAT" caption="Status VAT" tablecaption="Statusy VAT" >
+    <col name="Kontrahent" type ="Kontrahent" keyprimary="true" delete="cascade" children="StatusyVAT">
+      <keycol name="Data" />
+    </col>
+    <col name="Data" type="datetime" category="Ogólne" caption="Data sprawdzenia" />
+    <col name="StatusNumeru" type="StatusNumeruVAT" category="Ogólne" />
+    <col name="Aktualnosc" type="date" category="Ogólne" caption="Data aktualności" />
+    <col name="IdentyfikatorZapytania" type="string" length="36" category="Ogólne" caption="Identyfikator zapytania" />
+  </table>
+
+  <!-- TASK: 6425. [7.0] -->
+  <table name="KontrahentOddzialInfo" tablename="KontrahOddzial" name8="KonOdd" caption="Oddział kontrahenta">
+    <col name="Kontrahent" type="Kontrahent" children="OddzialInfo" childrenclass="KontrahentOddzialInfoSubTable"
+      description="Indywidualne parametry kontrahenta dla oddziałów." keyprimary="true" keyunique="true" delete="cascade" >
+      <keycol name="Oddzial" />
+    </col>
+    <col name="Oddzial" type="OddzialFirmy" />
+    <col name="SposobZaplaty" type="FormaPlatnosci" category="Kontrahent"
+      description="Sposób zapłaty dla kontrahenta w oddziale." />
+    <col name="Termin" type="int" category="Kontrahent"
+      description="Termin płatności dla kontrahenta w oddziale wyrażony w dniach." />
+  </table>
+  
+	
+
+  <table name="KontaktOsoba" tablename="KontaktyOsoby" name8="KontOs"
+		caption="Osoba" tablecaption="Osoby" warnings="Off" guided="Root"
+	>
+    <interface>IAdresHost</interface>
+    <interface>IKodowany</interface>
+    <interface>IWebOperator</interface>
+    <interface>IDaneKontaktoweHost</interface>
+    <!--[12228][8.1][Web 8.1]: [ZAM] Tabela do zapisywania ulubionych towarów-->
+    <interface>ITowaryUlubioneHost</interface>
+    <!-- [15486][9.1][Net 9.1]: Obsługa GIODO -->
+    <interface>IGIODOZgodnyHost</interface>
+    <interface>IGIODOWymianaDanychHost</interface>
+    <interface>IGIODOOświadczenieHost</interface>
+    <interface>IGIODOUprawnienieHost</interface>
+    <!-- [19055][9.4] Oceny, rozbudowa-->
+    <interface>IOceniający</interface>
+    <interface>IOdpowiedzialnyZaOcenę</interface>
+    <interface>IEmailElement</interface>
+    <interface>IŹródłoPowiązaniaStrukturyOrganizacyjnej</interface>
+    <interface>ITaskUser</interface>
+    <key name="WgOsoba" keyprimary="true">
+      <keycol name="Nazwisko" />
+      <keycol name="Imie" />
+    </key>
+    <!-- Mateusz - task 10148 - usunięcie setonlynull="true" -->
+    <!-- [12184][8.1][CRM 8.1]: Wizytówka - jeżeli jest wizytówka to kontrahent nie wymagazny, usunięcie required i dodanie weryfikatora -->
+    <col name="Kontrahent" type="IKontrahent"  
+			children="Osoby" 
+			relname="Osoby kontrahenta" 
+			delete="cascade"
+			relright="true">
+      
+		<!--readonly="true"-->
+		
+      <keycol name="Nazwisko" />
+      <keycol name="Imie" />
+      <verifier name="KontaktOsoba.KontrahentVerifier" onadded="true"/>
+    </col>
+    <col name="Nazwisko" type="string" length="50" required="true"/>
+    <col name="Imie" type="string" length="50" required="true">
+      <attribute>Dictionary("Imiona")</attribute>
+    </col>
+    <col name="Stanowisko" type="string" length="50"/>
+    <col name="Kontakt" name12="Knt" type="Kontakt"/>
+    <col name="Nieaktualny" type="boolean"/>
+    <col name="Uwagi" type="text"/>
+
+    <!-- [12184][8.1][CRM 8.1]: Wizytówka -->
+    <col name="Wizytowka" type="boolean" readonly="set" category="Inne" caption="Wizytówka" description="Określa czy dane osoby są wizytówką." />
+  </table>
+
+  <enum name="RodzajPrzypomnienia"/>
+    <table name="KontaktWazneDaty" tablename="KntktyWazneDaty" name8="KntktDat" caption="Ważna data" guided="Root">
+      <key name="WgData">
+        <keycol name="Data" />
+      </key>
+      
+      <col name="Kontakt" type="KontaktOsoba"  required="true" keyprimary="true">
+        <keycol name="Nazwa" />
+        <keycol name="Operator" />
+        <attribute>Context(Required=false)</attribute>
+      </col>
+     
+      <col name="Nazwa" type="string" length="50" required="true" >
+        <attribute>Dictionary("CRM.KtkDaty.Name", ManualList=true)</attribute>
+      </col>
+
+      <col name="Operator" type="Operator" required="true" />
+      <col name="Opis" type="string" length="100"/>
+      <col name="Data" type="date" required="true"/>
+      <col name="Przypomnienie" type="int"  />
+      <col name="PrzypomnienieWg"  type="RodzajPrzypomnienia" modifier="public virtual"/>
+  </table>
+  
+  <table name="DokumentZdarzenia" tablename="DokumentyZdarzen" name8="DokZdarz" guided="Root"
+		caption="Zdarzenie" tablecaption="Zdarzenia" warnings="Off"
+	>
+    <interface>IDokument</interface>
+    <key name="WgData" keyprimary="true">
+      <keycol name="Data" />
+    </key>
+    <key name="WgTermin">
+      <keycol name="Termin" />
+      <keycol name="TerminGodzina" />
+    </key>
+    <key name="WgRealizacja">
+      <keycol name="Realizacja" />
+      <keycol name="RealizacjaGodzina" />
+    </key>
+    <col name="Kontrahent" type="IKontrahent" required="true"
+			children="Zdarzenia" 
+			relname="Zdarzenia kontrahenta" 
+			relright="true"
+		/>
+    <col name="Definicja" type="DefinicjaDokumentu" required="true"
+			relname="Definicja zdarzenia"
+		/>
+    <col name="Numer" type="NumerDokumentu"/>
+    <col name="Data" type="date" required="true"/>
+    <col name="Termin" type="date" required="true" readonly="set"/>
+    <col name="TerminGodzina" type="time" readonly="set"/>
+    <col name="Realizacja" type="date" required="true"/>
+    <col name="RealizacjaGodzina" type="time"/>
+    <col name="Kontakt" type="KontaktOsoba"/>
+    <col name="Operator" type="Operator" required="true"/>
+    <col name="Temat" type="string" length="80">
+      <attribute>Dictionary("CRM.Zdarz.Temat", ManualList=true)</attribute>
+    </col>
+  </table>
+
+  <table name="PozycjaZdarzenia" tablename="PozycjeZdarzen"
+		tablecaption="Obsługa zdarzenia" warnings="Off"
+	>
+    <key name="WgData">
+      <keycol name="Data" />
+    </key>
+    <key name="WgTermin">
+      <keycol name="Termin" />
+      <keycol name="TerminGodzina" />
+    </key>
+    <key name="WgRealizacja">
+      <keycol name="Realizacja" />
+      <keycol name="RealizacjaGodzina" />
+    </key>
+    <col name="Dokument" type="DokumentZdarzenia" readonly="true" required="true"
+			children="Pozycje" 
+			relname="Pozycja zdarzenia" 
+			delete="cascade"
+			relguided="inner"
+			relright="true"
+			keyprimary="true"
+			keyclass="Lp" keyclasscol="Lp"
+		/>
+    <col name="Lp" type="int" required="true" batchfield="false"/>
+    <col name="Data" type="date" required="true"/>
+    <col name="Godzina" type="time" required="true"/>
+    <col name="Termin" type="date" required="true"/>
+    <col name="TerminGodzina" type="time"/>
+    <col name="Realizacja" type="date" required="true" readonly="set"/>
+    <col name="RealizacjaGodzina" type="time" readonly="set"/>
+    <col name="Kontakt" type="KontaktOsoba"/>
+    <col name="Operator" type="Operator" required="true"/>
+    <col name="Temat" type="string" length="80">
+      <attribute>Dictionary("CRM.PozZd.Temat", ManualList=true)</attribute>
+    </col>
+    <col name="Uwagi" type="text" category="Dodatkowe"/>
+  </table>
+	
+	<!-- 6.1 -->
+
+	<table name="Lokalizacja" tablename="Lokalizacje" name8="Lokal" tablecaption="Lokalizacje" caption="Lokalizacje" guided="Root">
+    <interface>IDaneKontaktoweHost</interface>
+    <key name="wgKodKontrahent" keyprimary="true" keyunique="true">
+			<keycol name="Kod" />
+			<keycol name="Kontrahent" />
+		</key>
+		<interface>IAdresHost</interface>
+		<col name="Kod" type="string" length="30" required="true" category="Ogólne" caption="Kod" description="Kod lokalizacji." />
+		<col name="Nazwa" type="string" length="240" required="true" category="Ogólne" caption="Nazwa" description="Nazwa lokalizacji." />
+    <col name="Kontrahent" type="IKontrahent"
+         required="false"
+         category="Ogólne"
+         description="Kontrahent, do którego przypisana jest lokalizacja."
+         children="Lokalizacje"
+         relname="Kontrahent"
+         relguided="inner"
+         delete="cascade"
+			   relright="true"
+         >
+      <verifier name="Lokalizacja.JestKontrahentVerifier" onadded="true"/>
+    </col>
+    <col name="OddzialFirmy" type="OddzialFirmy" category="Ogólne" children="LokalizacjeNadawcze" delete="cascade" required="false"/>             
+    <col name="Kontakt" name12="Knt" type="Kontakt"/>
+		<col name="Uwagi" type="text" category="Ogólne" caption="Uwagi" description="Uwagi do lokalizacji." />
+
+		<!-- [6743][7.9][CRM 7.9]: Dodać status lokalizacji (Aktywna) -->
+		<col name="Aktywna" type="boolean" category="Stan" caption="Aktywna" description="Aktywność lokalizacji." />
+    <!--8.0; TID: 10516; -->
+    <col name="Domyslna" type="boolean" category="Ogólne" caption="Domyślna lokalizacja w ramach kontrahenta" description="Wskazuje na domyślną lokalizację w ramach kontrahenta." />    
+	</table>
+
+    <!--15.1-->
+  
+  <table name="RolaOpiekun" tablename="RoleOpiekun" config="true" caption="Rola opiekuna" tablecaption="Role opiekunów kontrahentów" guided="Root" name8="RolaOpie">
+    <key name="WgNazwa" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="80" required="true" category="Ogólne" caption="Nazwa" localization="dictionary" description="Nazwa roli opiekuna" />
+    <col name="Opis" type="string" length="255" category="Ogólne" caption="Opis" localization="dictionary" description="Opis roli opiekuna"/>
+  </table>
+
+    <!-- 7.8 -->
+
+  <enum name="TypOpiekuna"/>
+  <table name="Opiekun" tablename="Opiekunowie"  name8="Opiekun" tablecaption="Opiekunowie kontrahentów" caption="Opiekun kontrahenta" guided="Root" >
+    <col name="Kontrahent" type="Kontrahent" setonlynull="true" category="Ogólne" description="Kontrahent, do którego przypisany jest opiekun."
+         delete="cascade"
+         required="true"
+         children="Opiekunowie"
+         relname="Opiekunowie kontrahenta"
+         keyprimary="true"
+    >
+      <keycol name="OddzialFirmy"/>
+    </col>
+
+    <col name="Rola" type="RolaOpiekun" category="Ogólne" description="Rola opiekuna" caption="Rola opiekuna"
+         required="true"
+         relname="Rola opiekuna">
+      <verifier name="Opiekun.OpiekunExistVerifier"/>
+      <verifier name="Opiekun.OpiekunDataVerifier"/>
+    </col>
+    
+    <col name="Operator" type="Operator" category="Ogólne"
+         required="true">
+      <keyinclude name="DataOd" />
+      <keyinclude name="DataDo" />
+      <keyinclude name="Typ" />
+      <keyinclude name="Rola" />
+    </col>
+
+    <col name="DataOd" type="date" category="Ogólne" caption="Data rozpoczęcia opieki" description="Określa datę rozpoczęcia opieki." >
+      <verifier name="Opiekun.OpiekunExistVerifier"/>
+      <verifier name="Opiekun.OpiekunDataVerifier"/>      
+    </col>
+    <col name="DataDo" type="date" category="Ogólne" caption="Data zakończenia opieki" description="Określa datę zakończenia kampanii">
+      <verifier name="Opiekun.OpiekunExistVerifier"/>
+      <verifier name="Opiekun.OpiekunDataVerifier"/>
+    </col>
+    <col name="Typ" type="TypOpiekuna"  category="Ogólne" caption="Typ opiekuna" description="Określa typ opiekuna.">
+      <verifier name="Opiekun.OpiekunExistVerifier"/>
+    </col>
+    <col name="Aktywny" type="boolean" category="Ogólne" caption="Aktywny" description="Określa czy opiekun jest aktywny." />
+
+    <!--[12018][8.1][CRM 8.1]: [CRM - opiekunowie] Dodać możliwośc przypisywania opiekuna do oddziału-->
+    <col name="OddzialFirmy" type="OddzialFirmy" category="Ogólne" caption="Oddział firmy" description="Określa oddział firmy, do którego przypisany jest opiekun.">
+      <verifier name="Opiekun.OpiekunExistVerifier"/>
+    </col>
+  </table>
+
+  <!-- [12183][8.1][CRM 8.1]: Spięcie osoby kontaktowej i wielu kontrahentów -->
+
+  <table name="OsobaKontrahent" tablename="OsobyKontrahenci" caption="Kontrahent powiązany z osobą kontaktową" tablecaption="Kontrahent powiązany z osobą kontaktową." guided="Root" namespace="Soneta.CRM.Osoba_Kontrahent">
+    <col name="OsobaKontaktowa"
+         type="KontaktOsoba"
+         category="Ogólne"
+         caption="Osoba kontaktowa"
+         description="Osoba kontaktowa, której przyporządkowany jest kontrahent."
+         children="PowiazaniKontrahenci"
+         relname="Kontrahenci osoby kontaktowej"
+         delete="cascade"
+         required="true"
+         keyprimary="true"
+         keyunique="true"
+    >
+
+  
+      
+      <keycol name="Kontrahent"/>
+    </col>
+
+    <col name="Kontrahent"
+         type="IKontrahent"
+         category="Ogólne"
+         caption="Kontrahent"
+         description="Kontrahent, powiązany z osobą kontaktową."
+         children="OsobyKontaktowe"
+         relname="Osoby kontaktowe Kontrahenta"
+         delete="cascade"
+         required="true" />
+
+    <col name="Glowny" type="boolean" category="Ogólne" caption="Główny" description="Wskazuje czy kontrahent jest głównym Kontrahentem osoby kontaktowej.">
+      <verifier name="OsobaKontrahent.GlowyVerifier" onadded="false" />
+    </col>
+    <col name="Stanowisko" type="string" length="50" category="Ogólne" caption="Stanowisko" description="Wskazuje stanowisko dla osoby kontaktowej.">
+      <attribute>Dictionary("Etat.Stanowisko")</attribute>
+    </col>
+
+    <col name="Nieaktualny" type="boolean" category="Ogólne" caption="Nieaktualny" description="Wskazuje aktywność osoby kontaktowej." />
+  </table>
+
+  <!-- [12184][8.1][CRM 8.1]: Wizytówka -->
+
+  <table name="WizytowkaFirmy" tablename="WizytowkiFirm" caption="Wizytówka firmy" tablecaption="Wizytówki firm." >
+    <interface>IAdresHost</interface>
+    <interface>IRegonHost</interface>
+    <interface>IDaneKontaktoweHost</interface>
+    <col name="Osoba"
+         type="KontaktOsoba"
+         category="Ogólne"
+         caption="Osoba"
+         description="Osoba, której przyporządkowana jest wizytówka firmy."
+         children="Wizytowki"
+         relname="Wizytówki firm powiązane z osobą"
+         delete="cascade"
+         required="true"
+         keyprimary="true"
+         readonly="true" />
+
+    
+    <col name="NazwaFirmy" type="string" length="250" required="true" category="Ogólne" caption="Nazwa firmy" description="Określa nazwę firmy." />
+    <col name="NIP" type="string" length="13" category="Ogólne" caption="NIP firmy" description="Określa NIP firmy." />
+    <col name="KRS" type="string" length="10" category="Ogólne" />
+    <col name="REGON" type="string" length="14" caption="Regon" description="Rejestr Gospodarki Narodowej">
+      <verifier name="RegonVerifier"/>
+    </col>
+
+    <col name="TelefonKomorkowy" type="string" length="30" category="Ogólne" caption="Numer telefonu komórkowego firmy" description="Określa numer telefonu komórkowego firmy." />
+    <col name="EMAIL" type="string" length="100" category="Ogólne" caption="Adres e-mail firmy" description="Określa adres e-mail firmy." />
+    <col name="WWW" type="string" length="100" category="Ogólne" caption="Adres internetowy firmy" description="Określa adres internetowy firmy." />
+    <col name="Kontakt" name12="Knt" type="Kontakt"/>
+  </table>
+
+  <table name="RodzajLokalizacji" tablename="RodzajeLok" name8="RdzLok" tablecaption="Rodzaje lokalizacji" caption="Rodzaj lokalizacji">
+    <col name="Lokalizacja" type="Lokalizacja"  category="Ogólne" caption="Lokalizacja" description="Lokalizacja"
+         children="RodzajeLokalizacji" relname="Rodzaje lokalizacji" keyprimary="true" relright="true" keyunique="true" required="true"
+         delete="cascade"
+         >
+      <keycol name="Rodzaj"/>
+    </col>
+
+    <col name="Rodzaj" type="SlownikElem"  category="Ogólne" caption="Rodzaj" description="Rodzaj lokalizacji" required="true"/>
+    <col name="Domyslny" type="boolean" category="Ogólne" caption="Domyślny" description="Wskazuje na domyślny rodzaj w ramach kontrahenta." />
+  </table>
+
+  <!-- Konta pocztowe -->
+  <table name="KontoPocztowe" tablename="KontaPocztowe" caption="Konto pocztowe" tablecaption="Konta pocztowe" guided="Root">
+    <interface>IRightsSource</interface>
+    <key name="WgNazwa" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" length="255" type="string" required="true" category="Ogólne" caption="Nazwa" description="Nazwa użytkownika (adres e-mail)." />
+    <col name="Login" length="255" type="string" required="true" category="Ogólne" caption="Login" description="Login użytkownika." />
+    <col name="Haslo" length="255" type="string" required="true" category="Ogólne" caption="Hasło" description="Hasło użytkownika." modifier="protected" />
+    <col name="IMAPServer" length="255" type="string" category="Ogólne" caption="Serwer" description="Nazwa serwera IMAP." />
+    <col name="IMAPPort" type="int" category="Ogólne" caption="Port" description="Numer portu dla protokołu IMAP." />
+    <col name="IMAPEncryption" type="boolean" category="Ogólne" caption="SSL/TLS" description="Określa czy używane jest szyfrowanie SSL/TLS." />
+    <col name="SMTPServer" length="255" type="string" category="Ogólne" caption="Serwer" description="Nazwa serwera SMTP." />
+    <col name="SMTPPort" type="int" category="Ogólne" caption="Port" description="Numer portu dla protokołu SMTP." />
+    <col name="SMTPEncryption" type="boolean" category="Ogólne" caption="SSL/TLS" description="Określa czy używane jest szyfrowanie SSL/TLS." />
+    <col name="SkipSmtpAuth" type="boolean" category="Ogólne" caption="Pomiń uwierzytelnianie" description="Określa czy podczas tworzenia połączenia SMTP pomijać uwierzytelnianie.">
+      <verifier name="KontoPocztowe.SMTPAuthorizationVerifier" onadded="true" />
+    </col>
+    <col name="SkipCertErrors" type="boolean" category="Ogólne" caption="Ignoruj błędy SSL" description="Określa czy ignorowane mają być błędy certyfikatów SSL." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Blokada" description="Określa czy konto jest zablokowane." />
+    <col name="PobierajZalaczniki" type="boolean" category="Ogólne" description="Określa czy pobierać załączniki do wiadomości." />
+    <col name="DataOd" type="date" category="Ogólne" description="Określa datę, od której należy ściągać wiadomości." />
+    <col name="TylkoTekst" type="boolean" category="Ogólne" caption="Tylko tekst" description="Określa czy treść wiadomości ma być zapisywana jako czysty tekst." />
+    <col name="SyncDelete" type="boolean" category="Ogólne" caption="Usuwaj wiadomości z serwera" description="Określa czy po usunięciu wiadomości w systemie usunąć ją także z serwera." />
+    <col name="SyncSeen" type="boolean" category="Ogólne" caption="Oznaczaj wiadomości na serwerze" description="Określa czy po oznaczeniu wiadomości w systemie oznaczyć ją także na serwerze" />
+    <col name="MarkAsSeen" type="boolean" category="Ogólne" caption="Ściągane wiadomości oznaczaj jako przeczytane" description="Określa czy system powinien automatycznie oznaczać ściągane wiadomości jako przeczytane na serwerze." />
+    <col name="ReceiveTimeout" type="int" category="Ogólne" caption="Czas oczekiwania na odpowiedź z serwera" description="Określa czas oczekiwania na odpowiedź z serwera w sekudach." />
+    <col name="NazwaNadawcy" type="string" length="255" category="Ogólne" caption="Nazwa nadawcy" description="Nazwa, która pojawi się w polu OD." />
+    <col name="ZamienZKL" type="boolean" category="Ogólne" caption="Zamień znaki końca linii" description="Określa czy znaki końca linii mają zostać zamienione." />
+    <col name="SaveAsSent" type="boolean" category="Ogólne" caption="Zapisz wiadomości z folderu wysłane jako wysłane" description="Określa czy wiadomości z folderu wysłane mają być zapisane jako wiadomości wysłane w systemie." />
+    <col name="UploadSentMail" type="boolean" category="Ogólne" caption="Po udanej wysyłce wiadomości zapisz ją w folderze wiadomości wysłanych na serwerze" />
+    <col name="Algorytm" type="boolean" category="Inne" description="Określa czy istnieje algorytm dla konta pocztowego." />
+    <col name="Code" type="text" caption="Kod kalkulatora konta pocztowego" description="Kod klasy kalkulatora dla konta pocztowego." />
+  </table>
+
+  <!-- Foldery na skrzynce -->
+  <table name="FolderPocztowy" tablename="FolderyPocztowe" caption="Folder pocztowy skrzynki">
+    <col name="KontoPocztowe" type="KontoPocztowe" category="Ogólne" caption="Konto" required="true" keyprimary="true" keyunique="true" description="Konto pocztowe" delete="cascade"
+         children="Foldery">
+      <keycol name="Nazwa"/>
+    </col>
+    <col name="Nazwa" length="255" type="string" required="true" category="Ogólne" caption="Nazwa" description="Nazwa folderu." />
+    <col name="LargestUID" type="decimal" category="Ogólne" description="Najwyższy identyfikator pobranej wiadomości." />
+    <col name="UIDValidity" type="decimal" category="Ogólne" description="Wartość umożliwiająca wykrycie zmian identyfikatorów UID wiadomości." />
+    <col name="FolderPocztyWychodzacej" type="boolean" category="Ogólne" caption="Poczta wychodząca" description="Folder poczty wychodzącej" />
+  </table>
+
+  <!-- Wiadomość email -->
+  <enum name="TypWiadomości"/>
+  <enum name="StatusWiadomosci"/>
+  <table name="WiadomoscEmail" tablename="WiadomosciEmail" caption="Wiadomość email" tablecaption="Wiadomości email" guided="Root">
+
+    <interface>IPermissionClient</interface>
+    
+    <key name="WgData">
+      <keycol name="Data" />
+    </key>
+    <key name="WgTematu">
+      <keycol name="Temat" />
+    </key>
+    <key name="WgMessageID">
+      <keycol name="MessageID"/>
+    </key>
+    <col name="KontoPocztowe" type="KontoPocztowe" category="Ogólne" caption="Konto" description="Konto pocztowe"
+         children="Wiadomosci" relright="true" keyprimary="true" relname="Wiadomości konta">
+      <verifier name="WiadomoscEmail.BlokadaKontaVerifier"/>
+      <keycol name ="MessageID" />
+    </col>
+    <col name="WiadomoscZrodlowa" type="WiadomoscEmail" length="200" category="Ogólne" caption="Wiadomość źródłowa" description="Identyfikator wiadomości, na którą odpowiadamy."
+        children="Odpowiedzi"
+        delete="cascade"/>
+    <col name="Data" type="datetime" category="Ogólne" caption="Data" description="Data wiadomości." />
+    <col name="Od" type="text" length="200" category="Ogólne" caption="Od" description="Nadawca wiadomości." />
+    <col name="Do" type="text" category="Ogólne" caption="Do" description="Adresaci wiadomości." />
+    <col name="DW" type="text" length="200" category="Ogólne" caption="DW" description="Do wiadomości." />
+    <col name="UDW" type="text" length="200" category="Ogólne" caption="UDW" description="Do wiadomości (Ukryte)." />
+    <col name="ReplyTo" type="text" length="200" category="Ogólne" caption="ReplyTo" description="Odpowiedź do." />
+    <col name="Temat" type="string" length="255" category="Ogólne" caption="Temat" description="Temat wiadomości." />
+    <col name="Tresc" type="text" category="Ogólne" caption="Treść" description="Treść wiadomości." />
+    <col name="MessageID" type="string" length="700" category="Ogólne" caption="MessageID" description="Identyfikator wiadomości na serwerze." />
+    <col name="UID" type="decimal" category="Ogólne" description="Unikalny identyfikator wiadomości w skrzynce." />
+    <col name="StatusWiadomosci" type="StatusWiadomosci" description="Określa status wiadomości." />
+    <col name="TypWiadomosci" type="TypWiadomości" selector="true" caption="Typ wiadomości" description="Typ wiadomości." />
+    <col name="SaZalaczniki" type="boolean" caption="Są załączniki" description="Określa czy wiadomość odebrana zawiera załączniki." />
+    <col name="RozmiarZalacznikow" type="int" caption="Rozmiar załączników [KB]" description="Określa rozmiar załączników w kilobajtach." />
+    <col name="DostepnyHtml" type="boolean" caption="Dostępna treść Html" description="Określa czy na serwerze dostępna jest treść html." />
+    <col name="PotwOdczytania" type="boolean" caption="Potwierdzenie odczytania wiadomości" description="Określa czy mamy otrzymać potwierdzenie odczytania wiadomości." />
+    <col name="Folder" type="string" length="255" description="Folder, z którego pochodzi wiadomość." />
+  </table>
+
+  <interface name="IEmailElement"/>
+  
+  <table name="ElementEmail" tablename="ElementyEmail" caption="Elementy powiązane" >
+    <col name="WiadomoscEmail" type="WiadomoscEmail" category="Ogólne" caption="Wiadomość email"
+          description="Wiadomość, do której powiązany jest element"
+          children="ElementyPowiazane"
+          relname="Wiadomość powiązana"
+          keyprimary="true"
+          keyunique="true"
+          delete="cascade">
+      <keycol name="Element" />
+    </col>
+    <col name="Element" type="IEmailElement" category="Ogólne" caption="Element powiązany" 
+         description="Element, który powiązany jest z wiadomością"
+         relname="Element powiązany z wiadomością"
+         children="WiadomosciPowiazane"
+         delete="cascade"
+    />
+  </table>
+
+  <enum name="TypDlaSzablonuEmail"/>
+  <table name="SzablonEmail" tablename="SzablonyEmail" caption="Szablon Email" tablecaption="Szablony Email" guided="Root">
+    <interface>ITemplate</interface>
+    <key name="WgNazwa" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <key name="WgTyp">
+      <keycol name="Typ"/>
+    </key>
+    <col name="Nazwa" type="string" length="30" category="Ogólne" required="true" />
+    <col name="Blokada" type="boolean" category="Ogólne" />
+    <col name="Domyslny" type="boolean" category="Ogólne" />
+    <col name="PotwOdczytania" type="boolean" caption="Potwierdzenie odczytania wiadomości" description="Określa czy mamy otrzymać potwierdzenie odczytania wiadomości." />
+    <col name="DO" type="string" length="100" category="Ogólne" />
+    <col name="DW" type="string" length="100" category="Ogólne" />
+    <col name="UDW" type="string" length="100" category="Ogólne" />
+    <col name="Temat" type="string" length="120" category="Ogólne" />
+    <col name="Tresc" type="text" category="Ogólne" caption="Treść">
+      <attribute>ControlEdit(ControlEditKind.Rich)</attribute>
+    </col>
+    <col name="Typ" type="TypDlaSzablonuEmail" category="Ogólne" description="Określa typ, dla którego szablon jest dostępny"/>
+    <col name="TypDanych" type="string" length="16" category="Raporty" caption="Typ danych" description="Określa typ danych, dla któego szablon jest dostępny" modifier="internal"/>
+    <col name="Oddzial" type="OddzialFirmy" required="false" relright="true" caption="Oddział firmy" description="Oddział firmy do którego przypisany jest szablon." />
+  </table>
+  
+  <enum name="TypDlaSzablonu"/>
+  <table name="SzablonSms" tablename="SzablonySms" config="true" caption="Szablon SMS" tablecaption="Szablony SMS" guided="Root">
+    <interface>ITemplate</interface>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="40" category="Ogólne" required="true" />
+    <col name="Blokada" type="boolean" category="Ogólne" />
+    <col name="Domyslna" type="boolean" category="Ogólne" />
+    <col name="Odbiorca" type="string" length="240" category="Ogólne" />
+    <col name="Tresc" type="text" category="Ogólne" caption="Treść"/>
+    <col name="Typ" type="TypDlaSzablonu" category="Ogólne" caption="Typ"/>
+  </table>
+
+  <table name="PodpisOperatora" tablename="PodpisyOper" caption="Podpis operatora" tablecaption="Podpisy operatorów" guided="Root" config="true">
+    <col name="Operator" type="Operator" category="Ogólne" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </col>
+    <key name="WgNazwa">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="100" category="Ogólne" required="true"/>
+    <col name="Blokada" type="boolean" category="Ogólne" />
+    <col name="Podpis" type="text" category="Ogólne" />
+  </table>
+
+  <enum name="TypPowiazaniaPodmiotu"/>
+  <table name="RelacjaPodmiotu" tablename="RelacjePodmiotow" tablecaption="Relacje podmiotów">
+    <col name="Nadrzedny" children="Podrzedni" type="IPodmiot" caption="Podmiot nadrzędny">
+      <keycol name="Podrzedny"/>
+    </col>
+    <col name="Podrzedny" delete="cascade" keyprimary="true" readonly="true" required="true" type="IPodmiot" caption="Podmiot podrzędny"/>
+    <col name="OdbiorcaPlatnik" type="boolean" caption="Odbiorca/Dostawca jest płatnikiem"/>
+  </table>
+  
+  <table name="ZrodloKontaktu" tablename="ZrodlaKontaktu" config="true" caption="Źródło kontaktu" guided="Root" tablecaption="Źródła kontaktu">
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" required="true" length="40" category="Ogólne" localization="dictionary" caption="Nazwa" description="Nazwa źródła" />
+    <col name="Opis" type="string" length="255" category="Ogólne" caption="Opis" localization="dictionary" description="Pole pozwalające dodać krótki opis źródła kontaktu. " />
+  </table>
+
+  <table name="Branza" tablename="Branze" config="true" caption="Branża" tablecaption="Branże" guided="Root">
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" required="true" length="40" category="Ogólne" caption="Nazwa" localization="dictionary" description="Nazwa branży" />
+    <col name="Opis" type="string" length="255" category="Ogólne" caption="Opis" localization="dictionary" description="Pole pozwalające dodać krótki opis branży." />
+  </table>
+  
+  <table name="BranzaKth" tablename="BranzeKth" caption="Branża kontrahenta" tablecaption="Branże kontrahentów">
+      <col name="Kontrahent" type="Kontrahent" required="true" keyprimary="true" keyunique="true"
+        relname="Kontrahent powiązany z branżą"
+        relguided="inner"
+        reldefault="true"
+        readonly="true"
+        relright="true"
+        delete="cascade"
+        children="Branze"
+      >
+      <keycol name="Branza"/>
+    </col>
+    <col name="Branza" type="Branza" required="true" readonly="true" relright="true"/>
+  </table>
+
+  <enum name="Klasyfikacja"/>
+  <table name="DefTransakcja" tablename="DefTransakcji" guided="Root" config="true" caption="Definicja transakcji CRM" tablecaption="Definicje transakcji CRM">
+    <interface>IRightsSource</interface>
+    <col name="Nazwa" type="string" length="30" category="Ogólne" required="true" caption="Nazwa" localization="dictionary" description="Pełna nazwa definicji transakcji." />
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" caption="Symbol" description="Skrótowa nazwa definicji transakcji wykorzystywana do wyszukiwania definicji oraz numeracji transakcji CRM." />
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" caption="Numeracja" description="Ustawienia określające sposób numeracji transakcji." />
+    <col name="RoleGuid" type="guid" category="Ogólne" description="Domyślna rola do której przypisana zostanie transakcja." />
+    <col name="Algorytm" type="boolean" category="Inne" description="Określa czy istnieje algorytm dla transakcji." />
+    <col name="Code" type="text" caption="Kod kalkulatora dla transakcji" description="Kod klasy kalkulatora dla transakcji." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie definicji." />
+    <col name="Domyslna" type="boolean" category="Ogólne" caption="Domyślna" description="Domyślna definicja transakcji." />
+    <col name="FormularzUzytkownika" type="boolean" category="Ogólne" caption="Formularz użytkownika" description="Formularz użytkownika." />
+    <col name="NazwaZakladkiUz" type="string" length="50" category="Ogólne" caption="Nazwa zakładki użytkownika" />
+    <col name="XmlForm" type="text" category="Definicja" caption="Definicja zakładki użytkownika." />
+    <col name="OpisHTML" type="boolean" category="Inne" caption="Opis w postaci HTML." description="Określa, czy opis będzie w postaci HTML." />
+    <col name="InicjujNazwe" type="boolean" category="Opcje" caption="Inicjuje nazwę transakcji" description="Określa, czy transakcja ma zainicjowaną nazwę z definicji." />
+    <col name="PokazKomunikat" type="boolean" category="Inne"
+			 description="Decyduje o pokazywaniu komunikatu o kontrahencie podczas jego ustawianiu na dokument CRM." />
+  </table>
+
+  <table name="StanTransakcji" tablename="StanyTransakcji" config="true" tablecaption="Stany transakcji" caption="Stan transakcji">
+    <col name="Definicja" type="DefTransakcja" required="true" category="Definicja"
+      description="Definicja transakcji, do której jest przypisany ten stan"
+      children="StanyTransakcji"
+      relname="Definicja transakcji"
+      delete="cascade"
+      relguided="inner"
+      relright="false"
+      keyprimary="true"
+      keyclass="Lp" keyclasscol="Lp"
+      readonly="true"
+      />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" localization="dictionary" description="Nazwa etapu transakcji." />
+    <col name="Opis" type="string" length="255" category="Ogólne" localization="dictionary" description="Opis etapu transakcji." />
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa etapu w ramach transakcji." />
+    <col name="Realizacja" type="percent" category="Ogólne" caption="Realizacja" description="Stopień realizacji transakcji na wskazanym etapie." />
+    <col name="Aktywny" type="boolean" category="Ogólne" caption="Aktywny" description="Wskazuje, czy transakcja w tym stanie jest aktywna." />
+    <col name="Klasyfikacja" type="Klasyfikacja" category="Ogólne" caption="Klasyfikacja" description="Klasyfikacja etapu transakcji." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowany"  description="Określa zablokowanie etapu. Zablokowane etapy nie będą wyświetlane w liście wyboru." />
+  </table>
+
+  <table name="Transakcja" tablename="Transakcje" guided="Root" caption="Transakcja">
+    <interface>IEmailElement</interface>
+    <col name="Definicja" type="DefTransakcja" required="true" setonlynull="true" category="Numer"
+         description="Definicja transakcji"  relname="Definicja transakcji" relright="true" />
+    <key name="WgNazwy" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Kontrahent" type="IKontrahent" required="false" category="Kontrahent"
+			description="Kontrahent podpięty do transakcji."
+			children="Transakcje"
+			relname="Kontrahent">
+      <verifier name="Transakcja.KomunikatOKontrahencieVerifier" />
+    </col>
+    <col name="Lead" type="Lead" required="false" category="Ogólne"
+			description="Lead podpięty do transakcji."
+			children="Transakcje"
+			relname="Lead">
+    </col>
+    <col name="Projekt" type="IProjekt" required="false" category="Projekt"
+         description="Projekt, z którym powiązana jest transakcja."
+         children="Transakcje"
+         relname="Projekt">
+    </col>
+    <col name="Prowadzacy" type="Operator" required="true" category="Transakcja" caption="Odpowiedzialny" description="Osoba odpowiedzialna za prowadzenie transakcji." />
+    <col name="Przedstawiciel" type="KontaktOsoba" category="Kontrahent" caption="Przedstawiciel" description="Osoba kontaktowa ze strony kontrahenta." children="Transakcje" relname="Przedstawiciel" />
+    <col name="Numer" type="NumerDokumentu" category="Numer" />
+    <col name="Nazwa" type="string" length="80" category="Ogólne" required="true" caption="Nazwa transakcji" />
+    <col name="Stan" type="StanTransakcji" category="Ogólne" caption="Stan transakcji" required="true" description="Stan transakcji" />
+    <col name="Zrodlo" type="ZrodloKontaktu" category="Ogolne" description="Źródło kontaktu." />
+    <col name="Opis" type="text" category="Opis" caption="Opis" description="Dokładny opis transakcji." />
+    <col name="Priorytet" type="PriorytetTransakcja" category="Stan" description="Priorytet transakcji." />
+    <col name="Przychod" type="currency" category="Wartość" caption="Przychód" description="Zakładany przychód."/>
+    <col name="Marza" type="percent" caption="Marża" category="Koszt" description="Marża podawana w procentach wykorzystywana do wyliczania kosztu."/>
+    <col name="Zysk" type="currency" category="Wartość" caption="Koszt" description="Zysk"/>
+    <col name="Koszt" type="currency" category="Wartość" caption="Koszt" description="Zakładany koszt."/>
+    <col name="DataOd" type="date" required="true" category="Ogólne" caption="Data rozpoczęcia" description="Data rozpoczęcia transakcji." >
+      <verifier name="Transakcja.DatyTransakcjiVerifier"/>
+    </col>
+    <col name="DataDo" type="date" category="Ogólne" caption="Data zakończenia" description="Planowana data zakończenia transakcji." >
+      <verifier name="Transakcja.DatyTransakcjiVerifier"/>
+    </col>
+   <col name="DataZamkniecia" type="date" category="Ogólne" caption="Data zamknięcia" description ="Data faktycznego zamknięcia" />
+  </table>
+
+  <table name="DefLeada" tablename="DefLeadow" guided="Root" config="true" caption="Definicja leada CRM" tablecaption="Definicje leadów CRM">
+    <interface>IRightsSource</interface>
+    <col name="Nazwa" type="string" length="30" category="Ogólne" caption="Nazwa" localization="dictionary" required="true" description="Pełna nazwa definicji leada." />
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" caption="Symbol" description="Skrótowa nazwa definicji leada wykorzystywana do wyszukiwania definicji oraz numeracji leadów CRM." />
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" caption="Numeracja" description="Ustawienia określające sposób numeracji leadów." />
+    <col name="RoleGuid" type="guid" category="Ogólne" description="Domyślna rola dla której przypisany zostanie lead." />
+    <col name="Algorytm" type="boolean" category="Inne" description="Określa czy istnieje algorytm dla leada." />
+    <col name="Code" type="text" caption="Kod kalkulatora dla leada" description="Kod klasy kalkulatora dla leada." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie definicji." />
+    <col name="Domyslna" type="boolean" category="Ogólne" caption="Domyślna" description="Domyślna definicja leada." />
+    <col name="FormularzUzytkownika" type="boolean" category="Ogólne" caption="Formularz użytkownika" description="Formularz użytkownika." />
+    <col name="NazwaZakladkiUz" type="string" length="50" category="Ogólne" caption="Nazwa zakładki użytkownika" />
+    <col name="XmlForm" type="text" category="Definicja" caption="Definicja zakładki użytkownika." />
+    <col name="OpisHTML" type="boolean" category="Inne" caption="Opis w postaci HTML." description="Określa, czy opis będzie w postaci HTML." />
+    <col name="InicjujNazwe" type="boolean" category="Opcje" caption="Inicjuje nazwę leada" description="Określa, czy lead ma zainicjowaną nazwę z definicji." />
+    <col name="DefinicjaTransakcja" type="DefTransakcja" caption="Domyślna definicja Transakcji" description="Domyślna definicja transakcji dla tego Leada" />
+    <col name="PokazKomunikat" type="boolean" category="Ogólne"
+			 description="Decyduje o pokazywaniu komunikatu o kontrahencie podczas jego ustawianiu na dokument CRM." />
+  </table>
+
+  <table name="StanLeada" tablename="StanyLeada" config="true" tablecaption="Stany leadów" caption="Stan leada">
+    <col name="Definicja" readonly="true" type="DefLeada" required="true" category="Ogólne" description="Definicja leada, do której jest przypisany ten stan" children="Stany" relname="Definicja leada" delete="cascade" relguided="inner" relright="false" keyprimary="true" keyclass="Lp" keyclasscol="Lp" />
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa stanu realizacji w ramach leada." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" localization="dictionary" caption="Nazwa" description="Nazwa stanu leada." />
+    <col name="Opis" type="string" length="255" category="Ogólne" localization="dictionary" description="Opis stanu leada." />
+    <col name="Realizacja" type="percent" category="Ogólne" caption="Realizacja" description="Stopień realizacji leada na wskazanym etapie." />
+    <col name="Aktywny" type="boolean" category="Ogólne" caption="Aktywny" description="Wskazuje, czy lead w tym stanie jest aktywny." />
+    <col name="Klasyfikacja" type="Klasyfikacja" category="Ogólne" caption="Klasyfikacja" description="Klasyfikacja stanu leada." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowany"  description="Określa zablokowanie stanu. Zablokowane stany nie będą wyświetlane w liście wyboru." />
+  </table>
+
+  <table name="Lead" tablename="Leady" guided="Root" >
+    <interface>IEmailElement</interface>
+    <col name="Definicja" type="DefLeada" required="true" setonlynull="true" category="Numer"
+         description="Definicja leada"  relname="Definicja leada" relright="true" />
+    <key name="WgNazwy" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Kontrahent" type="IKontrahent" required="false" category="Kontrahent"
+			description="Kontrahent podpięty do leada."
+			children="Leady"
+			relname="Kontrahent">
+      <verifier name="Lead.KomunikatOKontrahencieVerifier" />
+    </col>
+    <col name="Projekt" type="IProjekt" required="false" category="Projekt"
+         description="Projekt, z którym powiązany jest lead."
+         children="Leady"
+         relname="Projekt">
+    </col>
+    <col name="Przedstawiciel" type="KontaktOsoba" category="Kontrahent" caption="Przedstawiciel" description="Osoba kontaktowa ze strony kontrahenta." children="Leady" relname="Przedstawiciel" />
+    <col name="Prowadzacy" type="Operator" required="true" category="Lead" caption="Odpowiedzialny" description="Osoba odpowiedzialna za prowadzenie leada." />
+    <col name="Numer" type="NumerDokumentu" category="Numer" />
+    <col name="Nazwa" type="string" length="80" category="Ogolne" required="true" caption="Nazwa leada" />
+    <col name="StanLeada" type="StanLeada" category="Stan" required="true" description="Stan leada." />
+    <col name="Zrodlo" type="ZrodloKontaktu" category="Ogolne" description="Źródło kontaktu." />
+    <col name="Opis" type="text" category="Opis" caption="Opis" description="Dokładny opis leada." />
+    <col name="Priorytet" type="PriorytetLeada" category="Stan" description="Priorytet leada." />
+    <col name="Przychod" type="currency" category="Wartość" caption="Przychód" description="Zakładany przychód."/>
+    <col name="Marza" type="percent" caption="Marża" category="Koszt" description="Marża podawana w procentach wykorzystywana do wyliczania kosztu."/>
+    <col name="Koszt" type="currency" category="Wartość" caption="Koszt" description="Zakładany koszt."/>
+    <col name="DataOd" type="date" required="true" category="Ogólne" caption="Data rozpoczęcia" description="Data rozpoczęcia.">
+         <verifier name="Lead.DatyLeaduVerifier"/>
+    </col>
+    <col name="DataDo" type="date" category="Ogólne" caption="Data zakończenia" description="Planowana data zakończenia." >
+        <verifier name="Lead.DatyLeaduVerifier"/>
+    </col>
+  <col name="DataZamkniecia" type="date" category="Ogólne" caption="Data zamknięcia" description ="Data faktycznego zamknięcia" />
+  </table>
+
+  <table name="PriorytetLeada" tablename="PriorytetyLeadow" config="true" tablecaption="Priorytety leadów" caption="Priorytet leada">
+    <col name="Definicja" type="DefLeada" readonly="true" required="true" category="Definicja" description="Definicja leada, do której jest przypisany jest priorytet" children="Priorytety" relname="Definicja leada" 
+         delete="cascade" relguided="inner" relright="false" keyprimary="true" keyclass="Lp" keyclasscol="Lp" />
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa priorytetu w ramach leada." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" localization="dictionary" description="Nazwa priorytetu leada" />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowany"  description="Określa zablokowanie stanu. Zablokowane stany nie będą wyświetlane w liście wyboru." />
+  </table>
+  
+  <table name="PriorytetTransakcja" tablename="PriorytetyTran" config="true" tablecaption="Priorytety transakcji" caption="Priorytet transakcji">
+    <col name="Definicja" type="DefTransakcja" readonly="true" required="true" category="Definicja" description="Definicja transakcji, do której jest przypisany jest priorytet" children="Priorytety" relname="Definicja transakcji" 
+         delete="cascade" relguided="inner" relright="false" keyprimary="true" keyclass="Lp" keyclasscol="Lp" />
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa priorytetu w ramach transakcji." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" localization="dictionary" description="Nazwa priorytetu transakcji" />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowany"  description="Określa zablokowanie stanu. Zablokowane stany nie będą wyświetlane w liście wyboru." />
+  </table>
+
+  <table name="PodmiotTransakcja" tablename="PodmiotyTran" caption="Podmioty powiązane z transakcją" tablecaption="Podmioty powiązane z transakcjami.">
+    <col name="Transakcja" 
+         type="Transakcja"
+         category="Transakcja"
+         required="true"
+         relname="Transakcje podmiotów"
+         description="Transakcje podmiotów (Kontrahentów lub osób)"
+         relguided="inner"
+         delete="cascade"
+         children="TransakcjePodmiotu"
+         keyprimary="true" 
+         keyunique="true" >
+      <keycol name="Kontrahent"/>
+      <keycol name="Osoba"/>
+   </col>
+    <col name="Kontrahent"
+         type="IKontrahent"
+         category="Podmiot"
+         caption="Kontrahent"
+         description="Kontrahent, któremu przyporządkowana jest transakcja."
+         children="TransakcjeKontrahenta"
+         relname="Transakcje Kontrahenta" >
+      <verifier name="PodmiotTransakcja.UnikalnoscDanychVerifier" onadded="true"/>
+    </col>
+    <col name="Osoba"
+         type="KontaktOsoba"
+         category="Podmiot"
+         caption="Osoba"
+         description="Osoba, której przyporządkowana jest transakcja."
+         children="TransakcjeOsoby"
+         relname="Transakcje osoby" >
+      <verifier name="PodmiotTransakcja.UnikalnoscDanychVerifier" onadded="true"/>
+    </col>
+  </table>
+
+  <enum name="TypKoduDzialalnosci"/>
+    <table name="DzialalnoscKod" tablename="DzialalnoscKody" caption="Wykaz kodów PDK z opisem działalności" tablecaption="Wykaz kodów PDK z opisem działalności">
+        <col name="KodFormatowany" length="10" type="string"  keyprimary="true" keyunique="true" />
+        <col name="Kod" length="10" type="string" />
+        <col name="Nazwa" type="string" length="255" />
+        <col name="Grupa" type="string" length="5" />
+        <col name="Klasa" type="string" length="5" />
+        <col name="Dzial" type="string" length="2" />
+        <col name="Sekcja" type="string" length="10" />
+        <col name="Podstawowa" type="boolean"  />
+        <col name="TypDzialalnosci" type="TypKoduDzialalnosci" />
+        <key name="WgKoduSformatowanego" keyprimary="true">
+            <keycol name="KodFormatowany" />
+        </key>
+    </table>
+
+
+  <table name="KthDzialalnKod" tablename="KthDzialalnKody" caption="Wykaz działalności kontrahentów" tablecaption="Wykaz działalności kontrahentów">
+    <col name="Kontrahent" type="Kontrahent" required="true" keyprimary="true" relname="KthDzialalnKody" delete="cascade">
+      <keycol name="DzialalnoscKod" />
+    </col>
+    <col name="DzialalnoscKod" type="DzialalnoscKod" required="true" relname="Pkds" children="DzialalnoscKody" delete="cascade"  />
+    <col name="Przewazajace" type="boolean" caption="Przeważające" description="Informuje czy dane pkd jest przeważające" />
+  </table>
+  
+  <table name="PodmiotPowiazany"  tablename="PodmiotyPow" caption="Podmiot powiązany">
+    <col name="Kontrahent" type="Kontrahent" keyunique="true" required="true" delete="cascade" />
+   
+  </table>
+  
+</module>

@@ -1,0 +1,2727 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Core" namespace="Soneta.Core"
+         versionName="soneta" versionNumber="21120305">
+
+  <import>..</import>
+  <using>Soneta.Config</using>
+  <using>Soneta.Business.Db</using>
+  <using>Soneta.Business.Db.Permissions</using>
+  <using>Soneta.Business.App</using>
+  <using>Soneta.Business.Notifications</using>
+  <using>Soneta.Core.DbTuples</using>
+  <using>Soneta.Core.Dms</using>
+  <using>Soneta.Core.Schedule</using>
+  <using>Soneta.Business.Runtime</using>
+  <using>Soneta.Core.StrukturyOrganizacyjne</using>
+  <using>Soneta.Core.Substitute</using>
+  <using>Soneta.Core.GIODO</using>
+  <using>Soneta.Core.DbTuples.Processes</using>
+  <using>Soneta.POS</using>
+  <using>Soneta.Core.Conversation</using>
+
+  <!-- DEFINICJA CYKLU -->
+
+  <enum name="BramkaJPKFile"></enum>
+  <enum name="DefinicjaCykluOkresCyklu"></enum>
+  <enum name="DefinicjaCykluPozycjaDnia"></enum>
+  <enum name="DefinicjaCykluPozycjaDniaZaawansowana"></enum>
+  <enum name="DefinicjaCykluRodzajTerminu"></enum>
+  <enum name="DefinicjaCykluSposobNaDniWolne"></enum>
+  <enum name="DefinicjaCykluTyp"></enum>
+  <enum name="PodTypKodu"></enum>
+  <enum name="StatusPlikuJPK"></enum>
+  <enum name="SystemPos"/>
+  <enum name="ProtokolTraminala"/>
+  <enum name="TrybGenerowaniaJPK"></enum>
+  <enum name="TrybPodpisuJPK"></enum>
+  <enum name="TypProceduryVAT"/>
+  <enum name="WymagalnoscKwotyVAT"/>
+  <enum name="ZakresDanychJPK"/>
+  <enum name="LokalizacjaJPK"/>
+  <enum name="ZrodloPlikuJPK"></enum>
+
+
+  <subrow name="DefinicjaCyklu">
+    <col name="Krotnosc" type="int" modifier="public virtual"
+			 description="Określa ile razy cykl będzie powtórzony.">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <col name="Interwal" type="int" modifier="public virtual"></col>
+    <col name="Typ" type="DefinicjaCykluTyp" modifier="public virtual"
+			 description="Określa rodzaj cyklu za pomocą jednostki interwału czasu."></col>
+    <col name="Czas" type="time" description="Określa czas wystąpienia cyklu." />
+    <col name="PozycjaDnia" type="DefinicjaCykluPozycjaDnia"
+			 description="Określa pozycję dnia w okresie, w którym oczekiwane jest wystąpienie cyklu."></col>
+    <col name="RodzajTerminu" type="DefinicjaCykluRodzajTerminu"
+			 description="Wskazuje na to, czy określono termin cyklu lub termin wynika z opisu cyklu."></col>
+    <col name="SposobNaDniWolne" type="DefinicjaCykluSposobNaDniWolne"
+			 specialaccess="true"
+			 description="Określa sposób zachowania, kiedy cykl wystąpi w dniu wolnym."></col>
+    <col name="OkresCyklu" type="DefinicjaCykluOkresCyklu"
+			 description="Określa okres, w którym oczekiwane jest wystąpienie cyklu."></col>
+    <col name="Termin" type="int" readonly="set" modifier="protected"
+			 description="Określa termin wystąpienia cyklu. Wartość w polu nie jest czytelna dla użytkownika.">
+      <attribute>Browsable(false)</attribute>
+    </col>
+
+    <!--[16911][9.3][Workflow 9.3]: Przeniesienie kontrolki Schedule do Core - ujednolicenie z kontrolką handlu-->
+    <col name="Termin2" type="int" readonly="set" modifier="protected"
+         description="Określa termin wystąpienia cyklu (godziny). Wartość w polu nie jest czytelna dla użytkownika.">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <col name="Termin3" type="int" readonly="set" modifier="protected"
+         description="Określa termin wystąpienia cyklu (minuty w godzinie). Wartość w polu nie jest czytelna dla użytkownika.">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <col name="Termin4" type="int" readonly="set" modifier="protected"
+         description="Określa termin wystąpienia cyklu (dni w miesiącu/roku w kolejności). Wartość w polu nie jest czytelna dla użytkownika.">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <col name="Termin5" type="int" readonly="set" modifier="protected"
+         description="Określa termin wystąpienia cyklu (miesiące w roku w kolejności). Wartość w polu nie jest czytelna dla użytkownika.">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <col name="PozycjaDniaZaawansowana" type="DefinicjaCykluPozycjaDniaZaawansowana"
+			 description="Określa pozycję dnia w miesiącu, w którym oczekiwane jest wystąpienie cyklu."></col>
+
+  </subrow>
+
+  <!-- /DEFINICJA CYKLU -->
+
+  <subrow name="DefinicjaNumeracji">
+    <col name="Wzor" type="string" length="128"/>
+    <col name="PodczasEdycji" type="boolean" modifier="protected"/>
+  </subrow>
+
+  <subrow name="NumerDokumentu">
+    <key name="WgSymboluDokumentu" keyunique="true" lock="ExclusiveGet">
+      <keycol name="Symbol"/>
+      <keycol name="Numer"/>
+    </key>
+    <key name="WgNumeruDokumentu" keyunique="true">
+      <keycol name="Pelny"/>
+    </key>
+    <col name="Symbol" type="string" length="32"/>
+    <col name="Numer" type="int"/>
+    <col name="Pelny" type="string" length="40" caption="Numer pełny"/>
+  </subrow>
+
+  <enum name="Wojewodztwa"/>
+  <subrow name="Adres">
+    <col name="KodPocztowy" type="int" description="Kod pocztowy">
+      <attribute>MaskEdit("00-000", SaveLiteral=false)</attribute>
+      <attribute>SqlResolving(IgnoreDashes = true, NoDashesData = true)</attribute>
+    </col>
+    <col name="ZagranicznyKodPocztowy" type="string" length="9" description="Zagraniczny kod pocztowy"/>
+    <col name="Poczta" type="string" length="56" description="Poczta">
+      <attribute>Dictionary("Miejscowość")</attribute>
+    </col>
+    <col name="Miejscowosc" type="string" length="56" description="Miejscowość" caption="Miejscowość">
+      <attribute>Dictionary("Miejscowość")</attribute>
+      <verifier name ="Adres.MiejscowoscVerifier" onadded="true"/>
+    </col>
+    <col name="Gmina" type="string" length="36" description="Gmina">
+      <attribute>Dictionary("Gmina")</attribute>
+      <verifier name ="Adres.GminaVerifier" onadded="true"/>
+    </col>
+    <col name="Powiat" type="string" length="36" description="Powiat">
+      <attribute>Dictionary("Powiat")</attribute>
+      <verifier name ="Adres.PowiatVerifier" onadded="true"/>
+    </col>
+    <col name="Wojewodztwo" type="Wojewodztwa" description="Województwo" >
+      <verifier name ="Adres.WojewodztwoVerifier" onadded="true"/>
+    </col>
+    <col name="Kraj" type="string" length="50" description="Kraj">
+      <attribute>Dictionary("Kraj")</attribute>
+    </col>
+    <col name="KodKraju" type="string" length="2" description="Kod kraju"/>
+    <col name="Ulica" type="string" length="65" description="Nazwa ulicy (alei, osiedla)">
+      <!-- Było length="30", ograniczenie PP-->
+      <attribute>Dictionary("Ulica")</attribute>
+      <verifier name ="Adres.UlicaVerifier" onadded="true"/>
+    </col>
+    <col name="NrDomu" type="string" length="9" description="Numer domu (bloku)" />
+    <col name="NrLokalu" type="string" length="10" description="Numer lokalu w domu (bloku)" />
+    <col name="NietypowaLokalizacja" type="string" length="100" description="Nietypowe miejsce lokalizacji" />
+    <col name="Telefon" type="string" length="30" description="Numer telefonu">
+      <!-- Było length="20", ograniczenie PP-->
+      <verifier name="Adres.TelefonVerifier" onadded="true"/>
+    </col>
+    <col name="Faks" type="string" length="30" description="Numer faksu" >
+      <!-- Było length="20", ograniczenie PP-->
+    </col>
+  </subrow>
+
+  <interface name="IAdresHost"/>
+
+  <subrow name="IdentyfikacjaAdresu">
+    <col name="GLN" type="string" length="13" caption="GLN (ILN)" description="Globalny numer lakalizacji." />
+  </subrow>
+
+  <enum name="RodzajAdresu"/>
+  <table name="AdresExt" tablename="Adresy" caption="Adres">
+    <col name="Host" type="IAdresHost" readonly="true" required="true"
+			keyunique="true"
+			relname="Adresy"
+			relguided="inner"
+			delete="cascade"
+      keyprimary="true"
+		>
+      <keycol name="Typ"/>
+    </col>
+
+    <key name="WgGLN">
+      <keycol name="IdentyfikacjaAdresu.GLN"/>
+    </key>
+
+    <col name="Typ" type="RodzajAdresu" readonly="true" required="true"/>
+    <col name="Adres" type="Adres" />
+    <col name="IdentyfikacjaAdresu" type="IdentyfikacjaAdresu" />
+  </table>
+
+  <table name="KodPocztowy" tablename="KodyPocztowe" tablecaption="Tabela z kodami pocztowymi oraz odpowiadającymi im miejscowościami" >
+    <key name="WgKodu" keyunique="false" keyprimary="true">
+      <keycol name="KodPocztowy"/>
+    </key>
+    <col name="KodPocztowy" required="true" type="string" length="6" caption="Kod pocztowy" />
+    <col name="Miejscowosc" type="DictionaryItem" required="true" caption="Miejscowość" delete="cascade" />
+    <col name="Powiat" type="DictionaryItem" required="true" />
+    <col name="Wojewodztwo" type="Wojewodztwa" required="true" caption="Województwo"/>
+  </table>
+
+  <table name="KodPocztowyAU" tablename="KodyPocztoweAU" tablecaption="Tabela z kodami pocztowymi oraz odpowiadającymi im województwami" >
+    <key name="WgKodu" keyunique="false" keyprimary="true">
+      <keycol name="KodPocztowy"/>
+    </key>
+    <col name="KodPocztowy" required="true" type="string" length="6" caption="Kod pocztowy" />
+    <col name="Wojewodztwo" type="Wojewodztwa" required="true" caption="Województwo" />
+    <col name="Powiat" type="string" length="50" required="true" />
+    <col name="Gmina" type="string" length="50" required="true" />
+    <col name="Miejscowosc" type="string" length="50" required="true" caption="Miejscowość" />
+    <col name="Ulica" type="string" length="80" />
+  </table>
+
+  <subrow name="Kontakt">
+    <col name="SkrytkaPocztowa" type="string" length="5" description="Skrytka pocztowa"/>
+    <col name="TelefonKomorkowy" name12="TelKom" type="string" length="30" description="Numer telefonu komórkowego"  >
+      <!-- Było length="20", ograniczenie PP-->
+      <verifier name="Kontakt.TelefonVerifier" onadded="true"/>
+    </col>
+    <col name="EMAIL" type="string" length="100" description="Adres poczty elektronicznej">
+      <verifier name="Kontakt.EMAILVerifier" onadded="true"/>
+    </col>
+    <col name="WWW" type="string" length="100" description="Adres strony internetowej"/>
+  </subrow>
+
+  <subrow name="Osoba">
+    <col name="Osoba" type="string" length="50"/>
+    <col name="Adres" type="string" length="50"/>
+    <col name="Telefon" type="string" length="30">
+      <!-- Było length="20", ograniczenie PP-->
+    </col>
+  </subrow>
+
+  <interface name="IDaneKontrahentaHost"/>
+  <table name="DaneKontrahenta" tablename="DaneKontrahentow" name8="DaneKont">
+    <interface>IDaneKontaktoweHost</interface>
+
+    <col name="Host" type="IDaneKontrahentaHost" required="true" readonly="true"
+			keyunique="true"
+			relname="Dane kontrahentów"
+			relguided="inner"
+			delete="cascade"
+		>
+      <keycol name="Typ"/>
+    </col>
+    <!-- Nie jest required ze względu na problemy z konwersją CLA, ale w przyszłości
+		trzeba to porządnie skonwertować -->
+    <col name="Typ" type="int" readonly="true"/>
+    <col name="Nazwa" type="string" length="255" required="true"/>
+    <col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual">
+      <verifier name="EuVatVerifier"/>
+    </col>
+    <col name="Adres" type="Adres"/>
+    <col name="RodzajPodmiotu" type="RodzajPodmiotu" modifier="public virtual"/>
+    <col name="StatusPodmiotu" type="StatusPodmiotu" modifier="public virtual"/>
+    <col name="PodatnikVAT" type="boolean" category="Ogólne" modifier="public virtual"/>
+  </table>
+
+  <!-- DEFINICJA DOKUMENTU -->
+  <enum name="TypDokumentu" />
+  <enum name="KierunekPlatnosci" />
+
+
+
+  <table name="DefinicjaDokumentu" tablename="DefDokumentow" name8="DefDok" guided="Root" config="true" caption="Definicja dokumentu" tablecaption="Definicje dokumentów" >
+    <interface>IRightsSource</interface>
+    <interface>IDefinicjaKomunikatuEDIHost</interface>
+
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <key name="WgTypu" keyunique="true">
+      <keycol name="Typ" />
+      <keycol name="Symbol" />
+    </key>
+
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" />
+    <col name="Typ" type="TypDokumentu" selector="true" required="true" readonly="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="30" localization="dictionary" category="Ogólne" />
+    <col name="TypDokumentuVAT" type="ProceduraVAT" caption="Typ dokumentu VAT (JPK)" description="Procedura VAT określająca typ dokumentu"/>
+    <col name="Domyslna" type="boolean" category="Ogólne" />
+    <col name="Blokada" type="boolean" category="Ogólne" />
+    <!-- DEFINICJA -->
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" />
+    <col name="WidoczneCechy" type="text" category="Definicja" />
+    <col name="Rozszerzenie" type="text" modifier="protected" category="Definicja" />
+    <col name="DodatkowyNaglowekDefinicja" type="text" category="Definicja" />
+    <!-- ISO -->
+    <col name="ProceduraISO" type="IsoProcedura" category="ISO" description="Procedura ISO, która zostanie wykorzystana do numeracji dokumentów danego typu" relname="Powiazana procedura ISO" />
+    <!-- SCHEMAT PODZIAŝOWY-->
+    <col name="SchematPodzialowy" type="SchematPodz" cstype="ISchematPodziałowy"/>
+    <col name="ZawszePrzeliczajOpisAnalityczny" type="boolean"/>
+    <!-- NUMERACJA -->
+    <col name="NumerDokumentuZeZrodla" type="boolean" modifier="public virtual" category="Numeracja" />
+    <!-- PULPIT KBR-->
+    <col name="DlaPulpituKB" type="boolean" />
+  </table>
+
+
+  <enum name="StanEwidencji"/>
+  <enum name="StanPomocniczych"/>
+  <enum name="TypRelacjiDokumentuEwidencji"/>
+
+
+
+  <table name="DokEwidencji" name8="EwidDok" tablename="DokEwidencja" guided="Exported" caption="Dokument ewidencji" tablecaption="Dokument ewidencji">
+    <interface>IDokumentPlatny</interface>
+    <interface>IDaneKontrahentaHost</interface>
+    <interface>IRaportEwidencjiSP</interface>
+    <interface>IDokumentCRM</interface>
+    <interface>IKomunikatEDIHost</interface>
+    <interface>IEmailElement</interface>
+    <interface>IProceduraVATHost</interface>
+
+    <key name="WgDodatkowego">
+      <keycol name="NumerDodatkowy"/>
+    </key>
+    <key name="WgNumeruDokumentu">
+      <keycol name="NumerDokumentu"/>
+      <keycol name="DataDokumentu"/>
+    </key>
+    <key name="WgData" keyprimary="true">
+      <keycol name="DataDokumentu"/>
+    </key>
+    <key name="WgDataWplywu">
+      <keycol name="DataWplywu"/>
+    </key>
+    <key name="WgDataOperacji">
+      <keycol name="DataOperacji"/>
+    </key>
+    <key name="WgDataEwidencji">
+      <keycol name="DataEwidencji"/>
+    </key>
+    <key name="WgTyp">
+      <keycol name="Typ"/>
+      <keycol name="DataDokumentu"/>
+    </key>
+
+    <col name="Podmiot" type="IPodmiot" modifier="public virtual" category="Ogólne" relname="Element dziennika podmiotu" children="DokumentyEwidencji" >
+      <keycol name="DataDokumentu"/>
+    </col>
+    <col name="Dokument" type="IDokumentKsiegowalny" readonly="true" category="Ogólne" relname="Element dziennika dokumentu źródłowego" children="DokumentyEwidencji" />
+    <col name="Definicja" name12="Def" type="DefinicjaDokumentu" modifier="public virtual" category="Ogólne" relname="Definicja elementu dziennika" relright="true">
+      <keycol name="DataDokumentu"/>
+    </col>
+    <col name="EwidencjaSP" type="EwidencjaSP" cstype="IRow" readonly="true" category="Ogólne" relname="Ewidencja raportu ewidencji SP" />
+    <col name="Oddzial" type="OddzialFirmy" modifier="public virtual" category="Ogólne" relname="Oddział firmy dla którego zarejestrowano dokument" relright="true" >
+      <verifier name="OddzialRightsVerifier" onadded="true"/>
+      <verifier name="OddzialRequiredVerifier" onadded="true"/>
+    </col>
+    <col name="Typ" type="TypDokumentu" selector="true" readonly="true" required="true" category="Ogólne"/>
+    <col name="Stan" type="StanEwidencji" category="Ogólne"/>
+    <col name="BuforK" type="boolean" category="Ogólne" description="Bufor kontrolingowy"/>
+    <col name="NieKsiegowac" type="boolean" category="Ogólne" description="Nie podlega księgowaniu"/>
+    <col name="Szablon" type="boolean" category="Ogólne" description="Szablon dokumentu"/>
+    <col name="Seria" type="string" length="12" category="Ogólne"/>
+    <col name="Numer" type="NumerDokumentu" category="Ogólne"/>
+    <col name="SymbolNumeruZrodla" type="string" length="12" category="Ogólne" caption="Symbol numeru źródła" readonly="set" description="Symbol użyty podczas numeracji z dokumentu źródłowego" />
+    <col name="DataWplywu" type="date" required="true" category="Ogólne"/>
+    <col name="DataEwidencji" type="date" required="true" category="Ogólne" description="Data dodatkowa"/>
+    <col name="NumerDodatkowy" type="string" length="32"/>
+    <col name="NumerDokumentu" type="string" length="40" required="true" category="Dokument"/>
+    <col name="DataDokumentu" type="date" required="true" category="Dokument"/>
+    <col name="DataOperacji" type="date" required="true" category="Dokument"/>
+    <col name="Wartosc" type="currency" modifier="public virtual" category="Dokument"/>
+    <col name="WymagalnoscKwotyVAT" type="WymagalnoscKwotyVAT" modifier="protected" category="MPP" />
+    <col name="DokumentMPP" type="boolean" caption="Dokument MPP" category="MPP" readonly="set" />
+    <col name="Opis" type="string" length="80" modifier="public virtual" category="Dokument">
+      <attribute>Dictionary("Opis ewidencji", ManualList=true)</attribute>
+    </col>
+    <col name="Nadrzedny" type="DokEwidencji" category="Dokument" readonly="set" relname="Nadrzedny dokument ewidencji" children="Podrzedne" description="Nadrzędny dokument ewidencji">
+      <keycol name="NadrzednyTypRelacji"/>
+    </col>
+    <col name="NadrzednyTypRelacji" type="TypRelacjiDokumentuEwidencji" category="Dokument" readonly="set" name12="NadrzTypRel" description="Typ relacji do nadrzędnego dokumentu ewidencji" />
+    <col name="NrDokumentuK" type="string" length="40"  category="Dokument" description="Nr dokumentu korygowanego"/>
+    <col name="EwidencjaZbiorcza" type="DokEwidencji" category="Dokument" readonly="set" relname="Ewidencja zbiorcza" children="EwidencjeEwidencjiZbiorczej" description="Ewidencja zbiorcza" />
+    <col name="NumerProceduryISO" type="string" length="20" category="ISO" readonly="set" description="numer procedury ISO wg ktorej powstał ten dokument" />
+    <col name="KolKPiR" type="int" category="KPiR" modifier="protected" description="Numer kolumny KPiR w ewidencjach VAT" />
+    <col name="NKUP" type="percent" modifier="protected" description="Część niebędąca kosztem uzyskania przychodu" />
+  </table>
+
+
+
+  <table name="CentrumKosztow" tablename="CentraKosztow" name8="CentKosz" guided="Root" config="true">
+    <interface>IElementSlownika</interface>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="30" localization="dictionary" required="true" category="Ogólne"/>
+    <col name="Opis" type="string" length="255" localization="dictionary" category="Ogólne" caption="Opis" description="Opis centrum kosztów." />
+    <col name="Zablokowane" type="boolean" category="Ogólne"/>
+  </table>
+
+
+  <table name="ZrodloFinansowania" tablename="ZrodlaFinansow" caption="Źródło finansowania" tablecaption="Źródła finansowania" name8="ZrodFin" guided="Root" config="true">
+    <interface>IElementSlownika</interface>
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <key name="WgNazwy" >
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Symbol" type="string" length="8" required="true" category="Ogólne" caption="Symbol" description="Symbol źródła finansowania"/>
+    <col name="Nazwa" type="string" length="80" required="true" localization="dictionary" category="Ogólne" caption="Nazwa" description="Nazwa źródła finansowania." />
+    <col name="Zablokowane" type="boolean" category="Ogólne" caption="Zablokowane" description="Źródło finansowania zablokowane"/>
+  </table>
+
+
+  <!--
+    ****
+    PODZIELNIKI KOSZTOW
+    ****
+    -->
+
+
+    <table name="ZestawPodzielnikowKosztow" tablename="ZestPodzKosztow"
+      caption="Zestaw podzielników kosztów" tablecaption="Zestawy podzielników kosztów" config="true" guided="Root">
+        <interface>IZrodloPodzielnikaKosztow</interface>
+        <key name="WgNazwy" keyunique="true" keyprimary="true">
+            <keycol name="Nazwa" />
+        </key>
+        <col name="Nazwa" type="string" length="30" localization="dictionary" required="true" caption="Ogólne"/>
+    </table>
+
+
+      <table name="DefinicjaPodzielnikaKosztow" tablename="DefPodzKosztow" caption="Definicja podzielnika kosztów" tablecaption="Definicje podzielników kosztów" config="true" guided="Root">
+        <key name="WgNazwy" keyunique="true" keyprimary="true">
+          <keycol name="Nazwa" />
+        </key>
+        <col name="Nazwa" type="string" length="30" localization="dictionary" required="true" category="Ogólne"/>
+        <col name="TypeInformation" type="string" length="30" modifier="protected" category="Ogólne" >
+          <verifier name="DefinicjaPodzielnikaKosztow.TypeInformationVerifier" onadded="true" />
+        </col>
+        <col name="Algorytm" type="text" category="Ogólne">
+          <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+        </col>
+        <col name="Zablokowane" type="boolean" category="Ogólne"/>
+        <col name="Domyslna" type="boolean" category="Ogólne"/>
+      </table>
+
+
+    <table name="PodzielnikKosztow" tablename="PodzielKosztow" name8="PodzKosz" caption="Podzielnik kosztów" tablecaption="Podzielniki kosztów">
+        <col name="Zrodlo" type="IZrodloPodzielnikaKosztow" readonly="true" required="true" caption="Źródło podzielnika" children="Podzielniki" relname="Podzielniki kosztów" keyunique="true" keyprimary="true" relguided="inner" delete="cascade" >
+            <keycol name="Nazwa"/>
+        </col>
+        <col name="Nazwa" type="string" length="30" required="true" caption="Nazwa">
+            <attribute>Dictionary("Podziel.kosztow")</attribute>
+        </col>
+        <col name="Definicja" type="DefinicjaPodzielnikaKosztow" required="true"/>
+    </table>
+
+    <table name="HistoriaPodzielnika" tablename="HistPodzielnikow" name8="HistPodz" caption="Podzielnik kosztów" tablecaption="Podzielniki kosztów" >
+        <col name="Podzielnik" type="PodzielnikKosztow" readonly="true" required="true" relname="Zapis historyczny podzielnika kosztów" relguided="inner" children="Historia" keyclass="History" keyclasscol="Aktualnosc" delete="cascade" keyprimary="true" />
+        <col name="Aktualnosc" name12="Akt" type="FromTo" required="true" category="Ogólne" />
+        <col name="Podstawa" type="double" modifier="private" category="Ogólne"/>
+    </table>
+
+    <table name="ElementPodzielnika" tablename="ElemPodzielnikow" name8="ElemPodz" caption="Element podzielnika" tablecaption="Elementy podzielników" >
+        <col name="Historia" type="HistoriaPodzielnika" required="true" readonly="true" category="Ogólne" relname="Element podzielnika kosztów" children="Elementy" keyprimary="true" keyunique="true" delete="cascade" relguided="Root" >
+            <keycol name="ElementPodzialowy" />
+        </col>
+        <col name="ElementPodzialowy" type="IElementSlownika" required="true" relname="Element podzielnika" children="ElementyPodzielnika" category="Ogólne"/>
+        <col name="Wspolczynnik" type="double" category="Ogólne" />
+    </table>
+
+
+    <!--
+    ****
+    STAWKI VAT/AKCYZY
+    ****
+    -->
+
+
+    <enum name="StatusStawkiVat"/>
+
+  <subrow name="StawkaVat">
+    <col name="Status" type="StatusStawkiVat"/>
+    <col name="Procent" type="percent"/>
+    <col name="Zrodlowa" type="percent"/>
+    <col name="Obnizona" type="boolean"/>
+    <col name="Kraj" type="KrajTbl">
+      <verifier name="StawkaVat.KrajVerifier" onadded="true"/>
+    </col>
+  </subrow>
+
+  <table name="DefinicjaStawkiVat" name8="DefStVat" tablename="DefStawekVat" guided="Root" config="true"
+		caption="Definicja stawki VAT"
+		tablecaption="Definicje stawek VAT"
+	>
+    <key name="WgKodu" keyprimary="true" keyunique="true">
+      <keycol name="Kod"/>
+    </key>
+    <!--Ogólne-->
+    <col name="Kod" type="string" length="12" required="true" category="Ogólne"/>
+    <col name="Stawka" type="StawkaVat" category="Ogólne"/>
+    <col name="Opis" type="string" length="80" localization="dictionary" category="Ogólne"/>
+    <col name="Zablokowane" type="boolean" category="Ogólne"/>
+    <!--Ogólne-->
+  </table>
+
+  <!-- STAWKA AKCYZY -->
+  <enum name="TypStawkiAkcyzy"/>
+  <enum name="TypGrupyAkcyzy"/>
+
+
+  <subrow name="StawkaAkcyzy">
+    <col name="Symbol" type="string" length="12" description="Symbol - np. SWW"/>
+    <col name="Grupa" type="string" length="255" description="Grupa wyrobów">
+      <attribute>Dictionary("Grupa wyrobów", ManualList=true)</attribute>
+    </col>
+    <col name="Pozycja" type="int" description="Pozycja tabeli stawek"/>
+    <col name="Typ" type="TypStawkiAkcyzy"/>
+    <col name="TypGrupy" type="TypGrupyAkcyzy" description="Typ grupy wyrobów"/>
+    <col name="Procent" type="percent"/>
+  </subrow>
+
+  <table name="DefinicjaStawkiAkcyzy" name8="DefStAkc" tablename="DefStawekAkcyzy" guided="Root" config="true"
+		caption="Definicja stawki akcyzy"
+		tablecaption="Definicje stawek akcyzy">
+
+    <key name="WgKodu" keyprimary="true" keyunique="true">
+      <keycol name="Kod"/>
+    </key>
+
+    <col name="Kod" type="string" length="12" required="true" category="Ogólne"/>
+    <col name="Stawka" type="StawkaAkcyzy" category="Ogólne"/>
+    <col name="Opis" type="string" length="80" category="Ogólne"/>
+
+  </table>
+
+  <!-- POZYCJA EWIDENCJI ZBIORCZEJ -->
+  <table name="PozycjaEwidencjiZbiorczej" tablename="PozEwidZbiorczej"
+		caption="Pozycja ewidencji zbiorczej" tablecaption="Pozycje ewidencji zbiorczych">
+
+    <col name="Typ" type="TypDokumentu" selector="true" required="true" readonly="true" category="Ogólne" />
+
+    <col name="Lp" type="int" batchfield="false"
+	    category="Ogólne" description="Liczba porządkowa pozycji w ewidencji"/>
+
+    <col name="Dokument" type="IDokumentKsiegowalny" category="Ogólne"
+			caption="Dokument"
+			description="Dokument księgowany zbiorczo"
+			children="PozycjeEwidencji"
+			relname="Pozycje ewidencji zbiorczej dokumentu"
+			required="true" readonly="true"
+			keyunique="true"/>
+    <col name="Ewidencja" type="DokEwidencji" category="Ogólne"
+			caption="Ewidencja"
+			description="Ewidencja zbiorcza"
+			children="Pozycje"
+			relname="Pozycje ewidencji zbiorczej"
+			required="true" readonly="true"
+			relguided="inner"
+			delete="cascade"
+			keyclass="Lp"	keyclasscol="Lp" keyprimary="true"/>
+  </table>
+
+  <enum name="NaliczanieDeklaracjiOddziału"/>
+
+  <interface name="IEwidencjaSP" />
+
+  <subrow name="DanePFRONOddziału">
+    <col name="StatusZPChr" type="boolean"/>
+    <col name="StatusZPChrOkres" type="FromTo"/>
+    <col name="ZakladAktywnosciZawodowej" type="boolean" caption="Zakład aktywności zawodowej"/>
+    <col name="PKD" type="string" length="7"/>
+    <col name="PFRON" type="string" length="9"/>
+    <col name="KodAdresuPrzedsiebiorcy" type="string" length="7"/>
+    <col name="FormaPrawna" type="string" length="2"/>
+    <col name="FormaPrawna2" type="string" length="3"/>
+    <col name="FormaWlasnosci" type="string" length="1"/>
+    <col name="WielkoscPracodawcy" type="string" length="1"/>
+    <col name="NrRachunku" type="EwidencjaSP" cstype="IEwidencjaSP" relname="Rachunek oddziału dla rozliczeń z PFRON" />
+    <col name="StanowiPomocPubliczna" type="boolean"/>
+    <col name="DzialalnoscGospodarcza" type="boolean"/>
+    <col name="NazwaPelnomocnika" type="string" length="120" caption="Nazwa pełnomocnika"/>
+  </subrow>
+
+  <subrow name="DanePPKOddziału">
+    <col name="NumerUmowy" type="string" length="50" caption="Numer umowy" modifier="public virtual"/>
+    <col name="Upowaznieni" type="string" length="200" caption="Upoważnieni" modifier="public virtual"/>
+    <col name="PodlegaOdData" type="date" caption="Podlega od" readonly="set"/>
+    <col name="SkladkiOd" type="date" caption="Składki od"/>
+    <col name="NaliczajZeroweRaporty" type="boolean" caption="Naliczaj zerowe raporty" modifier="public virtual"/>
+  </subrow>
+
+  <subrow name="NumerRachunkuZUS">
+    <col name="Rachunek" type="RachunekBankowyPodmiotu" cstype="IRachunekBankowyPodmiotu"/>
+  </subrow>
+  <subrow name="NumerRachunkuUS">
+    <col name="Rachunek" type="RachunekBankowyPodmiotu" cstype="IRachunekBankowyPodmiotu"/>
+  </subrow>
+
+  <subrow name="DeklaracjeOddziału">
+    <col name="UrzadSkarbowy" type="UrzadSkarbowy" cstype="IKontrahent" relname="Urząd skarbowy oddziału" />
+    <col name="UrzadSkarbowyPodatek" type="UrzadSkarbowy" cstype="IKontrahent" relname="Urząd skarbowy oddziału dla podatku zryczałtowanego" />
+    <col name="PierwszyUrzadSkarbowy" type="UrzadSkarbowy" cstype="IKontrahent" relname="Urząd skarbowy właściwy w sprawach opodatkowania osób zagranicznych" modifier="public virtual"/>
+    <col name="KontrahentPomocniczyOddzial" type="Kontrahent" cstype="IPodmiot"
+				 relname="Kontrahent oddziału w centrali" description="Kontrahent pomocniczy służący do rozliczeń zobowiązań podatkowych oddziału w centrali"/>
+    <col name="KontrahentPomocniczyCentrala" type="Kontrahent" cstype="IPodmiot"
+						 relname="Kontrahent centrali w oddziale" description="Kontrahent pomocniczy służący do rozliczeń zobowiązań podatkowych centrali w oddziale"/>
+    <col name="InstytucjaFinansowaPPK" type="InstytucjaFinansowaPPK" cstype="IKontrahent" relname="Instytucja finansowa PPK oddziału" />
+    <col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual">
+      <verifier name="EuVatVerifier"/>
+    </col>
+    <col name="REGON" type="string" length="14" category="Ogólne" modifier="public virtual">
+      <verifier name="RegonVerifier"/>
+    </col>
+    <col name="KRS" type="string" length="10" category="Ogólne" modifier="public virtual"/>
+    <col name="PKD" type="string" length="15" category="Ogólne" modifier="public virtual"/>
+    <col name="Seria" type="string" length="12">
+      <verifier name="DeklaracjeOddziału.SeriaRequiredVerifier" />
+      <verifier name="DeklaracjeOddziału.SeriaUniqueVerifier" />
+    </col>
+    <col name="PIT" type="NaliczanieDeklaracjiOddziału">
+      <verifier name="DeklaracjeOddziału.SeriaRequiredVerifier" />
+    </col>
+    <col name="ZUS" type="NaliczanieDeklaracjiOddziału">
+      <verifier name="DeklaracjeOddziału.SeriaRequiredVerifier" />
+    </col>
+    <col name="PFRON" type="NaliczanieDeklaracjiOddziału">
+      <verifier name="DeklaracjeOddziału.SeriaRequiredVerifier" />
+    </col>
+    <col name="VAT" type="NaliczanieDeklaracjiOddziału">
+      <verifier name="DeklaracjeOddziału.SeriaRequiredVerifier" />
+    </col>
+    <col name="CIT" type="NaliczanieDeklaracjiOddziału">
+      <verifier name="DeklaracjeOddziału.SeriaRequiredVerifier" />
+    </col>
+    <col name="PPK" type="NaliczanieDeklaracjiOddziału">
+      <verifier name="DeklaracjeOddziału.SeriaRequiredVerifier" />
+    </col>
+    <col name="DanePFRON" type="DanePFRONOddziału"/>
+    <col name="DanePPK" type="DanePPKOddziału"/>
+    <col name="CITST" type="NaliczanieDeklaracjiOddziału">
+      <verifier name="DeklaracjeOddziału.KodGminyRequiredVerifier" />
+    </col>
+    <col name="KodGminy" type="string" length="7">
+      <verifier name="DeklaracjeOddziału.KodGminyRequiredVerifier" />
+    </col>
+    <col name="CITSTA" type="NaliczanieDeklaracjiOddziału"/>
+    <col name="DataRozpDzialalnosci" type="date"/>
+    <col name="NumerRachunkuZUS" type="NumerRachunkuZUS"/>
+    <col name="NumerRachunkuUS" type="NumerRachunkuUS"/>
+  </subrow>
+
+
+  <table name="OddzialFirmy" tablename="OddzialyFirmy" name8="Oddzialy" guided="Root" cached="true" config="true" caption="Oddział firmy" tablecaption="Oddziały firmy" >
+
+    <interface>IElementSlownika</interface>
+    <interface>IRightsSource</interface>
+    <interface>IAdresHost</interface>
+    <interface>IOddzialFirmy</interface>
+    <interface>IElementStrukturyFirmy</interface>
+
+    <key name="WgIdentyfikatora" keyunique="true" keyprimary="true">
+      <keycol name="Identyfikator" />
+    </key>
+    <key name="WgNazwySkroconej" keyunique="false">
+      <keycol name="NazwaSkrocona" />
+    </key>
+    <key name="WgSymbolu" keyunique="true">
+      <keycol name="Symbol" />
+    </key>
+
+    <col name="Identyfikator" type="string" length="80" required="true" category="Ogólne" />
+    <col name="Symbol" type="string" length="20" required="true" category="Ogólne"/>
+    <col name="NazwaSkrocona" type="string" length="80" required="true" category="Ogólne" >
+      <verifier name="OddzialFirmy.NazwaSkroconaUniqueVerifier"/>
+    </col>
+    <col name="Nazwa" type="string" length="240" category="Ogólne" />
+    <col name="SufiksNazwy" type="string" length="100" category="Ogólne" />
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="Nadrzedny" type="OddzialFirmy" readonly="set" category="Ogólne" children="Pododdzialy" keyunique="true" reldefault="true" relname="Oddzial nadrzedny oddzialu" delete="cascade" description="Oddział nadrzędny">
+      <keycol name="Identyfikator"/>
+    </col>
+    <col name="Deklaracje" type="DeklaracjeOddziału"/>
+    <col name="NumerLicencji" type="string" length="8" category="Licencja" required="false" caption="Numer licencji oddziału" description="Numer licencji z której mają być pobierane informacje do wydruków."/>
+    <col name="Slownikowy" type="boolean" category="Dodatkowe"/>
+    <col name="Dokumentowy" type="boolean" category="Dodatkowe"/>
+    <col name="Ksiegowy" type="boolean" category="Dodatkowe"/>
+    <col name="CRM" type="boolean" category="Dodatkowe"/>
+    <!-- V: 7.7; Niesie informacje dla modułu CzlonkowieSzkolenia; -->
+    <col name="CzSz" type="boolean" category="Dodatkowe"/>
+    <col name="OkresKsiegowy" type="FromTo" category="Dodatkowe"/>
+    <col name="OkresRozliczenKs" type="FromTo" category="Dodatkowe"/>
+    <col name="OkresVAT" type="FromTo" category="Dodatkowe"/>
+    <!-- V: 8.2 SKWP - Inicjalizacja przelewów -->
+    <col name="PrzelewZlecNazwa" type="string" length="53" category="Dodatkowe" />
+    <col name="PrzelewZlecAdres" type="string" length="53" category="Dodatkowe" />
+    <!-- 2010, historyczność -->
+    <col name="Okres" type="FromTo" category="Ogólne" required="true" modifier="public virtual"/>
+  </table>
+
+  <interface name="IMetrykaOddziałuFirmyHost"/>
+
+  <table name="OddzialFirmyRef" tablename="OddzialyFirmyRef" config="true" caption="Zmiana oddziału nadrzędnego" tablecaption="Zmiany oddziałów nadrzędnych">
+    <interface>IMetrykaOddziałuFirmyHost</interface>
+    <col name="Oddzial" type="OddzialFirmy" required="true" readonly="true"
+      relname="Historia podległości oddziału"
+      relguided="inner"
+      children="HistoriaPodleglosci"
+			keyclass="History" keyclasscol="Aktualnosc"
+      delete="cascade"
+      keyprimary="true"
+      keyunique="true"/>
+    <col name="Aktualnosc" type="FromTo" required="true" modifier="internal"/>
+    <col name="Nadrzedny" type="OddzialFirmy" required="true" readonly="set"
+      children="PododdzialyWgAktualnosci"/>
+  </table>
+
+  <table name="HistoriaDanychOddziału" tablename="HstDanychOddzial" guided="Root" cached="true" config="true"
+		caption="Historia danych oddziału firmy"
+		tablecaption="Historia danych oddziałów firmy"
+	>
+    <col name="Oddzial" type="OddzialFirmy" required="true" readonly="true" category="Ogólne"
+         children="HistoriaZmian"
+         keyprimary="true"
+         relguided="inner"
+         relname="Historia danych oddzału"
+         delete="cascade"
+         keyunique="true">
+      <keycol name="Termin"/>
+    </col>
+    <col name="Termin" type="date" required="true" category="Ogólne" />
+    <col name="NumerLicencji" type="string" length="8" category="Licencja"
+		    caption="Numer licencji oddziału" description="Numer licencji do weryfikacji danych oddziału.">
+      <verifier name="HistoriaDanychOddziału.NumerLicencjiVerifier" onadded="true"/>
+    </col>
+    <col name="NazwaSkrocona" type="string" length="80" required="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="240" category="Ogólne" />
+    <col name="SufiksNazwy" type="string" length="100" category="Ogólne" />
+    <col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual" caption="EU VAT">
+      <verifier name="EuVatVerifier"/>
+    </col>
+    <col name="REGON" type="string" length="14" category="Ogólne" modifier="public virtual">
+      <verifier name="RegonVerifier"/>
+    </col>
+    <col name="Adres" type="Adres"/>
+  </table>
+
+  <table name="MetrykaOddziałuFirmy" tablename="MetrykiOddzFirmy" config="true"
+		caption="Przyczyna zmiany danych oddziału firmy"
+		tablecaption="Przyczyny zmiany danych oddziałów firmy"
+	>
+    <col name="Oddzial" type="OddzialFirmy" required="true" readonly="true"
+      children="Metryka"
+      keyprimary="true"
+      relguided="inner"
+      relright="true"
+    >
+      <keycol name="Data"/>
+    </col>
+    <col name="Host" type="IMetrykaOddziałuFirmyHost" required="true" readonly="true"
+         delete="cascade"
+         keyunique="true"
+    />
+    <col name="Data" type="date" required="true" readonly="set" caption="Data zmiany"/>
+    <col name="Przyczyna" type="string" length="80" required="true" readonly="set" caption="Przyczyna zmiany"/>
+  </table>
+
+  <enum name="RodzajHistoriiFirmy"/>
+
+  <table name="HistoriaDanychFirmyBase" tablename="HstDanychFirmy" guided="Root" cached="true" config="true"
+		caption="Historia danych firmy"
+		tablecaption="Historia danych firmy"
+	>
+    <col name="Rodzaj" type="RodzajHistoriiFirmy" selector="true" required="true" category="Element" readonly="true" />
+    <key name="WgTermin" keyprimary="true" keyunique="true">
+      <keycol name="Rodzaj"/>
+      <keycol name="Termin"/>
+    </key>
+    <col name="Termin" type="date" required="true" category="Ogólne" />
+    <col name="NumerLicencji" type="string" length="8" category="Licencja"
+		    caption="Numer licencji oddziału" description="Numer licencji do weryfikacji danych oddziału."/>
+    <col name="NazwaSkrocona" type="string" length="80" required="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="240" category="Ogólne" />
+    <col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual" caption="EuVAT">
+      <verifier name="EuVatVerifier"/>
+    </col>
+    <col name="REGON" type="string" length="14" category="Ogólne" modifier="public virtual">
+      <verifier name="RegonVerifier"/>
+    </col>
+    <col name="Adres" type="Adres"/>
+  </table>
+
+  <table name="KodKreskowy" tablename="KodyKreskowe"
+		caption="Kod kreskowy"
+		tablecaption="Kody keskowe"
+	>
+    <key name="WgKodu" keyprimary="true">
+      <keycol name="Kod" />
+    </key>
+
+    <key name="WgTyp">
+      <keycol name="TypKodu"/>
+      <keycol name="PodTypKodu"/>
+    </key>
+
+    <col name="Zapis" type="IKodowany"
+			description="Zapis, do którego przypisany jest dany kod kreskowy"
+			children="KodyKreskowe"
+			relname="Kody kreskowe zapisu"
+			required="true" readonly="true" keyunique="true"
+ 			relguided="inner" relright="true" delete="cascade">
+      <keycol name="TypKodu" />
+      <keycol name="Kod" />
+      <keycol name="PodTypKodu" />
+    </col>
+    <!-- TASK: 2870. 4.5 length="20" -->
+    <col name="Kod" type="string" length="130" required="true"
+         description="Kod (może być kreskowy) do szybkiego wyszukiwania obiektów w programie.">
+      <verifier name="KodKreskowy.EANVerifier" />
+      <verifier name="KodKreskowy.EANUniqueVerifier" />
+      <verifier name="KodKreskowy.EMAILKodVerifier"/>
+    </col>
+
+    <col name="Jednostka" type="Jednostka" cstype="GuidedRow"
+			description="Jednostka przypisana do danego kodu."
+			relname="Jednostka kodu"
+		/>
+
+    <!-- 5.3 -->
+    <col name="TypKodu" type="TypKodu" readonly="true" />
+    <col name="PodTypKodu" type="PodTypKodu" caption="Rodzaj kodu">
+      <verifier name="KodKreskowy.EANVerifier" />
+      <verifier name="KodKreskowy.EANUniqueVerifier" />
+    </col>
+
+    <!-- 8.4 -->
+    <col name="Obcy" type="boolean" caption="Kod kontrahenta" description="Określa kod, który stosowany jest przez danego kontrahenta."/>
+  </table>
+
+  <!-- Mateusz - task 10771 - 7.8 - dodanie adresów WWW tak samo jak kodów kreskowych dla obiektów -->
+  <table name="AdresWWW" tablename="AdresyWWW"
+		caption="Adresy WWW"
+		tablecaption="Adresy WWW">
+
+    <key name="WgDomyslnyZapis" keyprimary="true">
+      <keycol name="Zapis" />
+      <keycol name="Domyslny"/>
+    </key>
+
+    <col name="Zapis" type="IAdresyWWWHost"
+			description="Zapis, do którego przypisany jest dany adres WWW"
+			children="AdresyWWW"
+			relname="Adresy WWW zapisu"
+			required="true" readonly="true" keyunique="true"
+ 			relguided="inner" relright="true" delete="cascade">
+      <keycol name="Adres" />
+    </col>
+
+    <col name="Adres" type="string" length="255" required="true" modifier="public virtual" caption="Adres WWW"
+         description="Adres WWW skojarzony z danym zapisem." />
+
+    <col name="Domyslny" type="boolean" required="false" caption="Domyślny" modifier="public virtual"
+         description="Czy dany adres WWW jest domyślny dla danego zapisu." />
+  </table>
+
+  <table name="Licznik" tablename="Liczniki">
+    <key name="WgNazwy" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="32" required="true" readonly="true" />
+    <col name="Ostatni" type="int"/>
+  </table>
+
+  <enum name="StronaKsiegowania"/>
+  <enum name="TypElementuKsiegowalnego"/>
+  <enum name="RodzajPodmiotu"/>
+  <enum name="StatusPodmiotu"/>
+  <enum name="TypKodu"/>
+  <interface name="IDokument"/>
+  <interface name="IDokumentKasowy" />
+  <interface name="IDokumentPlatny" />
+  <interface name="IDokumentKsiegowalny"/>
+  <interface name="IKontrahent" />
+  <interface name="IPodmiot" />
+  <interface name="IElementSlownika" />
+  <interface name="IZrodloPodzielnikaKosztow"/>
+  <interface name="IZrodloOpisuAnalitycznego"/>
+  <interface name="IRaportEwidencjiSP"/>
+  <interface name="IKodowany"/>
+  <interface name="IElementStrukturyFirmy"/>
+  <interface name="ISchematPodziałowy"/>
+  <interface name="IAdresyWWWHost"/>
+  <interface name="IProjekt"/>
+  <interface name="IProceduraVATHost"/>
+
+
+  <simpletype name="Amount">
+    <cstype>Amount</cstype>
+    <cscreator>new Amount(creator.Read_double(), creator.Read_string())</cscreator>
+    <nullcondition>value==Amount.Zero || value==Amount.Empty</nullcondition>
+    <dbfield type="double" postfix="Value" />
+    <dbfield type="string" postfix="Symbol" />
+  </simpletype>
+
+
+  <table name="KrajTbl" tablename="KrajeTbl" guided="Root" config="true" caption="Kraj" tablecaption="Kraje" >
+    <key name="WgKodu2" keyunique="true" keyprimary="true">
+      <keycol name="Kod2"/>
+    </key>
+    <key name="WgKodu3" keyunique="true">
+      <keycol name="Kod3"/>
+    </key>
+    <key name="WgKoduNum" keyunique="true">
+      <keycol name="KodNum"/>
+    </key>
+    <key name="WgNazwa" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <key name="WgObywatelstwa">
+      <keycol name="Obywatelstwo" />
+    </key>
+
+    <col name="Obywatelstwo" type="string" length="100" caption="Obywatelstwo" />
+    <col name="Kod2" type="string" length="2" required="true" caption="Kod kraju alfa-2" description="Dwuliterowy kod kraju wg standardu ISO-3166-1" >
+      <verifier name="KrajTbl.Kod2FormatVerifier" onadded="true" />
+    </col>
+    <col name="Kod3" type="string" length="3" required="true" caption="Kod kraju alfa-3" description="Trzyliterowy kod kraju wg standardu ISO-3166-1" >
+      <verifier name="KrajTbl.Kod3FormatVerifier" onadded="true" />
+    </col>
+    <col name="KodNum" type="string" length="3" required="true" caption="Kod cyfrowy kraju" description="Trzycyfrowy kod kraju wg standardu ISO-3166-1" >
+      <verifier name="KrajTbl.KodNumFormatVerifier" onadded="true" />
+    </col>
+    <col name="Nazwa" type="string" length="64" localization="dictionary" required="true" caption="Nazwa kraju" description="Nazwa kraju" />
+    <col name="SymbolWaluty" type="string" length="3" caption="Symbol waluty" description="Symbol domyślnej waluty dla kraju">
+      <verifier name="KrajTbl.WalutaFormatVerifier" onadded="true" />
+    </col>
+    <col name="UE" type="boolean" caption="Kraj UE" description="Kraj jest członkiem Unii Europejskiej" />
+    <col name="Blokada" type="boolean" caption="Blokada" description="Blokada - kraj zablokowany nie może być użyty do tworzenia nowych danych" />
+  </table>
+
+
+  <!-- ISO BEGIN -->
+
+  <table name="IsoProcedura" tablename="IsoProcedury" guided="Root" config="true" caption="Procedura ISO" tablecaption="Procedury ISO" >
+    <key name="WgNazwy" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="40" required="true" caption="Nazwa procedury" description="Nazwa procedury" />
+    <col name="Opis" type="string" length="200" caption="Opis procedury" description="Opis procedury" />
+    <col name="Blokada" type="boolean" caption="Blokada" description="Procedura zablokowana" />
+  </table>
+
+  <table name="IsoNumerProcedury" tablename="IsoNumeryProc" config="true" caption="Numer procedury ISO" tablecaption="Numery procedur ISO">
+    <col name="Procedura" type="IsoProcedura" required="true" keyunique="true" keyprimary="true" readonly="true" category="Ogólne" children="NumeryWgOddzialow" delete="cascade" relguided="inner" >
+      <keycol name="Oddzial"/>
+    </col>
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" delete="cascade" relname="NumeryOddzialu"/>
+    <col name="Numer" type="string" length="20" required="true"  category="Ogólne" />
+  </table>
+
+  <!-- ISO END -->
+
+  <!-- STRUKTURA HIERARCHICZNA BEGIN MS -->
+
+  <table name="StrukturaOrganizacyjna" tablename="StrukturyOrg" guided="Root" config="true"
+		caption="Struktura organizacyjna"
+		tablecaption="Struktury organizacyjne"
+	>
+    <interface>IRightsSource</interface>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="50" required="true" category="Ogólne" localization="dictionary"/>
+    <col name="Blokada" type="boolean" category="Ogólne" />
+    <col name="Xml" type="text" category="Definicja" caption="Definicja zakładki użytkownika." />
+    <col name="Algorytm" type="text" category="Ogólne">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+
+    <!--[17136][9.3][Workflow 9.3]: Prezentacja struktur organizacyjnych w drzewie folderow programu-->
+    <col name="PublikujWDrzewie" type="boolean" category="Ogólne" caption="Publikuj w drzewie" description="Określa czy definicja ma zostać opublikowana w folderze Struktury"/>
+
+    <!--[17566][9.3][Workflow 9.3]: Struktury - historyczność-->
+    <col name="Historycznosc" type="boolean" category="Historyczność" caption="Historyczność" description="Określa czy definicja ma przechowywać historię struktury"/>
+
+    <!--[17137][9.3][Workflow 9.3]: Parametr ekskluzywności rekordów na definicji struktury-->
+    <col name="Ekskluzywnosc" type="boolean" category="Ogólne" caption="Ekskluzywność powiązań" description="Określa czy powiązania struktury organizacyjnej mogą wystąpić kilka razy dla tej struktury"/>
+
+    <!--[17137][9.3][Workflow 9.3]: Elementy struktury i struktura nie są widoczne na standardowych listach-->
+    <col name="Systemowa" type="boolean" readonly="set" category="Ogólne" caption="Struktura systemowa" description="Struktura jest w całości zarządzana z poziomu kodu i niedostępna na oknach."/>
+
+    <col name="HistoriaPodleglosci" type="boolean" category="Historyczność" caption="Historia podległości" description="Określa czy definicja ma przechowywać historię struktury" modifier="public virtual"/>
+    <col name="OkresPowiazania" type="boolean" category="Historyczność" caption="Okres powiązania" description="Określa czy powiązanie ma obsługiwać okres ważności." modifier="public virtual"/>
+    <col name="KontrolaPraw" type="string" length="16" modifier="protected"/>
+  </table>
+
+  <table name="DefinicjaElementuStrukturyOrganizacyjnej" tablename="DefElStrukturOrg" guided="Root" config="true"
+		caption="Definicja elementu struktury organizacyjnej"
+		tablecaption="Definicje elementów struktur organizacyjnych"
+	>
+    <col name="Struktura" type="StrukturaOrganizacyjna" category="Ogólne" required="true" readonly="true"
+      relguided="inner"
+      relright="true"
+      delete="cascade"
+      children="DefinicjeElementów"
+      keyunique="true"
+			relname="Definicje elementów struktury organizacyjnej">
+      <keycol name="Nazwa"/>
+    </col>
+    <col name="Nazwa" type="string" length="50" required="true" category="Ogólne" localization="dictionary"/>
+    <col name="DozwolonePowiazania" type="boolean"/>
+    <col name="Warunek1" type="boolean"/>
+    <col name="Warunek2" type="boolean"/>
+    <col name="Warunek3" type="boolean"/>
+    <col name="Warunek4" type="boolean"/>
+    <col name="Warunek5" type="boolean"/>
+
+    <!--[17588][9.3][Workflow 9.3]: Dodać property określające typ rekordu jaki może zostać podpięty pod strukturę-->
+    <col name="TypZrodlaPowiazania" type="string" length="100" category="Ogólne" caption="Typ obiektu źródła" description="Określa typ obiektu źródła powiązania" />
+  </table>
+
+  <table name="ElementStrukturyOrganizacyjnej" tablename="ElementyStrOrg" guided="Root" config="false"
+		caption="Element struktury organizacyjnej"
+		tablecaption="Elementy struktur organizacyjnych"
+	>
+
+    <interface>IPermissionClient</interface>
+
+    <key name="WgKodu" keyunique="true" >
+      <keycol name="Struktura"/>
+      <keycol name="Kod" />
+      <keycol name="Nazwa"/>
+      <keycol name="Nadrzedny" />
+      <keycol name="Okres.From" />
+      <keyinclude name="Okres.To" />
+    </key>
+
+    <key name="WgKodu2">
+      <keycol name="Kod" />
+    </key>
+
+    <col name="Struktura" type="StrukturaOrganizacyjna" category="Ogólne" required="true" readonly="true" keyprimary="true" keyunique="true"
+		  relright="true"
+		  children="Elementy"
+		  relname="Definicje elementów struktury organizacyjnej">
+      <keycol name="Nazwa"/>
+      <keycol name="Kod" />
+      <keycol name="Nadrzedny" />
+      <keycol name="Okres.From" />
+      <keyinclude name="Okres.To" />
+      <verifier name="ElementStrukturyOrganizacyjnej.UnikalnoscVerifier" onadded="true" />
+      <verifier name="ElementStrukturyOrganizacyjnejSystemUserGroupVerifier" onadded="true"/>
+    </col>
+
+    <col name="Nadrzedny" type="ElementStrukturyOrganizacyjnej" category="Ogólne"
+		  children="Elementy"
+		  delete="cascade"
+		  readonly="set"
+		  relright="true"
+		  relname="Zależne elementy struktury organizacyjnej">
+      <keycol name="Struktura"/>
+      <verifier name="ElementStrukturyOrganizacyjnej.UnikalnoscVerifier" onadded="true" />
+      <verifier name="ElementStrukturyOrganizacyjnejSystemUserGroupVerifier" onadded="true"/>
+    </col>
+
+    <col name="Definicja" type="DefinicjaElementuStrukturyOrganizacyjnej" category="Ogólne" required="true" relname="Elementy struktury organizacyjnej wg definicji">
+      <verifier name="ElementStrukturyOrganizacyjnejSystemUserGroupVerifier" onadded="true"/>
+    </col>
+    <col name="Kod" type="string" length="20" category="Ogólne" required="true">
+      <verifier name="ElementStrukturyOrganizacyjnej.UnikalnoscVerifier" onadded="true" />
+      <verifier name="ElementStrukturyOrganizacyjnejSystemUserGroupVerifier" onadded="true"/>
+    </col>
+    <col name="Nazwa" type="string" length="100" category="Ogólne" required="true">
+      <verifier name="ElementStrukturyOrganizacyjnej.UnikalnoscVerifier" onadded="true" />
+      <verifier name="ElementStrukturyOrganizacyjnejSystemUserGroupVerifier" onadded="true"/>
+    </col>
+    <col name="NazwaPomocnicza" type="string" length="100" category="Ogólne"/>
+
+    <!--[17566][9.3][Workflow 9.3]: Struktury - historyczność-->
+    <col name="Okres" type="FromTo" category="Historyczność" caption="Okres" description="Okres obowiązywania elementu struktury organizacyjnej" readonly="set">
+        <attribute>Browsable(false)</attribute>
+      <verifier name="ElementStrukturyOrganizacyjnej.UnikalnoscVerifier" onadded="true" />
+      <verifier name="ElementStrukturyOrganizacyjnejSystemUserGroupVerifier" onadded="true"/>
+    </col>
+
+    <col name="KontrolaPraw" type="IRightsSource" modifier="public virtual"/>
+  </table>
+
+  <table name="ElementStrukturyOrganizacyjnejRef" tablename="ElementyStOrgRef" caption="Zmiana elementu nadrzędnego" tablecaption="Zmiany elementów nadrzędnych">
+    <col name="Element" type="ElementStrukturyOrganizacyjnej" required="true" readonly="true"
+      relguided="inner"
+      children="HistoriaPodleglosci"
+			keyclass="History" keyclasscol="Aktualnosc"
+      delete="cascade"
+      keyprimary="true"
+      keyunique="true"/>
+    <col name="Aktualnosc" type="FromTo" required="true" modifier="internal"/>
+    <col name="Nadrzedny" type="ElementStrukturyOrganizacyjnej" required="true" readonly="set"
+      children="PodelementyWgAktualnosci"/>
+  </table>
+
+  <interface name="IŹródłoPowiązaniaStrukturyOrganizacyjnej"/>
+
+  <table name="PowiązanieStrukturyOrganizacyjnej" tablename="PowiazaniaStrOrg"
+     caption="Powiązanie z elementem struktury organizacyjnej"
+     tablecaption="Powiązania elementyów struktur organizacyjnych"
+	>
+    <col name="Element" type="ElementStrukturyOrganizacyjnej" category="Ogólne"
+      children="Powiązania"
+      readonly="true"
+      relright="true"
+      keyunique="false"
+      keyprimary="true"
+			relname="Powiązania elementu struktury organizacyjnej">
+      <keycol name="Zrodlo"/>
+      <keycol name="Okres.To"/>
+      <keyinclude name="Okres.From"/>
+    </col>
+    <col name="Zrodlo" type="IŹródłoPowiązaniaStrukturyOrganizacyjnej" category="Ogólne"
+      children="PowiązaniaStrOrg"
+      readonly="true"
+      relright="true"
+      relguided="inner"
+      delete="cascade"
+			relname="Powiązania źróła struktury organizacyjnej"/>
+    <!-- 2010, historyczność -->
+    <col name="Okres" type="FromTo" category="Ogólne" required="true" modifier="public virtual">
+      <verifier name="PowiązanieStrukturyOrganizacyjnej.OkresRequiredVerifier" onadded="true"/>
+    </col>
+
+  </table>
+
+
+
+
+
+  <enum name="DostepnoscTeczki"/>
+  <table name="DefTeczki" tablename="DefsTeczek" config="true" tablecaption="Definicje teczek" caption="Definicja teczki" guided="Root">
+    <interface>IRightsSource</interface>
+    <key name="WgSymbol" keyunique="true" keyprimary="true">
+      <keycol name="Symbol"/>
+    </key>
+    <col name="Symbol" type="string" length="16" required="true" category="Ogólne" important="true" caption="Symbol" description="Skrótowa nazwa definicji, wykorzystywana do wyszukiwania definicji oraz numeracji teczek." />
+    <col name="Nazwa" type="string" length="128" required="true" category="Ogólne" important="true" caption="Nazwa" localization="dictionary" description="Pełna nazwa definicji." />
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" caption="Numeracja" description="Ustawienia określające sposób numeracji." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie definicji." />
+    <col name="Dostepnosc" type="DostepnoscTeczki"  category="Ogólne"  caption="Dostepność teczki" description="Określa typ dostepności teczki."  />
+    <col name="FormularzUzytkownika" type="boolean" category="Ogólne" caption="Formularz użytkownika" description="Formularz użytkownika." />
+    <col name="NazwaZakladkiUz" type="string" length="50" category="Ogólne" caption="Nazwa zakładki użytkownika" />
+    <col name="XmlForm" type="text" category="Definicja" caption="Definicja zakładki użytkownika." />
+  </table>
+
+
+  <table name="StanTeczki" tablename="StanyTeczek" name8="StanTec" config="true" tablecaption="Stany teczek" caption="Stan teczki">
+
+    <key name="WgNazwaDefinicja">
+      <keycol name="Nazwa"/>
+      <keycol name="Definicja" />
+    </key>
+
+    <col name="Definicja" type="DefTeczki" required="true" readonly="true" category="Ogólne" description="Definicja teczki, do której jest przypisany ten stan"
+         children="Stany" relname="Definicja teczki" delete="cascade" relguided="inner"
+         relright="false" keyprimary="true" keyclass="Lp" keyclasscol="Lp" />
+
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa stanu ." />
+
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" localization="dictionary" description="Nazwa stanu" />
+    <col name="Aktywny" type="boolean" category="Ogólne" caption="Aktywny" description="Wskazuje, czy teczka w tym stanie jest aktywne (otwarte)." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowany"  description="Określa zablokowanie stanu." />
+
+  </table>
+
+  <table name="Teczka" tablename="Teczki" tablecaption="Teczki" caption="Teczka" guided="Root" name8="Teczki">
+
+    <interface>IPermissionClient</interface>
+
+    <col name="Definicja" type="DefTeczki" required="true" setonlynull="true" category="Numer"
+         description="Definicja teczki"  relname="Definicja teczki" relright="true" />
+
+    <key name="WgNazwy" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+
+    <col name="Stan" type="StanTeczki" category="Ogolne" description="Stan teczki." />
+    <col name="Aktywny" type="boolean" category="Ogolne" readonly="set" caption="Aktywny" description="Wskazuje, czy teczka w tym stanie jest aktywna (otwarta)." />
+    <col name="Numer" type="NumerDokumentu" category="Numer" />
+
+    <col name="Nazwa" type="string" length="128" category="Ogolne" required="true" caption="Nazwa teczki" description="Krótka nazwa teczki, na podstawie której będzie można ją wyszukiwać">
+      <attribute>Dictionary("Core.Tcz.Nazwa", ManualList=true)</attribute>
+    </col>
+
+    <col name="Opis" type="text" category="Ogolne" caption="Opis" description="Dokładny opis teczki" />
+    <col name="Wlasciciel" type="Operator" category="Ogólne" description="Właściciel teczki" />
+  </table>
+
+  <table name="ElemTeczki" tablename="ElemTeczek" tablecaption="Elementy teczek" caption="Element teczki" name8="ETeczki">
+
+    <col name="Teczka" type="Teczka" required="true" description="Teczka do której należy element" delete="cascade"
+         children="Elementy" relname="Elementy teczki" relguided="true" category="Ogólne" keyclass="Lp" keyclasscol="Lp"/>
+
+    <col name="Element" type="IGuidedRow" keyprimary="true"
+         description="Element teczki" keyunique="true" category="Ogólne">
+      <keycol name="Teczka"/>
+    </col>
+
+    <col name="Nazwa" type="string" length="255" category="Ogólne" required="true" caption="Nazwa, opis elementu" description="Krótka nazwa, opis elementu." />
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa elementu w ramach teczki."/>
+    <col name="Data" type="date" category="Ogólne" caption="Data elementu" description="Data elementu" />
+  </table>
+
+  <!-- DANE KONTAKTOWE -->
+
+  <enum name="TypRodzajuKontaktu"/>
+  <table name="RodzajKontaktu" tablename="RodzajeKontaktow" config="true" name8="RodzKnt" tablecaption="Rodzaj kontaktu" caption="Rodzaj kontaktu" guided="Root">
+
+    <key name="WgNazwa" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+
+    <col name="Nazwa" type="string" length="64" required="true" localization="dictionary" category="Ogólne" important="true" caption="Nazwa rodzaju kontaktu"
+         description="Nazwa rodzaju kontaktu." />
+
+    <col name="Typ" type="TypRodzajuKontaktu" category="Ogólne" caption="Typ rodzaju kontaktu" description="Określa typ rodzaju kontaku."/>
+  </table>
+
+  <interface name="IDaneKontaktoweHost" />
+  <table name="DaneKontaktowe" tablename="DaneKnt" name8="DaneKnt" tablecaption="Dane kontaktowe" caption="Dane kontaktowe">
+
+    <key name="WgKontakt" keyprimary="true" >
+      <keycol name="Kontakt"/>
+    </key>
+
+    <col name="Rodzaj" type="RodzajKontaktu" required="true" category="Ogólne" setonlynull="true" caption="Rodzaj kontaktu" description="Rodzaj kontaktu.">
+    </col>
+    <col name="Kontakt" type="string" length="128" required="true" category="Ogólne" caption="Kontakt" description="Kontakt." />
+    <col name="Opis" type="string" length="255" category="Ogólne" caption="Opis" description="Krótki opis kontaktu." />
+    <col name="Domyslny" type="boolean" category="Ogólne" caption="Domyślny" description="Określa domyślny kontakt." />
+    <col name="Host" type="IDaneKontaktoweHost" required="true" category="Ogólne" caption="Host kontaktu" description=""
+         relname="Kontakty" children="Kontakty" delete="cascade" relguided="inner">
+      <keycol name="Rodzaj" />
+      <keycol name="AdresExt" />
+      <attribute>Context(Required=false)</attribute>
+    </col>
+    <col name="AdresExt" type="AdresExt" caption="Adres" required="false" category="Ogólne" delete="cascade">
+      <keycol name="Rodzaj" />
+    </col>
+
+  </table>
+
+
+  <table name="CelKontaktu" tablename="CeleKontaktow" name8="CeleKnt" tablecaption="Cele kontaktów" caption="Cel kontaktu">
+
+    <col name="DaneKontaktowe" type="DaneKontaktowe"  category="Ogólne" caption="Dane kontaktowe" description="Dane kontaktowe"
+         children="CeleKontaktu" relname="Cele kontaktu" keyprimary="true" relright="true" keyunique="true" required="true"
+         delete="cascade"
+         >
+      <keycol name="Cel"/>
+    </col>
+
+    <col name="Cel" type="SlownikElem"  category="Ogólne" caption="Cel" description="Cel kontaktu" required="true"/>
+
+  </table>
+
+  <enum name="SelektorSlownika" />
+
+  <table name="SlownikElem" config="true" tablename="Slowniki" name8="Slownik" guided="Root" caption="Słownik">
+
+    <key name="WgKategoria" keyprimary="true" keyunique="true">
+      <keycol name="Kategoria"/>
+      <keycol name="Nazwa"/>
+    </key>
+
+    <key name="WgNazwa">
+      <keycol name="Nazwa"/>
+    </key>
+
+    <col name="Nadrzedny" type="SlownikElem" description="Określa nadrzędny obiekt słownikowy"
+			relname="Nadrzedny"
+			delete="cascade"
+         children="Podrzędne"
+      />
+
+    <col name="Selektor" type="SelektorSlownika"  selector="true" required="true"  readonly="true" caption="Selektor słownika"
+        description="Selektor słownika." />
+
+    <col name="Kategoria" type="string" length="32" required="true" readonly="true" caption="Nazwa słownika"
+			description="Nazwa słownika, do którego należy dany element." />
+
+    <col name="Kod" type="string" length="32" caption="Kod" description="Kod elementem słownika." />
+    <col name="Nazwa" type="string" length="128" caption="Nazwa" localization="dictionary" description="Nazwa elementu słownika." />
+    <col name="Liczba" type="int" caption="Liczba" description="Wartość liczbowa elementu słownika." />
+    <col name="Domyslny" type="boolean" caption="Wartość domyślna" description="Wartość domyślna w ramach kategorii"/>
+    <col name="Blokada" type="boolean" caption="Blokada" description="Blokuje element słownika przy wyborze." modifier="public virtual"/>
+  </table>
+
+  <table name="SlownikZewn" config="true" tablename="SlownikiZewn" guided="Root" caption="Słownik zewnętrzny">
+    <key name="WgRodzaj" keyprimary="true" keyunique="true">
+      <keycol name="Rodzaj"/>
+      <keycol name="Nazwa"/>
+    </key>
+
+    <key name="WgNazwa">
+      <keycol name="Nazwa"/>
+    </key>
+
+    <col name="Nadrzedny" type="SlownikZewn" description="Nadrzędny słownik zewnętrzny" relname="Nadrzedny" delete="cascade" children="Podrzedne"/>
+    <col name="Rodzaj" type="string" description="Rodzaj słownika zewnętrznego" length="128" required="true"/>
+    <col name="ZapisZewn" type="string" length="128" caption="Obiekt z systemu zewnętrznego" description="Wskazanie na obiekt z systemu zewnętrzenego" required="true"/>
+    <col name="Nazwa" type="string" length="256" required="true" description="Nazwa słownika zewnętrznego"/>
+    <col name="Parametry" type="string" length="1000" description="Dodatkowe parametry"/>
+  </table>
+
+  <interface name="IElementSlownikZewnRel"/>
+  <table name="SlownikZewnRel" tablename="SlownikiZewnRel" tablecaption="SlownikiZewnRel">
+    <col name="SlownikZewn" keyprimary="true" type="SlownikZewn" description="Słownik zewnętrzy" delete="cascade" required="true"/>
+    <col name="Element" type="IElementSlownikZewnRel" description="Obiekt wewnętrzny" keyunique="true" delete="cascade" required="true">
+      <keycol name="SlownikZewn"/>
+    </col>
+  </table>
+
+  <!-- STRUKTURA HIERARCHICZNA END -->
+
+    <enum name="StandardDefXml" />
+    <enum name="SelektorDefXml" />
+    <enum name="RodzajZrodlaDanychDefXml"/>
+
+    <table name="DefXmlNag" tablename="DefsXmlNag" name8="DefsXmlN" guided="Root" config="true" tablecaption="Definicje XML" caption="Definicja XML" >
+
+        <key name="WgNazwa" keyprimary="true" keyunique="true">
+            <keycol name="Nazwa"/>
+        </key>
+        <key name="WgTableName" >
+            <keycol name="TableName"/>
+        </key>
+        <key name="WgSelektor" >
+            <keycol name="Selektor"/>
+        </key>
+
+        <col name="Selektor" type="SelektorDefXml" selector="true" required="true" readonly="true" caption="Selektor definicji" description="Selektor definicji."/>
+        <col name="Nazwa" type="string" length="80" localization="dictionary" category="Ogólne" required="true" caption="Nazwa definicji" description="Krótka nazwa definicji XML." />
+        <col name="TableName" type="string" length="16" required="true" setonlynull="true" category="Ogólne" caption="Klasa" description="Klasa obiektu."/>
+        <col name="Standard" type="StandardDefXml" category="Ogólne" />
+        <col name="Rodzaj" type="RodzajDefXml" required="true" category="Ogólne" />
+        <col name="Blokada" type = "boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie definicji." />
+        <col name="PlikSzablonu" type="string" length="255" category="Ogólne" caption="Plik szabolnu" />
+        <col name="RodzajZrodlaDanych" type="RodzajZrodlaDanychDefXml" caption="Rodzaj źródła danych" category="Ogólne" description="Określa rodzaj źródła danych." />
+        <col name="KodowanieZnakow" type="int" caption="Kodowanie znaków" category="Ogólne" description="Określa sposób kodowania znaków (strona kodowa)." />
+        <col name="Opis" type="text" caption="Opis" category="Ogólne" description="Opis definicji." />
+        <col name="ExpandInteger" type="int" modifier="protected" description="Pole liczbowe do wykorzystania per rodzaj definicji." />
+        <col name="ExpandInteger2" type="int" modifier="protected" description="Pole liczbowe do wykorzystania per rodzaj definicji." />
+        <col name="LocalXSD" type="string" length="200" category="Ogólne" caption="Scieżka do pliku XSD" >
+          <attribute>ControlEdit(ControlEditKind.PathPropertyExpression)</attribute>
+        </col>
+    </table>
+
+  <enum name="ElementType" />
+  <enum name="PoleSpecjalne" />
+  <table name="DefXmlElem" tablename="DefsXmlElem" name8="DefsXmlE" guided="Root" config="true"
+         tablecaption="Elementy definicji XML" caption="Element definicji XML">
+
+    <col name="DefXmlNag" type="DefXmlNag" required="true" category="Ogólne"
+          description="Definicja XML, z którą powiązany jest element"
+          children="DefsXmlElem"
+          relname="DefsXmlElem"
+          delete="cascade"
+          keyprimary="true"
+         keyunique="true"
+         relguided="inner"
+         >
+      <keycol name="Nadrzedny"/>
+      <keycol name="Element"/>
+    </col>
+
+    <col name="Lp" type="int" batchfield="false" required="true"/>
+
+    <col name="Element" type="string" length="80" category="Ogólne" required="true" caption="Nazwa elementu" description="Nazwa elementu.">
+      <verifier name="DefXmlElem.DefXmlElemElementVerifier" onadded="true"/>
+      <verifier name="DefXmlElem.DefXmlElemKSeFVerifier"/>
+    </col>
+
+    <col name="Nadrzedny" type="DefXmlElem" category="Ogólne" caption="Element nadrzędny" description="Określa nadrzędny element."
+     lock="ExclusiveGet" children="Podrzedne" relname="ElementyPodrzedne" delete="cascade" >
+      <keycol name="Lp" />
+    </col>
+
+    <col name="TableName" type="string" length="16" required="true" category="Ogólne" caption="Klasa" description="Klasa obiektu."/>
+    <col name="CodeExport" type="text" category="Ogólne" caption="Kod eksportu" description="Kod dla eksportu."/>
+    <col name="CodeImport" type="text" category="Ogólne" caption="Kod importu" description="Kod dla importu."/>
+    <col name="CodeVisible" type="text" category="Ogólne" caption="Kod widoczności" description="Kod widoczności elementu."/>
+    <col name="Code" type="text" category="Ogólne" caption="Pozostały kod" description="Pozostały kod."/>
+    <col name="Type" type="ElementType" category="Ogólne" caption="Typ elementu" description="Określa typ obiektu tworzonego przy przekształcaniu elementu."/>
+    <col name="Specjalne" type="PoleSpecjalne" category="Ogólne" caption="Przeznaczenie elementu" description="Określa specjalne przeznaczenie danego elementu."/>
+    <col name="Opis" type="text" caption="Opis" category="Ogólne" description="Opis elementu definicji." />
+  </table>
+
+  <interface name="IImportExportXmlHost"/>
+  <enum name="RodzajOperacji"/>
+  <table name="ImportExportXml" tablename="ImpExpXml" caption="Importy, eskporty" tablecaption="Importy, eksporty XML">
+    <col name="Host" type="IImportExportXmlHost"  required="true" caption="Obiekt, którego dotyczy import/eksport"
+         keyunique="true" keyprimary="true" delete="cascade" />
+    <col name="DefinicjaXmlNag" type="DefXmlNag"  required="true" caption="Definicja wykorzystana do importu/eksportu." />
+    <col name="Plik" type="string" length="255" required="true" caption="Plik importu/eksportu"/>
+    <col name="Rodzaj" type="RodzajOperacji" caption="Rodzaj operacji" description="Rodzaj operacji." />
+    <col name="Xml" type="text" category="Ogólne" caption="Przetworzony dokument XML" description=""/>
+  </table>
+
+  <interface name="IDefinicjaKomunikatuEDIHost"/>
+  <table name="RodzajKomunikatuHost" tablename="RodzajeKomHost" caption="Rodzaj komunikatu" tablecaption="Rodzaje komunikatów">
+    <col name="Host" type="IDefinicjaKomunikatuEDIHost"  required="true" caption="Obiekt, dla którego zdefionowano komunikat"
+         keyprimary="true" delete="cascade" keyclass="Lp"	keyclasscol="Lp" children="RodzajeKomunikatow" relname="Rodzaje komunikatow">
+      <attribute>Context</attribute>
+    </col>
+
+    <col name="Rodzaj" type="RodzajDefXml" caption="Rodzaj komunikatu" description="Rodzaj definiowanego komunikatu." required="true" />
+    <col name="Kierunek" type="RodzajOperacji" caption="Kierunek komunikatu" description="Kierunek definiowanego komunikatu." required="true" />
+    <col name="Lp" type="int" required="true" batchfield="false"/>
+  </table>
+
+    <table name="KomunikatAPI" tablename="KomunikatyAPI" tablecaption="KomunikatyAPI">
+    <key name="WgDocumentID" keyprimary="true">
+      <keycol name="documentID" />
+    </key>
+    <col name="documentID" type="string" length="52" required="true" description="ID nadane przez api"/>
+    <col name="documentType" type="int" required="true" description="Typ dokumentu."/>
+    <col name="msgID" type="string" length="52" required="true" description="ID komunikatu nadane przez api"/>
+    <col name="systemZewn" type="SystemZewn" required="true" description="System Zewnętrzny."/>
+  </table>
+
+  <table name="DefXmlFiltr" tablename="DefXmlFiltry" tablecaption="Filtry dla komunikatów." caption="Filtr dla komunikatu" >
+    <key name="WgNazwaOperator" keyprimary="true" keyunique="true">
+      <keycol name="Tabela"/>
+      <keycol name="Operator"/>
+    </key>
+    <col name="Operator" type="Operator" category="Ogólne" description="Operator, do którego przypisano filtr." />
+    <col name="Tabela" type="string" length="32" required="true" caption="Tabela danych, do której przypisano filtr." />
+    <col name="Filtr" type="string" length="255" required="true" caption="Filtr."/>
+  </table>
+
+  <enum name="TypSystemuZewn"/>
+  <table name="SystemZewn" tablename="SystemyZewn" config="true" guided="Root"
+        caption="System zewnętrzny" tablecaption="Lista systemów zewnętrznych">
+    <key name="WgSymbol" keyprimary="true" keyunique="true">
+      <keycol name="Symbol"/>
+    </key>
+    <key name="WgTyp" keyunique="false">
+      <keycol name="Typ"/>
+      <keycol name="Domyslny"/>
+    </key>
+    <col name="Typ" type="TypSystemuZewn"  selector="true" readonly="true"
+         category="Ogólne" caption="Typ systemu" description="Typ systemu zewnętrznego" required="true"/>
+    <col name="Symbol" type="string" length="16" required="true"
+         category="Ogólne" caption="Symbol" description="Symbol dokumentu" />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Blokada" description="Blokada systemu zewnętrznego"/>
+    <col name="Domyslny" type="boolean" category="Ogólne" caption="Domyślny"/>
+    <col name="Opis" type="text" category="Ogólne" caption="Opis" description="Opis systemu zewnętrznego" />
+    <col name="Kontrahent" type="IKontrahent" category="Ogólne" caption="Kontrahent" description="Kontrahent związany z systemem zewnętrznym" />
+  </table>
+
+  <table name="SysZewnStatus" tablename="SysZewnStatusy">
+      <col name="StatusPrzed" length="50" type="string" caption="Status w systemie zewnętrznym" required="true" />
+      <col name="Nazwa" length="100" type="string" caption="Nazwa statusu" required="true" />
+      <col name="StatusPo" length="50" type="string" caption="Status po w systemie zewnętrznym" />
+      <col name="Pobieranie" type="boolean" description="Zamówienia z tym statusem będą pobrane i przetworzone." />
+      <col name="SystemZewn" caption="System zewnętrzny" delete="cascade" type="SystemZewn" children="SysZewnStatusy" required="true" />
+  </table>
+
+  <table name="SysZewnUsDodatkowa" tablename="SysZewnUsDod">
+    <col name="SystemZewn" caption="System zewnętrzny" delete="cascade" type="SystemZewn" children="UslugiDodatkowe" required="true"/>
+    <col name="UslugaDodatkowa" caption="Usługa dodatkowa" type="SlownikElem" required="true" keyprimary="true" keyunique="true">
+      <keycol name="SystemZewn" />
+    </col>
+  </table>
+
+    <enum name="GetRestriction" />
+    <table name="SystemZewnDefXmlNag" tablename="SysZewnDefXmls" config="true"
+           caption="Powiązanie systemu zewnętrznego z defnicją XML">
+        <col name="SystemZewn" type="SystemZewn" children="DefinicjeXml" relname="Definicje XML" keyprimary="true" keyunique="true" setonlynull="true" required="true"
+             delete="cascade">
+            <keycol name="DefXmlNag" />
+            <attribute>Context</attribute>
+        </col>
+        <col name="DefXmlNag" type="DefXmlNag" caption="Definicja" />
+        <col name="Get" type="GetRestriction" caption="Pobieranie" />
+        <col name="Update" type="boolean" caption="Aktualizacja" />
+    </table>
+
+  <table name="SysZewnImpDef" tablename="SysZewnImpDefs"
+    caption="Element definicji pobierania danych" tablecaption="Elementy definicji pobierania danych">
+    <key name="WgSymbol" keyprimary="true" keyunique="true">
+      <keycol name="Symbol"/>
+    </key>
+    <col name="Symbol" type="string" length="16" required="true" />
+    <col name="Tabela" type="string" length="16" caption="Tabela" required="true">
+      <keycol name="Tabela" />
+    </col>
+    <col name="Akcja" type="string" length="32" caption="Akcja" required="true"/>
+    <col name="Priorytet" type="int" caption="Priorytet" required="true"/>
+    <col name="DownloadSchema" type="string" length="80" caption="Schemat pobierania" required="true" modifier="public virtual"/>
+    <col name="UpdateSchema" type="string" length="80" caption="Schemat aktualizacji" required="true"/>
+    <col name="AfterSyncSchema" type="string" length="80" caption="Schemat usuwania zadań synchronizacji" required="true"/>
+  </table>
+
+  <table name="RelacjaZewn" tablename="RelacjeZewn"
+        caption="Relacja zewnętrzna" tablecaption="Powiązania obiektów programu z obiektami z systemów zewnętrznych">
+
+    <col name="SystemZewn" type="SystemZewn" category="Ogólne" required="true"
+         caption="System zewnętrzny" description="Wskazanie na system zewnętrzny" keyprimary="true">
+      <keycol name="Zapis" />
+    </col>
+
+    <col name="Zapis" type="guid" category="Ogólne" caption="Identyfikator obiektu programu" description="Wskazanie na obiekt programu"/>
+    <col name="ZapisTabela" type="string" length="16" category="Ogólne" caption="Typ obiektu programu" description="Typ obiektu programu"/>
+    <key name="WgZapis" >
+      <keycol name="ZapisTabela"/>
+      <keycol name="Zapis"/>
+      <keycol name="ZapisZewnTyp"/>
+    </key>
+
+    <col name="ZapisZewn" type="string" length="64" category="Ogólne" caption="Obiekt z systemu zewnętrznego" description="Wskazanie na obiekt z systemu zewnętrzenego"/>
+    <col name="ZapisZewnTyp" type="string" length="80" category="Ogólne" caption="Rodzaj typu zewnętrznego" required="false"/>
+    <key name="WgZapisZewn">
+      <keycol name="ZapisTabela"/>
+      <keycol name="ZapisZewn"/>
+      <keycol name="ZapisZewnTyp"/>
+    </key>
+    <col name="Info" type="string" length="256" category="Ogólne" caption="Info" description="Dodatkowe informacje" />
+  </table>
+
+  <table name="ZadanieZewnSynch" tablename="ZadaniaZewnSynch"
+         caption="Zadanie synchronizacji" tablecaption="Zadania do synchronizacji">
+
+      <key name="WgTabela">
+          <keycol name="ZapisTabela" />
+          <keycol name="SystemZewn" />
+      </key>
+
+    <col name="SystemZewn" type="SystemZewn" caption="System zewnętrzny" description="Wskazanie na system zewnętrzny"
+          required="true" keyprimary="true">
+      <keycol name="Zapis" />
+    </col>
+
+    <col name="Zapis" type="guid" category="Ogólne" caption="Identyfikator obiektu programu" description="Wskazanie na obiekt programu"/>
+    <col name="ZapisTabela" type="string" length="16" category="Ogólne" caption="Typ obiektu programu" description="Typ obiektu programu"/>
+    <col name="Akcja" type="string" length="32" category="Ogólne" caption="Akcja" description="Rodzaj zadania synchronizacji" />
+    <col name="Data" type="datetime" category="Ogólne" caption="Data" description="Data zarejestrowania zadania" />
+    <col name="Info" type="string" length="256" category="Ogólne" caption="Info" description="Dodatkowe informacje" />
+  </table>
+
+  <enum name="RodzajElementuESklepu"/>
+  <interface name="IElemSysZewnHost"/>
+  <table name="ElemSysZewn" tablename="ElementySysZewn" caption="Elementy systemu zewnętrznego">
+    <col name="SystemZewn" keyprimary="true" type="SystemZewn" children="ElementySysZewn" readonly="true" delete="cascade" required="true" caption="System zewnętrzny"/>
+    <col name="Element" keyunique="true" type="IElemSysZewnHost" delete="cascade" caption="Element" required="true" readonly="false" setonlynull="true">
+      <keycol name="SystemZewn"/>
+      <keycol name="Rodzaj"/>
+    </col>
+    <col name="Domyslny" type="boolean" caption="Domyślny"/>
+    <col name="ElementZewn" type="string" length="64" category="Ogólne" caption="Obiekt z systemu zewnętrznego" description="Wskazanie na obiekt z systemu zewnętrzenego"/>
+    <col name="Rodzaj" readonly="true" required="true" type="RodzajElementuESklepu" caption="Rodzaj danych elementu"/>
+  </table>
+  <!-- DbTuples -->
+
+  <enum name="FolderPaths"/>
+  <enum name="AttachToBasicDokumentType"/>
+  <enum name="CreateProcessType"/>
+  <enum name="WidocznoscType"/>
+
+  <table name="DbTupleDefinition" tablename="TuplesDefs" guided="Root" config="true"
+         caption="Definicja dokumentu dodatkowego" tablecaption="Definicje dokumentów dodatkowych"
+  >
+    <interface>IRuntimeRowDefinition</interface>
+    <interface>IRightsSource</interface>
+    <interface>IManagedRowDefinion</interface>
+
+    <key name="WgNazwa" keyunique="true" keyprimary="true">
+      <keycol name="NazwaTabeli"/>
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="NazwaTabeli" type="string" length="16" required="true" readonly="true"
+         category="Ogólne" caption="Klasa" description="Klasa obiektu nadrzędanego"/>
+    <col name="Nazwa" type="string" length="70" localization="dictionary" required="true" important="true"
+         category="Ogólne" caption="Nazwa" description="Nazwa dokumentu"/>
+    <col name="FormatedName" type="string" length="70" localization="dictionary" required="true" important="true"
+         category="Ogólne" caption="Nazwa formatowana" description="Nazwa formatowana dokumentu"/>
+    <col name="Symbol" type="string" length="12" required="true"
+         category="Numeracja" caption="Symbol" description="Symbol dokumentu"/>
+    <col name="Seria" type="boolean"
+         category="Numeracja" caption="Seria dokumentu" />
+    <col name="Numeracja" type="DefinicjaNumeracji"
+         category="Numeracja" />
+    <col name="Domyslna" type="boolean"
+        category="Ogólne" caption="Domyślne" description="Definicja domyślna"/>
+    <col name="Blokada" type="boolean"
+         category="Ogólne" caption="Blokada" description="Definicja zablokowana"/>
+    <col name="FolderPath" type="FolderPaths"/>
+    <col name="Ukryty" type="boolean"/>
+    <col name="Xml" type="text"
+         category="Ogólne" caption="Definicja zakładki użytkownika" />
+    <col name="Tools" type="RuntimeRowDefinitionTools"/>
+    <col name="AttachToBasicDocument" type="AttachToBasicDokumentType"
+        category="Ogólne" caption="Dodaj do dokumentu podstawowego" description="Dodaj do nowego dokumentu podstawowego"/>
+    <col name="CreateProcess" type="CreateProcessType" caption="Uruchom procesy"/>
+    <col name="TylkoPosrednio" type="boolean" caption="Utwórz tylko pośrednio" modifier="public virtual"/>
+    <col name="KreatorTabeli" type="string" length="16" modifier="public virtual"/>
+    <col name="ReadOnlyAttachmentEditMode" type="AttachmentEditMode" modifier="public virtual"/>
+    <col name="Interfejsy" type="string" length="300" caption="Interfejsy" description="Interfejsy jakie implementuje klasa tupla (z namespace) oddzielone przecinkiem"/>
+    <col name="KlasaBazowa" type="string" length="300" caption="Klasa bazowa" description="Klasa bazowa po której dziedziczy klasa tupla (z namespace), która musi dziedziczyć po DokumentWTeczcePracowniczej"/>
+    <col name="Kategoria" type="KDokDodatkowego" required="false" caption="Kategoria"/>
+  </table>
+
+  <interface name="IBasicDocument"/>
+  <table name="DbTuple" tablename="Tuples" guided="Root"
+        caption="Dokument dodatkowy" tablecaption="Dokumenty dodatkowe"
+    >
+    <interface>IŹródłoPowiązaniaStrukturyOrganizacyjnej</interface>
+    <interface>IDokument</interface>
+    <interface>IManagedRowInfoHost</interface>
+    <interface>IPoświadczenieOdbioruHost</interface>
+    <key name="WgData" keyprimary="true">
+      <keycol name="Data"/>
+    </key>
+    <key name="WgTermin">
+      <keycol name="Termin"/>
+    </key>
+    <key name="WgOkres">
+      <keycol name="Okres.To"/>
+      <keyinclude name="Okres.From"/>
+    </key>
+    <col name="Definicja" type="DbTupleDefinition" required="true" readonly="true"
+      category="Ogólne" caption="Definicja" description="Definicja dokumentu"/>
+    <col name="Numer" type="NumerDokumentu"
+         category="Dokument" />
+    <col name="Seria" type="string" length="30"
+         category="Dokument">
+      <attribute>Dictionary("Seria zdarzenia")</attribute>
+    </col>
+    <col name="Data" type="date" required="true"
+      category="Dokument" caption="Data" description="Data dokumentu"/>
+    <col name="Termin" type="date"
+      category="Dokument" caption="Termin" description="Data zdarzenia"/>
+    <col name="Okres" type="FromTo"
+      category="Dokument" caption="Okres" description="Okres zdarzenia"/>
+
+    <col name="BasicDocument" type="IBasicDocument" category="Ogólne" caption="Dokument podstawowy" description="Dokument podstawowy" readonly="set">
+      <verifier name="DbTuple.PrimaryRelationOrBasicDocumentRequiredVerifier" onadded="true"/>
+    </col>
+    <col name="RelacjaPodstawowa" type="IGuidedRow" caption="Relacja podstawowa" description="Relacja podstawowa">
+      <verifier name="DbTuple.PrimaryRelationOrBasicDocumentRequiredVerifier" onadded="true"/>
+    </col>
+
+    <col name="Fields" type="RuntimeFields"/>
+    <col name="Nazwa" type="string" length="70" required="true" modifier="public virtual"/>
+  </table>
+
+  <table name="DbTupleRel" tablename="TuplesRelations"
+        caption="Relacja dokumentu dodatkowego" tablecaption="Relacje dokumentów dodatkowych" namespace="Soneta.Core.DbTuples"
+    >
+    <col name="DbTuple" type="DbTuple" required="true" readonly="true" keyprimary="true"
+      children="Relations" delete="cascade"
+      category="Ogólne" caption="Zdarzenie" description="Zdarzenie"
+    >
+      <keycol name="Definicja"/>
+    </col>
+    <col name="Host" type="IGuidedRow" category="Ogólne" caption="Rekord" description="Rekord powiązany">
+      <keycol name="Podstawowa"/>
+    </col>
+    <col name="Definicja" type="RuntimeFieldDefinition" required="true" readonly="true"
+      category="Ogólne" caption="Definicja" description="Definicja pola dokumentu"/>
+    <col name="Podstawowa" type="boolean" readonly="true"
+         category="Ogólne" caption="Podstawowa" description="Relacja podstawowa"/>
+  </table>
+
+  <!-- KATEGORIE DOKUMENTÓW DODATKOWYCH -->
+  <table name="KDokDodatkowego" tablename="KDokDodatkowych" guided="Root" config="true"
+  caption="Kategoria dokumentu dodatkowego"
+  tablecaption="Kategorie dokumentów dodatkowych"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="30" localization="dictionary" required="true"/>
+    <col name="Blokada" type="boolean"/>
+  </table>
+
+  <interface name="IGIODOZgodnyHost"/>
+  <enum name="GIODOStatus"/>
+  <table name="GIODOZgodny" tablename="GIODOZgodne">
+    <col name="Host" type="IGIODOZgodnyHost"
+			description="Host, do którego przypisany status zgodności"
+			children="PotwierdzeniaGIODO"
+			relname="Potwierdzenia GIODO hosta"
+			required="true"
+      readonly="true"
+ 			relguided="inner"
+      relright="true"
+      delete="cascade"
+      keyprimary="true">
+      <keycol name="DataZmiany" />
+    </col>
+
+    <col name="Operator" type="Operator" required="true" category="Ogólne" modifier="public virtual" caption="Operator" description="Operator zmieniający status."/>
+    <col name="Stan" type="GIODOStatus" category="Ogólne" caption="Status" description="Status potwierdzenia."/>
+    <col name="DataZmiany" type="datetime" category="Ogólne" caption="Data" description="Data zmiany statusu."/>
+  </table>
+
+  <!-- GIODOWymianaDanych -->
+
+  <interface name="IGIODOWymianaDanychHost"/>
+  <enum name="GIODOKierunekWymianyDanych"/>
+  <table name="GIODOWymianaDanych" tablename="GIODOWymDanych" guided="Root">
+    <key name="WgData" keyprimary="true">
+      <keycol name="Data" />
+      <keycol name="Definicja" />
+    </key>
+    <col name="Host" type="IGIODOWymianaDanychHost"
+			description="Zapis do którego przypisano informacja o wymianie danych"
+			children="GIODOUdostępnienia"
+			relname="Udostępnienia GIODO zapisu"
+			required="false"
+      readonly="true"
+      relright="other"
+    >
+      <keycol name="Data" />
+      <keycol name="Kierunek" />
+    </col>
+    <col name="ZbiorDanych" type="GIODOZbiorDanych"
+			description="Zbiór danych do którego przypisano informacja o wymianie danych"
+			children="GIODOUdostępnienia"
+			relname="Udostępnienia GIODO zbioru"
+			required="false"
+      readonly="true"
+      relright="true"
+    >
+      <keycol name="Data" />
+      <keycol name="Kierunek" />
+    </col>
+    <col name="Definicja" type="DefinicjaDokumentu" required="true" category="Ogólne"
+			relname="Definicja wymian danych GIODO"
+		/>
+    <col name="Bufor" type="boolean" category="Dokument" />
+    <col name="Data" type="date" category="Ogólne" required="true" caption="Data" description="Data udostępnienia."/>
+    <col name="Numer" type="NumerDokumentu" category="Dokument" />
+    <col name="Podmiot" type="IKontrahent" category="Ogólne" caption="Kontrahent" description="Podmiot, któremu udostępniono dane."/>
+    <col name="PozyskaneOdOsoby" type="boolean" category="Ogólne" caption="Pozyskane od osoby" description="Dane pozyskane od osoby, której dotyczą."/>
+    <col name="NaWniosekOsoby" type="boolean" readonly="set" category="Ogólne" caption="Na wniosek osoby" description="Dane udostępnione na wniosek osoby, której dotyczą."/>
+    <col name="UdostepnioneOsobie" type="boolean" category="Ogólne" caption="Udostępnione osobie" description="Dane udostępnione osobie, której dotyczą."/>
+    <col name="TylkoDostep" type="boolean" category="Ogólne" caption="Tylko dostęp" description="Przetwarzanie danych na infrastrukturze powierzającego."/>
+    <col name="Kierunek" type="GIODOKierunekWymianyDanych" selector="true" readonly="true" required="true" category="Ogólne" caption="Kierunek" description="Udostępnienie czy pozyskanie."/>
+    <col name="Zakres" type="text" category="Ogólne" caption="Zakres" description="Zakres udostępnionych danych."/>
+    <!-- 14.3 -->
+    <col name="Oddzial" type="OddzialFirmy" category="Ogólne"/>
+    <col name="SposobPozyskania" type="string" length="50" category="Ogólne" caption="Sposób pozyskania" description="Sposób pozyskania">
+      <attribute>Dictionary("PozyskanieWymian", ManualList=true)</attribute>
+    </col>
+  </table>
+
+  <!-- GIODOOświadczenie -->
+
+  <table name="GIODOCelPrzetwarzania" tablename="GIODOCelePrzetw" guided="Root" config="true"
+     caption="Cel przetwarzania" tablecaption="Cele przetwarzania"
+  >
+    <key name="WgNazwa" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="120" required="true" category="Ogólne" important="true" localization="dictionary"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="Opis" type="text" category="Opis" caption="Opis" description="Dokładny opis celu" localization="dictionary"/>
+    <col name="PodstawaPrawna" type="string" length="50" category="Ogólne" caption="Podstawa prawna" description="Podstawa prawna przetwarzania" localization="dictionary"/>
+  </table>
+
+  <enum name="RodzajeOświadczeńGIODO"/>
+
+  <table name="GIODODefinicjaOświadczenia" tablename="GIODODefOswiadcz" guided="Root" config="true"
+       caption="Definicja oświadczenia" tablecaption="Definicje oświadczeń"
+  >
+    <interface>IRightsSource</interface>
+    <key name="WgOswiadczenie" keyunique="true" keyprimary="true">
+      <keycol name="Oswiadczenie"/>
+    </key>
+    <col name="Oswiadczenie" type="string" length="150" required="true"
+         localization="dictionary" category="Ogólne" caption="Oświadczenie" description="Nazwa oświadczenia"/>
+    <col name="Tresc" type="text" required="false"
+         localization="dictionary" category="Ogólne" caption="Oświadczenie" description="Treść oświadczenia"/>
+    <col name="Blokada" type="boolean"
+         category="Ogólne" caption="Blokada" description="Definicja zablokowana"/>
+    <col name="Pracownik" type="boolean" category="Dostępny dla">
+      <verifier name="GIODODefinicjaOświadczenia.DostępnyDlaVerifier" onadded="true"/>
+    </col>
+    <col name="OsobaKontakowa" type="boolean" category="Dostępny dla">
+      <verifier name="GIODODefinicjaOświadczenia.DostępnyDlaVerifier"/>
+    </col>
+    <col name="OsobaFizyczna" type="boolean" category="Dostępny dla">
+      <verifier name="GIODODefinicjaOświadczenia.DostępnyDlaVerifier"/>
+    </col>
+    <col name="Uczestnik" type="boolean" category="Dostępny dla">
+      <verifier name="GIODODefinicjaOświadczenia.DostępnyDlaVerifier"/>
+    </col>
+    <!-- 12.1 -->
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" />
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" />
+    <!-- 12.3 -->
+    <col name="Rodzaj" type="RodzajeOświadczeńGIODO" category="Ogólne" />
+    <col name="Domyslny" type="boolean" />
+    <!-- 14.3 -->
+    <col name="Cel" type="GIODOCelPrzetwarzania" category="Ogólne" />
+  </table>
+
+  <table name="GIODOWycofanieOświadczenia" tablename="GIODOWycofOsw" config="true">
+    <col name="Definicja" type="GIODODefinicjaOświadczenia" readonly="true" required="true" category="Ogólne"
+      children="ZgodyDoWycofania"
+			relname="Definicja relacji wycofującego GIODO"
+			keyprimary="true"
+			keyunique="true"
+			delete="cascade"
+			relguided="inner"
+		>
+      <keycol name="Wycofywany"/>
+    </col>
+    <col name="Wycofywany" type="GIODODefinicjaOświadczenia" required="true" category="Ogólne"
+			relname="Definicja relacji wycofywany GIODO"
+		/>
+    <col name="Ostrzezenie" type="boolean" category="Ogólne"/>
+    <col name="Auto" type="boolean" category="Ogólne"/>
+  </table>
+
+  <interface name="IGIODOOświadczenieHost"/>
+  <table name="GIODOOświadczenie" tablename="GIODOOswiadcz" guided="Root" caption="Oświadczenie" tablecaption="Oświadczenia">
+    <key name="WgData">
+      <keycol name="Data" />
+      <keycol name="Definicja" />
+    </key>
+    <key name="WgOkresu">
+      <keycol name="Okres.To" />
+      <keycol name="Definicja" />
+      <keyinclude name="Okres.From" />
+    </key>
+
+    <col name="Host" type="IGIODOOświadczenieHost" caption="Składający oświadczenie"
+			description="Zapis, do którego przypisano informacja o oświadczeniu"
+			children="GIODOOświadczenia"
+			relname="Oświadczenie GIODO zapisu"
+			required="true"
+      readonly="true"
+      relright="other"
+      keyprimary="true"
+    >
+      <keycol name="Data" />
+      <keycol name="Definicja" />
+    </col>
+
+    <col name="Definicja" type="GIODODefinicjaOświadczenia" readonly="true" required="true" category="Ogólne" caption="Definicja" description="Definicja oświadczenia."
+      relright="true"
+    />
+    <col name="Data" type="date" category="Ogólne" required="true" caption="Data" description="Data oświadczenia.">
+      <verifier name="GIODOOświadczenie.WycofywaneVerifier"/>
+    </col>
+    <col name="Oswiadczenie" type="boolean" required="true" category="Ogólne" caption="Oświadczenie" description="Oświadczenie."/>
+    <col name="Tresc" type="text" required="false" readonly="set"
+         category="Ogólne" caption="Oświadczenie" description="Treść oświadczenia"/>
+    <!-- 12.1 -->
+    <col name="Bufor" type="boolean" category="Dokument">
+      <verifier name="GIODOOświadczenie.WycofywaneVerifier"/>
+    </col>
+    <col name="Numer" type="NumerDokumentu" category="Dokument" />
+    <!-- 12.3 -->
+    <col name="Rodzaj" type="RodzajeOświadczeńGIODO" category="Ogólne" readonly="set"/>
+    <col name="Okres" type="FromTo" readonly="set" specialaccess="true" description="Okres, na który udzielono zgodę"/>
+    <col name="WycofanieZgody" type="GIODOOświadczenie" readonly="set" category="Udzielenie zgody" children="WycofaneZgody"/>
+    <col name="DataWycofaniaZgody" type="date" readonly="set" category="Udzielenie zgody" />
+    <!-- 14.3 -->
+    <col name="Oddzial" type="OddzialFirmy" category="Ogólne"/>
+    <col name="SposobPozyskania" type="string" length="50" category="Ogólne" caption="Sposób pozyskania" description="Sposób pozyskania oświadczenia">
+      <attribute>Dictionary("PozyskanieOśwad", ManualList=true)</attribute>
+    </col>
+  </table>
+
+  <!-- GIODOUprawnienie -->
+
+  <table name="GIODODefinicjaUprawnienia" tablename="GIODODefUprawn" guided="Root" config="true"
+       caption="Definicja uprawnienia" tablecaption="Definicje uprawnień"
+  >
+    <interface>IRightsSource</interface>
+    <key name="WgUprawnienie" keyunique="true" keyprimary="true">
+      <keycol name="Uprawnienie"/>
+    </key>
+    <col name="Uprawnienie" type="string" localization="dictionary" length="150" required="true"
+         category="Ogólne" caption="Uprawnienie" description="Nazwa uprawnienia"/>
+    <col name="Tresc" type="text" required="false"
+         localization="dictionary" category="Ogólne" caption="Uprawnienie" description="Treść uprawnienia"/>
+    <col name="Blokada" type="boolean"
+         category="Ogólne" caption="Blokada" description="Definicja zablokowana"/>
+    <col name="Pracownik" type="boolean" category="Dostępny dla">
+      <verifier name="GIODODefinicjaUprawnienia.DostępnyDlaVerifier" onadded="true"/>
+    </col>
+    <col name="OsobaKontakowa" type="boolean" category="Dostępny dla">
+      <verifier name="GIODODefinicjaUprawnienia.DostępnyDlaVerifier"/>
+    </col>
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" />
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" />
+    <col name="Domyslny" type="boolean" />
+  </table>
+
+  <interface name="IGIODOUprawnienieHost"/>
+  <table name="GIODOUprawnienie" tablename="GIODOUprawnienia" guided="Root" caption="Uprawnienie" tablecaption="Uprawnienia">
+    <key name="WgData">
+      <keycol name="Data" />
+      <keycol name="Definicja" />
+    </key>
+    <key name="WgOkresu">
+      <keycol name="Okres.To" />
+      <keycol name="Definicja" />
+      <keyinclude name="Okres.From" />
+    </key>
+
+    <col name="Uprawniony" type="IGIODOUprawnienieHost" caption="Uprawniony"
+			description="Zapis, do którego przypisano informacja o uprawnieniu"
+			children="GIODOUprawnienia"
+			relname="Uprawnienie GIODO zapisu"
+			required="true"
+      readonly="true"
+      relright="other"
+      keyprimary="true"
+    >
+      <keycol name="Data" />
+      <keycol name="Definicja" />
+    </col>
+
+    <col name="Definicja" type="GIODODefinicjaUprawnienia" readonly="true" required="true" category="Ogólne" caption="Definicja" description="Definicja uprawnienia"
+      relright="true"
+    />
+    <col name="Bufor" type="boolean" category="Dokument" />
+    <col name="Data" type="date" category="Ogólne" required="true" caption="Data" description="Data"/>
+    <col name="Numer" type="NumerDokumentu" category="Dokument" />
+    <col name="Przyznane" type="date" category="Ogólne" description="Uprawnienie porzyznane od dnia">
+      <verifier name="GIODOUprawnienie.PrzyznaneOdebraneVerifier" onadded="true"/>
+    </col>
+    <col name="Odebrane" type="date" category="Ogólne" description="Uprawnienie odebrane od dnia">
+      <verifier name="GIODOUprawnienie.PrzyznaneOdebraneVerifier"/>
+    </col>
+    <col name="WycofanieUprawnienia" type="GIODOUprawnienie" readonly="set" category="Udzielenie zgody" children="WycofaneUprawnienia"/>
+    <col name="Okres" type="FromTo" readonly="set" specialaccess="true" description="Okres, na który przyznano uprawnienie"/>
+    <col name="Tresc" type="text" required="false" readonly="true"
+         category="Ogólne" caption="Oświadczenie" description="Treść oświadczenia"/>
+    <!-- 14.3 -->
+    <col name="Oddzial" type="OddzialFirmy" category="Ogólne"/>
+  </table>
+
+
+  <table name="GIODOKategoriaOsob" tablename="GIODOKategOsob" tablecaption="Kategorie osób" caption="Kategoria osób" config="true" guided="Root" namespace="Soneta.Core.GIODO">
+    <key name="WgNazwa" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" localization="dictionary" category="Ogólne" required="true" keyprimary="true" caption="Nazwa kategorii" description="Nazwa kategorii" length="128"/>
+    <col name="Typ" type="TypKategoriiOsob" category="Ogólne" required="true" caption="Typ kategorii osób" description="Typ kategorii osób" />
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="Opis" type="text" caption="Opis kategorii" description="Opis kategorii" category="Ogólne" localization="dictionary"/>
+  </table>
+
+  <table name="GIODOKategoriaOdbiorcow" tablename="GIODOKategOdb" tablecaption="Kategorie odbiorców" caption="Kategoria odbiorców" config="true" guided="Root" namespace="Soneta.Core.GIODO">
+    <key name="WgNazwa" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" category="Ogólne" required="true" keyprimary="true" caption="Nazwa kategorii" description="Nazwa kategorii" length="128" localization="dictionary"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="Opis" type="text" caption="Opis kategorii" description="Opis kategorii" category="Ogólne" localization="dictionary"/>
+  </table>
+
+  <table name="GIODOKategoriaDanychOsobowych" tablename="GIODOKategDnOsob" tablecaption="Kategorie danych osobowych" caption="Kategoria danych osobowych" config="true" guided="Root" namespace="Soneta.Core.GIODO">
+    <key name="WgNazwa" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" category="Ogólne" required="true" keyprimary="true" caption="Nazwa kategorii" description="Nazwa kategorii" length="128" localization="dictionary" />
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="Opis" type="text" caption="Opis kategorii" description="Opis kategorii" category="Ogólne" localization="dictionary"/>
+  </table>
+
+  <enum name="TypKategoriiOsob" />
+  <enum name="SelektorPrzetwarzania" />
+  <enum name="TypZbioruDanych" />
+  <interface name="IGIODOKategoria" />
+
+  <table name="GIODOZbiorDanych" tablename="GIODOZbiory"
+         tablecaption="Zbiory danych" caption="Zbiór danych" namespace="Soneta.Core.GIODO" guided="Root">
+
+    <key name="WgSymbol" keyprimary="true" keyunique="true">
+      <keycol name="Symbol"/>
+    </key>
+
+    <col name="Symbol" type="string" length="32" caption="Symbol" description="Unikatowy symbol zbioru danych" required="true" />
+    <col name="Nazwa" type="string" length="255" caption="Nazwa zbioru danych" description="Nazwa zbioru danych" required="true" />
+    <col name="Oddzial" type="OddzialFirmy" category="Ogólne" />
+    <col name="Typ" type="TypZbioruDanych" description="Typ zbioru danych własny/powierzony" required="true" />
+    <col name="Administrator" type="IKontrahent" caption="Adminstrator danych" description="Adminstrator danych osobowych" />
+    <col name="CelPrzetwarzania" type="GIODOCelPrzetwarzania" caption="Cel przetwarzania" description="Cel przetwarzania" />
+    <col name="KategoriaOsob" type="GIODOKategoriaOsob" caption="Kategorie osób" description="Kategorie osób, których dane dotyczą" required="true" />
+    <col name="Panstwa" type="string" length="255" caption="Przekazanie danych do państwa trzeciego" description="Przekazanie danych do państwa trzeciego lub organizacji międzynarodowej" />
+    <col name="SposobPrzetwarzania" type="string" length="255" description="Sposób przetwarzania (papierowy/elektroniczny)">
+      <attribute>Dictionary("GIODOSposobPrzet", ManualList=true)</attribute>
+    </col>
+    <col name="SystemyKomp" type="string" length="255" caption="Aplikacja komputerowa" description="Nazwa aplikacji komputerowej wykorzystywanej do przetwarzania">
+      <attribute>Dictionary("GIODOSystemyKomp", ManualList=true)</attribute>
+    </col>
+    <col name="Lokalizacja" type="string" length="255" caption="Lokalizacja zbioru" description="Lokalizacja zbioru danych" />
+    <col name="Odpowiedzialny" type="string" length="255" caption="Odpowiedzialny" description="Odpowiedzialny za zbiór danych" />
+    <col name="OpisSrodkowBezp" type="text" caption="Opis środków bezpieczeństwa" description="Opis technicznych i organizacyjnych środków bezpieczeństwa" />
+    <col name="PlanUsuniecie" type="string" length="255" caption="Planowane usunięcie" description="Planowane usunięcie zbioru" />
+  </table>
+
+  <table name="GIODOPrzetwarzanie" tablename="GIODOPrzetwarz"
+         tablecaption="Czynności przetwarzania" caption="Czynność przetwarzania" namespace="Soneta.Core.GIODO" guided="Root">
+
+    <key name="WgSelektorZbior" keyprimary="true">
+      <keycol name="Selektor" />
+      <keycol name="ZbiorDanych" />
+    </key>
+
+    <col name="Selektor" type="SelektorPrzetwarzania" selector="true" required="true"  readonly="true" caption="Selektor przetwarzania" />
+    <col name="Nazwa" type="string" length="255" caption="Nazwa czynności" description="Nazwa czynności przetwarzania" />
+    <col name="Numer" type="NumerDokumentu" category="Ogólne" keyprimary="true" />
+    <col name="ZbiorDanych" type="GIODOZbiorDanych" category="Ogólne" caption="Zbiór danych" relname="Przetwarzania zbioru danych" children="Przetwarzania">
+    </col>
+
+    <col name="Rozpoczecie" type="date" caption="Data rozpoczęcia przetwarzania" required="true" />
+    <col name="Zakonczenie" type="date" caption="Data zakończenia przetwarzania" />
+    <col name="PlanZakonczenia" type="string" length="255" caption="Plan zakończenia" description="Plan zakończenia przetwarzania" />
+    <col name="Opis" type="text" caption="Opis, zakres przetwarzania" />
+  </table>
+
+  <table name="GIODOZbiorKategoria" tablename="GIODOZbioryKateg"
+         tablecaption="GIODO przetwarzania - kategoria" caption="Powiązanie przetwarzania z kategorią." namespace="Soneta.Core.GIODO">
+    <key name="WgNazwa" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="128" category="Ogólne" description="Nazwa kategorii przypisanej do czynności przetwarzania" />
+    <col name="ZbiorDanych" type="GIODOZbiorDanych" readonly="true" keyunique="true" caption="Czynność przetwarzania" description="Czynność przetwarzania"
+        children="Kategorie" relname="Przypisane kategorie">
+      <keycol name="Kategoria" />
+    </col>
+    <col name="Kategoria" type="IGIODOKategoria" required="true" readonly="true" caption="Kategoria" description="Kategorie osób, danych osobowych przypisanych do czynności" />
+  </table>
+
+  <table name="GIODONaruszenie" tablename="GIODONaruszenia" tablecaption="Naruszenia ochrony danych osobowych" caption="Naruszenie ochrony danych osobowych" namespace="Soneta.Core.GIODO">
+      <interface>IDokument</interface>
+      <key name="WgNazwa" keyprimary="true" keyunique="true">
+        <keycol name="Nazwa" />
+      </key>
+      <col name="Nazwa" type="string" length="255" caption="Nazwa czynności" description="Nazwa czynności lub kategorii czynności" />
+      <col name="Numer" type="NumerDokumentu" category="Ogólne" />
+      <col name="ZbiorDanych" type="GIODOZbiorDanych" category="Ogólne" caption="Zbiór danych"
+           relname="Naruszenia zbioru danych" children="Naruszenia" />
+      <col name="DataNaruszenia" type="date" required="true" description="Data naruszenia" />
+      <col name="CzasNaruszenia" type="time" description="Czas naruszenia" />
+      <col name="DataZgloszenia" type="date" description="Data zgłoszenia" />
+      <col name="CzasZgloszenia" type="time" description="Czas zgłoszenia" />
+      <col name="Opis" type="text" caption="Opis naruszenia" description="Opis naruszenia (w tym kategorie i liczba wpisów danych osobowych)" />
+      <col name="LiczbaOsob" type="int" caption="Liczba osób" description="Przybliżona liczba osób, których dotyczy naruszenie" />
+      <col name="Konsekwencje" type="text" caption="Konsekwencje naruszenia" description="Możliwe konsekwencje naruszenie" />
+      <col name="SrodkiZaradzenia" type="text" caption="Środki zaradzenia" description="Zastosowane/proponowane środki w celu zaradzenia naruszeniu lub zminimalizowania skutków naruszenia danych osobowych" />
+      <col name="PrzyczynaOpoznienia" type="text" caption="Przyczyna opóźnienia" description="Opis przyczyny opóźnienia zgłoszenia" />
+  </table>
+
+  <!-- END RODO, GIODO -->
+
+  <!-- [17035][9.3][Workflow 9.3]: Wrzucić do 9.3 zmiany związane z schedule - cofnięte do wersji 9.2 -->
+
+  <enum name="ScheduleTypeEnum"/>
+  <enum name="ExceptionStrategyEnum"/>
+
+  <table name="ScheduleDefinition" tablename="ScheduleDefs" caption="Definicja harmonogramu" tablecaption="Definicje harmonogramów" guided="Root" >
+
+    <key name="ByName" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+    </key>
+
+    <key name="WgHzInstance">
+      <keycol name="HzInstance"/>
+    </key>
+
+    <col name="Name" type="string" length="80" category="Ogólne" required="true" description="Nazwa definicji harmonogramu" caption="Nazwa" />
+
+    <col name="TaskDefinition"
+         type="TaskDefinition"
+         required="true"
+         category="Ogólne"
+         caption="Definicja zadania"
+         description="Definicja zadania powiązana z definicją harmonogramu"
+         modifier ="public virtual"
+         relname="ScheduleDefinition_TaskDefinition"
+         children="ScheduleDefs"
+         delete="cascade">
+      <verifier name ="ScheduleDefinition.SchedulerReferenceVerifier" onadded="true" />
+    </col>
+
+    <col name="Locked" type="boolean" category="Ogólne" caption="Definicja zablokowana" description="Określa czy definicja jest zablokowana"/>
+    <col name="ScheduleType" type="ScheduleTypeEnum" category="Ogólne" caption="Typ harmonogramu" description="Określa typ harmonogramu">
+      <verifier name="ScheduleDefinition.FolderVerifiers" onadded="true"/>
+    </col>
+    <col name="FolderIn" type="string" length="255" category="Ogólne" caption="Ścieżka wejściowa" description="Określa ścieżkę, dla której śledzone są pliki">
+      <verifier name="ScheduleDefinition.FolderVerifiers" onadded="true"/>
+    </col>
+    <col name="FolderOut" type="string" length="255" category="Ogólne" caption="Ścieżka wyjściowa" description="Określa ścieżkę, archiwalną dla przetworzonych plików">
+      <verifier name="ScheduleDefinition.FolderVerifiers" onadded="true"/>
+    </col>
+    <col name="StartDate" type="date" category="Cykl" caption="Czas rozpoczęcia" description="Określa czas rozpoczęcia obowiązywania cyklu">
+      <verifier name="ScheduleDefinition.TimesVerifiers" onadded="true"/>
+    </col>
+    <col name="EndDate" type="date" category="Cykl" caption="Czas zakończenia" description="Określa czas zakończenia obowiązywania cyklu">
+      <verifier name="ScheduleDefinition.TimesVerifiers" onadded="true"/>
+    </col>
+    <col name="Date" type="date" category="Cykl" caption="Data cyklu" description="Określa datę wystąpienia cyklu"/>
+    <col name="Code" type="text" category="Algorytm" caption="Kod algorytmu" description="Kod algorytmu kalkulatora definicji cyklu"/>
+    <col name="CycleDefinition" type="DefinicjaCyklu" category="Cykl" caption="Definicja cyklu" description="Określa definicję cyklu"/>
+
+    <col name="Host" type="IScheduleAutoJob" category="Ogólne" caption="Rekord" description="Określa opcjonalny rekord powiązany" readonly="true" />
+    <col name="AutoActionName" type="string" length="255" category="Ogólne" modifier="protected" caption="Nazwa metody automatycznej" description="Określa nazwę metody automatycznej wywoływanej podczas przetwarzania automatycznych akcji harmonogramu" />
+    <col name="ExceptionStrategy" type="ExceptionStrategyEnum" category="Wyjątki" caption="Strategia obsługi wyjątków" description="Określa strategię obsługi wyjątków" />
+    <col name="HzInstance" type="string" length="255" category="Ogólne" caption="Nazwa instacji" description="Określa nazwę instancji harmonogramu zadań" />
+    <col name="Priority" type="int" category="Ogólne" caption="Priorytet" description="Określa priorytet zadania" >
+    </col>
+  </table>
+
+  <interface name="IScheduleAutoJob"/>
+
+  <table name="ScheduleItem" tablename="ScheduleItems" caption="Element harmonogramu" tablecaption="Elementy harmonogramów" namespace="Soneta.Core.Schedule">
+
+    <key name="ByIdGuid" keyunique="true">
+      <keycol name="IdGuid"/>
+    </key>
+
+    <col name="ScheduleDefinition"
+         type="ScheduleDefinition"
+         required="true"
+         readonly="true"
+         keyprimary="true"
+         keyunique="true"
+         category="Ogólne"
+         caption="Definicja harmonogramu"
+         description="Definicja harmonogramu powiązana z elementem harmonogramu"
+         relname="ScheduleItem_ScheduleDefinition"
+         children="ScheduleItems"
+         delete="cascade">
+      <keycol name="Task"/>
+    </col>
+
+    <col name="Task" type="Task" readonly="true" category="Ogólne" caption="Zadanie" description="Zadanie powiązana z elementem harmonogramu" />
+    <col name="IdGuid" type="guid" required="true" readonly="set" category="Ogólne" caption="Identyfikator wiersza" description="Określa identyfikator wiersza" />
+    <col name="InvokeTime" type="datetime" category="Ogólne" caption="Czas wykonania zadania" description="Określa czas wykonania zadania"/>
+    <col name="Host" type="IScheduleAutoJob" category="Ogólne" caption="Rekord" description="Określa opcjonalny rekord powiązany" readonly="true" />
+    <col name="ExceptionTimeStamp" type="datetime" category="Wyjątki" caption="Czas wystąpienia wyjątku" description="Określa czas wystąpienia wyjątku dla przetwarzanego elementu harmonogramu" readonly="set" />
+
+  </table>
+
+  <table name="JobInvokeLog" tablename="JobInvokeLogs" caption="Log pracy" tablecaption="Logi prac" >
+
+    <key name="ByScheduleItemIdGuid" keyprimary="true" keyunique="true">
+      <keycol name="ScheduleItemIdGuid"/>
+    </key>
+
+    <key name="ByTaskGuid">
+      <keycol name="TaskGuid"/>
+    </key>
+
+    <key name="ByHostGuid">
+      <keycol name="HostGuid"/>
+    </key>
+
+    <col name="ScheduleItemIdGuid" type="guid" required="true" readonly="true" category="Ogólne" caption="Identyfikator elementu harmonogramu" description="Określa identyfikator elementu harmonogramu"/>
+    <col name="TaskGuid" type="guid" category="Ogólne" caption="Guid wiersza zadania" description="Określa guid wiersza zadania"/>
+    <col name="TaskParentGuid" type="guid" category="Ogólne" caption="Guid wiersza powiązanego" description="Określa guid wiersza powiązanego"/>
+    <col name="TaskParentTable" type="string" length="16" category="Ogólne" caption="Nazwa tabeli wiersza powiązanego" description="Określa nazwę tabeli wiersza powiązanego"/>
+    <col name="StartDateTime" type="datetime" category="Ogólne" caption="Czas rozpoczęcia" description="Określa czas rozpoczęcia"/>
+    <col name="EndDateTime" type="datetime" category="Ogólne" caption="Czas zakończenia" description="Określa czas zakończenia"/>
+    <col name="Value" type="text" category="Ogólne" caption="Informacja" modifier="public virtual" description="Określa dodatkową informację o danym zadaniu" readonly="set"/>
+    <col name="HostGuid" type="guid" category="Ogólne" caption="Guid wiersza powiązanego" description="Określa guid wiersza powiązanego"/>
+    <col name="HostTable" type="string" length="255" category="Ogólne" caption="Tabela wiersza powiązanego" description="Określa tabelę wiersza powiązanego"/>
+    <col name="ScheduleDefinitionGuid" type="guid" category="Ogólne" caption="Guid definicji harmonogramu" description="Określa guid definicji harmonogramu"/>
+    <col name="ScheduleDefinitionName" type="string" length="80" category="Ogólne" caption="Nazwa definicji harmonogramu" description="Określa nazwę definicji harmonogramu"/>
+
+  </table>
+
+  <table name="JobInvokeLogDetail" tablename="JobInvokeLogDets" caption="Szczegółowe logi pracy" tablecaption="Szczegółowe logi prac" >
+    <col name="JobInvokeLog" type="JobInvokeLog" length="80" category="Ogólne" readonly ="true" caption="Referencja do tabeli JobInvokeLog" description="Określa referencję do tabeli JobInvokeLog"/>
+    <col name="Message" type="text" category="Ogólne" caption="Informacja" readonly ="true" description="Określa dodatkową informację o danym zadaniu"/>
+    <col name="CreationDateTime" type="datetime" category="Ogólne" readonly ="true" caption="Data utworzenia" description="Określa datę utworzenia"/>
+    <col name="LastEntryDateTime" type="datetime" category="Ogólne" readonly ="true" caption="Data ostatniego wpisu" description="Określa datę ostatniego wpisu"/>
+    <col name="OperatorName" type="text" category="Ogólne" readonly ="true" caption="Nazwa operatora" description="Określa nazwę operatora"/>
+    <col name="StackTrace" type="text" category="Ogólne" readonly ="true" caption="Stos błędu" description="Określa stos błędu"/>
+    <col name="IsService" type="boolean" category="Ogólne" readonly ="true" caption="Usługa" description="Określa czy HZ jest uruchomiony jako usługa"/>
+    <col name="PortNumber" type="text" category="Ogólne" readonly ="true" caption="Numer portu" description="Określa numer portu HZ"/>
+    <col name="HzInstance" type="text" category="Ogólne" readonly ="true" caption="Nazwa instancji harmonogramu" description="Określa nazwę instancji harmonogramu"/>
+    <col name="Priority" type="text" category="Ogólne" readonly ="true" caption="Priorytet" description="Określa priorytet"/>
+  </table>
+
+  <table name="SkanerKodow" tablename="SkaneryKodow" caption="Skaner kodów" guided="Root">
+    <key name="WgNazwy" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="32" description="Nazwa skanera kodów kreskowych." />
+    <col name="Domyslny" type="boolean" />
+    <col name="PrefixKod" type="int" />
+    <col name="PrefixNazwa" type="string" length="32" />
+    <col name="SuffixKod" type="int" />
+    <col name="SuffixNazwa" type="string" length="32" />
+  </table>
+
+
+
+  <table name="JednolityPK"  tablename="JednolitePK" tablecaption="Jednolity PK" caption="Jednolity PK" guided="Root">
+    <key name="WgOkres" keyprimary="true">
+      <keycol name="Okres.To"/>
+    </key>
+    <col name="Rodzaj" type="SlownikElem" category="Ogólne" caption="Rodzaj" description="Rodzaj" readonly="set" required="true"/>
+    <col name="Plik" type="string" length="255" required="true" readonly="set" category="Ogólne" caption="Ścieżka do pliku JPK" />
+    <col name="Metadane" type="string" length="255" readonly="set" category="Ogólne" caption="Ścieżka do pliku metadanych (paczka wysyłki)" />
+    <col name="Okres" type="FromTo" required="true" readonly="set" description="Okres za który wygenerowano JPK"  />
+    <col name="NumerKorekty" type="int" readonly="set" description="Numer korekty"  />
+    <col name="Data" type="date" required="true" readonly="set" description="Data generowania" />
+    <col name="Czas" type="time" readonly="set" description="Czas generowania" />
+    <col name="FormCode" type="string" length="24" category="Formularz" caption="Kod formularza" description="Kod formularza JPK" />
+    <col name="FormSysCode" type="string" length="24" category="Formularz" caption="Kod systemowy" description="Kod systemowy formularza JPK" />
+    <col name="FormSchemaVer" type="string" length="24" category="Formularz" caption="Wersja wzorca" description="Wersja wzorca formularza JPK" />
+    <col name="TrybGenerowania" type="TrybGenerowaniaJPK" category="Formularz" readonly="set"  caption="Tryb generowania" description="Tryb generowania pliku JPK" />
+    <col name="TrybPodpisu" type="TrybPodpisuJPK" category="Formularz" readonly="set" caption="Tryb podpisu" description="Tryb podpisu pliku JPK" />
+    <col name="ZrodloJPK" type="ZrodloPlikuJPK" caption="Źródło JPK" readonly="true" description="Źródło pliku JPK" />
+    <col name="StatusJPK" type="StatusPlikuJPK" caption="Status JPK" required="true" readonly="set" description="Status pliku JPK" />
+    <col name="BramkaJPK" type="BramkaJPKFile" caption="Bramka JPK" required="true" readonly="set" description="Bramka pliku JPK" />
+    <col name="MetaData" type="text" readonly="set" description="Plik metadanych (paczka wysyłki) w bazie danych" />
+    <col name="InitUploadXml" type="text" readonly="set" description="Żądanie otwarcia sesji wysyłania danych" />
+    <col name="InitUpload" type="text" readonly="set" description="Odpowiedź na żądanie otwarcia sesji wysyłania danych" />
+    <col name="AuthInfo" type="text" readonly="set" description="Informacja o podpisie nieautoryzowanym" />
+    <col name="Opis" type="text" description="Dodatkowy opis" />
+    <col name="UPO" type="text" readonly="set" description="Urzędowe potwierdzenie odbioru" />
+    <col name="ProcessingError" type="text" readonly="set" description="Błąd przetwarzania danych" />
+    <col name="Oddzial" type="OddzialFirmy" caption="Oddział firmy" readonly="set" description="Oddział firmy" relright="true" />
+    <col name="ZakresDanych" type="ZakresDanychJPK" readonly="set" caption="Zakres danych" description="Zakres generowanych danych" />
+    <col name="DeklaracjaVAT7" type="Deklaracja" cstype="IDeklaracja" readonly="set" caption="Deklaracja" description="Deklaracja VAT7" />
+    <col name="LokalizacjaPliku" type="LokalizacjaJPK" readonly="set" required="true" Caption="Lokalizacja pliku" description="Wskazuje miejsce oraz sposób przechowywania pliku JPK"/>
+    <col name="PlikBinarny" type="binary" modifier="protected" Caption="Zawartość pliku" description="Zawartość pliku JPK w bazie danych"/>
+    <col name="PlikBinarnyEnc" type="binary" modifier="protected" Caption="Zaszyfrowana zawartość pliku" description="Zawartość pliku JPK przygotowanego do wysyłki"/>
+  </table>
+
+
+
+  <table name="HTTPLinkInfo" tablename="HTTPLinkInfos" guided="Root">
+    <col name="Dokument" type="IGuidedRow" readonly="true" required="true" keyprimary="true" caption="Dokument" description="Udostępniany dokument"/>
+    <col name="WorkerName" type="string" length="255" required="true" readonly="true" />
+    <col name="Parametry" type="string" length="255" readonly="true" />
+    <col name="Data" type="date" required="true" readonly="true" description="Data generowania" />
+    <col name="Termin" type="date" required="true" description="Termin ważności" />
+    <col name="Operator" type="Operator"/>
+    <col name="WebOperator" type="IWebOperator"/>
+    <col name="RoleGuid" type="guid"/>
+    <col name="Anonimowy" type="boolean" />
+    <col name="TylkoRaz" type="boolean" />
+    <col name="Anulowany" type="boolean" />
+    <col name="Wykonany" type="boolean" readonly="set"/>
+  </table>
+
+  <enum name="StateForSubstitution"></enum>
+  <enum name="LevelOfReplacement"></enum>
+  <table name="SubstituteUser" tablename="SubstituteUsers" tablecaption="Zastępstwa" caption="Zastępstwo" namespace="Soneta.Core.Substitute" guided="Root">
+    <col name="Replacement" type="ITaskUser" modifier="public virtual" keyprimary="true" caption="Zastępujący" description="Określa zastępującego">
+      <verifier name="SubstituteUserReplacedAndReplacementIsNotTheSameValueVerifier" onadded="true"/>
+      <verifier name="ReplacmentAndReplacedAreRequiredVerifier" onadded="true"/>
+    </col>
+    <col name="Replaced" type="ITaskUser" modifier="public virtual" caption="Zastępowany" description="Określa zastępowanego">
+      <verifier name="SubstituteUserReplacedAndReplacementIsNotTheSameValueVerifier" onadded="true"/>
+      <verifier name="ReplacmentAndReplacedAreRequiredVerifier" onadded="true"/>
+    </col>
+    <col name="SubstituteAuthority" type="Operator" required="true" caption="Uprawnienia zastępującego" description="Określa uprawnienia zastępującego"/>
+    <col name="SelectedEntitles" type="text" caption="Wybrane uprawnienia zastępującego" description="Określa wybrane uprawnienia zastępującego"/>
+    <col name="FromTo" type="FromTo" caption="Okres" required="true" description="Okres">
+      <verifier name="SubstituteUserTheSameRecordVerifier" onadded="true"/>
+    </col>
+    <col name="EndDate" type="date" caption="Data zakończenia" description="Data zakończenia"/>
+    <col name="StateForSubstitution" type="StateForSubstitution" caption="Stan" description="Stan" readonly="set"/>
+
+    <col name="SubstituteDef"
+         type="SubstituteDef"
+         category="Ogólne"
+         caption="Definicja zastępstwa"
+         required="true"
+         description="Definicja zastępstwa powiązana z zastępstwem"
+         relname="SubstituteUser_SubstituteDef"
+         children="SubstituteUsers"
+         delete="cascade"/>
+
+    <col name="LevelOfReplacement" type="LevelOfReplacement" caption="Przejmowane obowiązki" description="Określa czy zastępujący przejmuje tylko obowiązki zastępowanego, czy także osób które on zastępuje"/>
+  </table>
+
+  <table name="SubstituteDef" tablename="SubstituteDefs" tablecaption="Definicje zastępstw" caption="Definicja zastępstwa" namespace="Soneta.Core.Substitute" guided="Root" config="true">
+    <interface>IRightsSource</interface>
+    <key name="ByName" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+    </key>
+
+    <col name="Name" type="string" length="255" caption="Nazwa definicji" description="Nazwa definicji zastępstwa" category="Ogólne" required="true" localization="dictionary"/>
+    <col name ="GetListReplacementCode" type="AlgorithmColumn" category="Algorytm" caption="Algorytm metody GetListReplacement" description="Określa algorytm metody GetListReplacement"/>
+    <col name ="GetListReplacedCode" type="AlgorithmColumn" category="Algorytm" caption="Algorytm metody GetListReplaced" description="Określa algorytm metody GetListReplaced"/>
+    <col name ="GetListSubstituteAuthorityCode" type="AlgorithmColumn" category="Algorytm" caption="Algorytm metody GetListSubstituteAuthority" description="Określa algorytm metody GetListSubstituteAuthority"/>
+    <col name ="LockedSubstituteDef" type="boolean" category="Ogólne" caption="Zablokowana definicja zastępstwa" description="Określa czy definicja zastępstwa jest zablokowana"/>
+    <col name ="DefaultSubstituteDef" type="boolean" modifier="public virtual" category="Ogólne" caption="Domyślna definicja zastępstwa" description="Określa czy definicja zastępstwa jest domyślna"/>
+    <col name ="SendEmailInSubstituteProcess" type="boolean" category="Ogólne" caption="Wyślij email" description="Określa czy w trakcie procesu zastępstw mają być wysyłane powiadomienia mailowe"/>
+    <col name ="IsSelectedEntitlesVisible" type="boolean" category="Ogólne" caption="Widoczność pola Wybrane uprawnienia" description="Określa czy na formularzu zastępstwa będzie widoczne pole Wybrane uprawnienia"/>
+    <col name ="IsLevelOfReplacementVisible" type="boolean" category="Ogólne" caption="Widoczność pola Przejmowane obowiązki" description="Określa czy na formularzu zastępstwa będzie widoczne pole Przejmowane obowiązki"/>
+  </table>
+
+  <enum name="ObfuscateType"></enum>
+  <table name="ObfuscateDef" tablename="ObfuscateDefs" tablecaption="Definicje zakresów zaciemniania"  config="true" guided="Root">
+    <interface>IRightsSource</interface>
+    <key name="ByName" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+      <keycol name="TableName"/>
+    </key>
+    <key name="ByTableName">
+      <keycol name="TableName"/>
+      <keycol name="Name"/>
+    </key>
+    <key name="ByType">
+      <keycol name="ObfuscateType"/>
+      <keycol name="Name"/>
+    </key>
+    <col name="Name" type="string" length="30" localization="dictionary" caption="Nazwa">
+      <verifier name="ObfuscateDef.NameRequiredVerifier" onadded="true"/>
+    </col>
+    <col name="TableName" type="string" length="16" caption="Nazwa tabeli" required="true" readonly="true"/>
+    <col name="Description" type="string" length="256" localization="dictionary" caption="Opis" />
+    <col name="ObfuscateType" type="ObfuscateType" caption="Rodzaj anonimizacji" required="true" readonly="true"/>
+    <col name="Default" type="boolean"/>
+    <col name="ConditionText" type="text" modifier="internal">
+      <verifier name="ObfuscateDef.ConditionTextVerifier" onadded="true"/>
+    </col>
+  </table>
+
+  <enum name="ObfuscateOption"/>
+  <table name="ObfuscateField" tablename="ObfuscateFields" tablecaption="Elementy zakresów zaciemniania" config="true" guided="Child">
+    <col name="ObfuscateDef" type="ObfuscateDef"
+         required="true" caption="Zakres"
+         relname="ObfuscateField_ObfuscateDef"
+         children="Fields"
+         relguided="inner" delete="cascade"/>
+    <col name="Path" type="string" caption="Właściwość" length="256" required="true">
+      <verifier name="ObfuscateField.PathVerifier"/>
+      <verifier name="ObfuscateField.PathUniqueVerifier"/>
+    </col>
+
+    <col name="Option" type="ObfuscateOption" caption ="Dodatkowa opcja"/>
+  </table>
+
+  <enum name="ObfuscateStatus"/>
+  <table name="ObfuscatedData" tablename="ObfuscatedDatas" tablecaption="Zaciemnione dane" caption="Zaciemniona dana" guided="Root">
+    <key name="BySubjectTable" keyprimary="true" keyunique="true">
+      <keycol name="SubjectGuid"/>
+      <keycol name="SubjectTable"/>
+    </key>
+    <key name ="ByObfuscateStatus">
+      <keycol name="ObfuscateStatus"/>
+    </key>
+    <col name="DelegatingDateTime" type="datetime"/>
+    <col name="DelegatingOperator" type="guid"/>
+    <col name="ObfuscatingDateTime" type="datetime"/>
+    <col name="ObfuscatingOperator" type="guid"/>
+    <col name="SubjectTable" type="string" length="16" caption="Tabela obiektu obfuskowanego" required="true" readonly="true"/>
+    <col name="SubjectGuid" type="guid" caption="Klucz obcy tabeli obfuskowanej" required="true" readonly="true"/>
+    <col name="CodedData" type="binary" />
+    <col name="CheckSum" type="string" length="256" required="true"/>
+    <col name="Range" type="guid" required="true" caption="Guid szablonu"/>
+    <col name="ObfuscateType" type="ObfuscateType" readonly="set"/>
+    <col name="ObfuscateStatus" type="ObfuscateStatus"/>
+  </table>
+
+  <!-- DokEwidencjaDbTupleDefinitionExt -->
+
+  <table name="DocEwidencjaDbTupleDefExt" tablename="DEDbTupleDefExts" config="true"
+         caption="Rozszerzenie definicji tupli dla tabeli DokEwidencja"
+         tablecaption="Rozszerzenia definicji tupli dla tabeli DokEwidencja"
+  >
+    <col name="DbTupleDefinition" type="DbTupleDefinition" required="true" readonly="true" keyunique="true" keyprimary="true"
+         children="DokEwidencjaExt"
+         relguided="inner" delete="cascade" relname="Definicje pól dynamicznych"/>
+    <col name="DefinicjaProcesu" type="guid" modifier="protected"/>
+  </table>
+
+    <table name="TerminalPlatniczy" tablename="TerminalePlat" tablecaption="Lista terminali płatniczych" caption="Terminal płatniczy" config="true" guided="Root">
+        <key name="WgNazwy" keyprimary="true" keyunique="true">
+            <keycol name="Nazwa"/>
+        </key>
+        <col name="Nazwa" type="string" length="64" required="true"/>
+        <col name="IdTerminala" type="string" length="10" required="true"/>
+        <col name="Symbol" type="string" length="10" required="true"/>
+        <col name="Domyslna" type="boolean"/>
+        <col name="SystemPOS" type="SystemPos" caption="System"/>
+        <col name="ProtokolTerminala" type="ProtokolTraminala" caption="Protokół"/>
+        <col name="Port" type="string" length="64"/>
+        <col name="AdresIP" type="string" length="32"/>
+        <col name="ConnectionString" type="string" length="96"/>
+    </table>
+
+    <table name="TerminalPlatStanowisko" tablename="TerminalPlatStan" tablecaption="Lista terminali płatniczych przypisanych do stanowiska" config="true" name8="TermPS">
+        <key name="WgStanowisko" keyprimary="true" keyunique="true">
+            <keycol name="Stanowisko"/>
+        </key>
+        <col name="Stanowisko" type="string" length="64" required="true" category="Ogólne"/>
+        <col name="Terminal" type="TerminalPlatniczy" required="true" children="Stanowiska" category="Ogólne" relname="TerminalPlatStanowisko">
+            <attribute>Context</attribute>
+        </col>
+    </table>
+
+<!-- ManagedRowInfo -->
+
+  <interface name="IManagedRowDefinion"/>
+
+  <table name="ManagedRowCreator" tablename="ManagedRowCrts" config="true"
+       caption="Kreator wiersza" tablecaption="Kreatory wierszy" >
+    <col name="Definicja" type="IManagedRowDefinion"
+         readonly="true"
+         required="true"
+         keyunique="true"
+         caption="Wymaganie"
+         relname="Kreatory wymagań"
+         children="Kreatory"
+         keyprimary="true"
+         delete="cascade"
+			   relguided="inner"
+    >
+      <keycol name="DefinicjaDokumentu"/>
+    </col>
+    <col name="DefinicjaDokumentu" type="DbTupleDefinition"
+         children="KreowaneDefinicje"
+         required="true"
+         caption="Definicja dokumentu"
+         relname="Stanowiska definicji dokumentów"
+         modifier="public virtual">
+    </col>
+    <col name="Kreator" type="boolean" modifier="public virtual"/>
+    <col name="KreatorSeryjny" type="boolean" modifier="public virtual"/>
+    <col name="Modyfikator" type="boolean" modifier="public virtual"/>
+    <col name="ModyfikatorSeryjny" type="boolean" modifier="public virtual"/>
+  </table>
+
+
+  <enum name="ManagedRowStates"/>
+
+  <interface name="IManagedRowInfoHost"/>
+
+  <table name="ManagedRowInfo" tablename="ManagedRowsInfo" caption="Informacja o przetwarzaniu przez proces">
+
+    <col name="ManagedRow" type="IManagedRowInfoHost" readonly="true" required="true"
+			keyunique="true"
+			relname="Informacje o zarządzaniu"
+			relguided="inner"
+			delete="cascade"
+		  relright="true"
+      keyprimary="true"
+		/>
+
+    <col name="ManagedState" type="ManagedRowStates" readonly="set" required="true"/>
+  </table>
+
+  <table name="ManagedRowMetricsDefinition" tablename="ManRowMetricDefs" config="true" guided="Root"
+    caption="Definicja zapisu w metryce dokumentu"
+    tablecaption="Definicje zapisów w metryce dokumentu"
+  >
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="80" localization="dictionary" required="true" category="Ogólne"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="Tresc" type="string" length="255"
+      category="Ogólne" caption="Treść" description="Treść wpisu"/>
+  </table>
+
+  <table name="ManagedRowMetrics" tablename="ManRowsMetrics"
+		  caption="Metryka dokumentu"
+		  tablecaption="Metryki dokumentów">
+
+    <col name="ManagedRowInfo" type="ManagedRowInfo" required="true" readonly="true"
+				children="Metryka"
+				relname="Metryka dokumentu zarządzanego"
+				delete="cascade"
+				relguided="inner"
+				relright="true"
+				keyprimary="true"
+				keyclass="Lp" keyclasscol="Lp"
+		/>
+
+    <col name="Lp" type="int" required="true" category="Ogólne" batchfield="false" specialaccess="true"
+				description="Liczba porządkowa wpisu." />
+
+    <col name="Operator" type="Operator" required="true" readonly="true"
+			description="Operator, który był zalogowany do systemu, który utworzył to zgłoszenie."
+			relname="Metryki operatora"
+		>
+      <keycol name="Czas"/>
+    </col>
+    <col name="WebOperator" type="IWebOperator" readonly="true"
+			relname="Metryki web operatora"
+    >
+      <keycol name="Czas"/>
+    </col>
+    <col name="Definicja" type="ManagedRowMetricsDefinition" required="true" readonly="true"
+      category="Ogólne" caption="Definicja" description="Definicja zapisu"/>
+    <col name="Czas" type="datetime" required="true" readonly="true" caption="Data i godzina"
+			description="Data i godzina dokonania wpisu." />
+    <col name="Nazwa" type="string" length="80" required="true" readonly="true"
+			description="Nazwa wpisu." />
+    <col name="Informacja" type="string" length="255" readonly="true"
+			description="Dodatkowe informacje dla wpisu." />
+    <col name="Tresc" type="string" length="255" readonly="set"
+      category="Ogólne" caption="Treść" description="Treść wpisu"/>
+  </table>
+
+  <!-- DefinicjaPoświadczeniaOdbioru -->
+  <table name="DefinicjaPoświadczeniaOdbioru" tablename="DefPoswOdbioru" guided="Root" config="true"
+     caption="Definicja poświadczenia odbioru" tablecaption="Definicje poświadczeń odbioru"
+  >
+    <key name="WgPoswiadczenie" keyunique="true" keyprimary="true">
+      <keycol name="Poswiadczenie"/>
+    </key>
+    <col name="Poswiadczenie" type="string" length="150" required="true"
+         localization="dictionary" category="Ogólne" caption="Oświadczenie" description="Nazwa poświadczenia"/>
+    <col name="Tresc" type="text" required="false"
+         localization="dictionary" category="Ogólne" caption="Oświadczenie" description="Treść poświadczenia"/>
+    <col name="Blokada" type="boolean" caption="Blokada" description="Definicja zablokowana"/>
+  </table>
+
+  <!-- PoświadczenieOdbioru -->
+  <interface name="IPoświadczenieOdbioruHost"/>
+  <enum name="StanyPoświadczeniaOdbioru"/>
+
+  <table name="PoświadczenieOdbioru" tablename="PoswiadczOdbioru" caption="Poświadczenie odbioru" tablecaption="Poświadczenia odbioru">
+    <key name="WgData">
+      <keycol name="Data" />
+      <keyinclude name="Poswiadczenie"/>
+    </key>
+
+    <col name="Podmiot" type="IWebOperator"
+			description="Podmiot poświadczający odbiór"
+			children="PoświadczeniaOdbioru"
+			relname="Poświadczenia odbioru podmiotu"
+			required="true"
+      readonly="true"
+    >
+      <keycol name="Data" />
+      <keyinclude name="Poswiadczenie"/>
+    </col>
+
+    <col name="Dokument" type="IPoświadczenieOdbioruHost"
+			description="Dokument z poświadczeniem odbioru"
+			children="PoświadczeniaOdbioru"
+			relname="Poświadczenia odbioru dokumentu"
+			required="true"
+      readonly="true"
+      relright="true"
+      relguided="inner"
+      keyprimary="true"
+      keyunique="true"
+      delete="cascade"
+    />
+
+    <col name="Definicja" type="DefinicjaPoświadczeniaOdbioru" readonly="true" required="true" category="Ogólne" caption="Definicja" description="Definicja poświadczenia odbioru"
+      modifier="public virtual"
+    >
+      <keycol name="Data" />
+      <keyinclude name="Poswiadczenie"/>
+    </col>
+    <col name="Data" type="date" category="Ogólne" required="true" readonly="set" caption="Data" description="Data poświadczenia"/>
+    <col name="Poswiadczenie" type="boolean" readonly="set" modifier="public virtual" category="Ogólne" caption="Poświadczenie" description="Poswiadczenie odbioru"/>
+    <col name="Tresc" type="text" readonly="set" modifier="public virtual"
+         category="Ogólne" caption="Oświadczenie" description="Treść oświadczenia"/>
+    <col name="Stan" type="StanyPoświadczeniaOdbioru" readonly="set" />
+  </table>
+
+
+  <!-- JPK V7M -->
+
+    <subrow name="AlgorytmWlWyl">
+        <col type="text" name="Kod" caption="Kod użytkownika" modifier="public virtual">
+            <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+        </col>
+        <col type="boolean" name="Wlaczony" caption="Włączony" modifier="public virtual" />
+    </subrow>
+
+
+    <table name="ProceduraVAT" tablename="ProceduryVAT" guided="Root" caption="Procedura VAT" tablecaption="Słownik procedur VAT" config="true">
+        <key name="WgTypu" keyprimary="true" keyunique="true">
+            <keycol name="Typ"/>
+            <keycol name="Symbol"/>
+        </key>
+        <col name="Typ" type="TypProceduryVAT" required="true" readonly="true" caption="Typ" description="Typ słownika"  modifier="public virtual" selector="true"/>
+        <col name="Symbol" type="string" length="150" required="true" caption="Symbol" description="Symbol" setonlynull="true" />
+        <col name="Nazwa" type="text" required="true" caption="Nazwa" description="Nazwa"/>
+        <col name="Blokada" type="boolean" caption="Blokada" description="Procedura zablokowana"/>
+        <col name="AlgorytmHandlowy" type="AlgorytmWlWyl" caption="Algorytm handlowy" description="Algorytm handlowy" modifier="public virtual"/>
+        <col name="AlgorytmEwidencji" type="AlgorytmWlWyl" caption="Algorytm ewidencji" description="Algorytm ewidencji" modifier="public virtual"/>
+    </table>
+
+
+    <table name="RelProceduraVAT" tablename="RelProceduryVAT" caption="Powiązanie procedury VAT" guided="Root" tablecaption="Powiązania procedur VAT z dokumentami">
+        <col name="Dokument" type="IProceduraVATHost" required="true" readonly="true" caption="Dokument" description="Dokument" keyprimary="true" keyunique="true" children="ProceduryVAT">
+            <keycol name="Procedura"/>
+        </col>
+        <col name="Procedura" type="ProceduraVAT" required="true" modifier="public virtual" caption="Procedura" description="Procedura" />
+    </table>
+
+
+  <enum name="GrupaDefinicjiNaglowkaEnum"/>
+  <!-- UIExtensions -->
+  <table name="UIExtension" tablename="UIExtensions" guided="Root" config="false" caption="Definicja XML nagłówka lub stopki dokumentu" tablecaption="Definicje XML nagłówków lub stopek dokumentów">
+    <key name="WgTabela">
+      <keycol name="Tabela"/>
+    </key>
+    <key name="WgNazwa" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+
+    <col name="Tabela" type="string" length="150" required="true" caption="Nazwa powiązanej tabeli" description="Nazwa tabeli, dla której elementu powstała definicja"/>
+    <col name="Nazwa" type="string" length="150" required="true" caption="Nazwa" description="Nazwa nagłówka lub stopki" modifier="public virtual"/>
+    <col name="Grupa" type="GrupaDefinicjiNaglowkaEnum" required="true" caption="Grupa" description="Przeznaczenie nagłówka lub stopki"/>
+    <col name="XmlOld" type="text" required="false" caption="Definicja - stary standard" description="Definicja zgodna ze starym standardem"/>
+    <col name="PageForm" type="text" required="false" caption="Definicja - obecny standard" description="Definicja zgodna z nowym standardem"/>
+  </table>
+
+  <!-- PRACA ZDALNA -->
+  <interface name="IStoperHost"/>
+  <interface name="ITimeTrackHost"/>
+  <interface name="IWykonujacy"/>
+
+  <table name="TimeTrack" tablename="TimeTracks" tablecaption="Rejestracja pracy hybrydowej" caption="Rejestracja pracy hybrydowej" guided="Root">
+    <col name="Wykonujacy" type="IWykonujacy" required="true" keyprimary="true"></col>
+    <key name="WgHost" keyprimary="false" keyunique="false">
+      <keycol name="HostType" />
+      <keycol name="HostGuid" />
+    </key>
+    <col name="HostType" type="string" length="255" required="false">
+      <verifier name="TimeTrack.TimeTrackVerifier" onadded="true"/>
+    </col>
+    <col name="HostGuid" type="guid" required="false">
+       <verifier name="TimeTrack.TimeTrackVerifier" onadded="true"/>
+    </col>
+    <col name="Data" type="date"></col>
+    <col name="CzasRozpoczecia" type="time"></col>
+    <col name="CzasWykonania" type="time"></col>
+    <col name="Uwagi" type="string" length="255">
+       <verifier name="TimeTrack.TimeTrackVerifier" onadded="true"/>
+    </col>
+  </table>
+
+  <!-- DRAG AND DROP - ROW SEQUENCE -->
+  <interface name="IRowSequencer"/>
+
+  <table name="RecordSequence" tablename="RecordSequences" tablecaption="Kolejność rekordów" caption="Kolejność rekordów" guided="Root">
+    <col name="Performer" type="IWykonujacy" />
+    <col name="DataSource" type="IRowSequencer" required="true" keyprimary="true" delete="cascade" />
+    <col name="DataSourceParent" type="int" />
+    <col name="Scope" type="string" length="40" required="true" />
+    <col name="Sequence" type="int" required="true" />
+  </table>
+
+  <!-- CONVERSATION -->
+  <interface name="IDiscussionHost" />
+
+  <table name="Discussion" tablename="Discussions" tablecaption="Dyskusje" caption="Dyskusje" guided="Root">
+
+    <key name="ByCreation">
+      <keycol name="CreationDate"/>
+    </key>
+
+    <col name="Host" type="IDiscussionHost" keyunique="true" required="true" capiton="Host" keyprimary="true" />
+    <col name="CreationDate" type="datetime" required="true" caption="Data utworzenia" />
+    <col name="ModificationDate" type="datetime" required="true" caption="Data modyfikacji" />
+  </table>
+
+  <table name="DiscussionTopic" tablename="DiscussionTopics" tablecaption="Tematy dyskusji" caption="Tematy dyskusji" guided="Root">
+    <key name="ByCreation">
+      <keycol name="CreationDate"/>
+    </key>
+
+    <col name="Author" type="IOwner" required="true" caption="Autor" keyprimary="true" />
+    <col name="Value" type="text" required="true" caption="Treść" />
+    <col name="CreationDate" type="datetime" required="true" caption="Data utworzenia" />
+    <col name="ModificationDate" type="datetime" required="true" caption="Data modyfikacji" />
+    <col name="Discussion"
+        type="Discussion"
+        required="false"
+        relname="Discussions"
+        relguided="inner"
+        delete="cascade"
+        children="DiscussionTopics" />
+    <col name="EstimatedHeightInHtml" type="int"/>
+    <col name="EstimatedHeightInWin" type="int"/>
+  </table>
+
+  <!--KOMENTARZE-->
+  <enum name="CommentType"/>
+  <interface name="ICommentDataHost"/>
+
+  <table name="Comment" tablename="Comments" caption="Komentarze" config ="false">
+    <key name="ByHostDraft" keyunique="false">
+        <keycol name="Host"/>
+        <keycol name="Draft"/>
+    </key>
+    <key name="ByHostOwnerDraft" keyunique="false">
+        <keycol name="Host"/>
+        <keycol name="Owner"/>
+        <keycol name="Draft"/>
+    </key>
+
+    <col name="Owner" type="IOwner" required="true" caption="Właściciel"/>
+    <col name="Host" type="ICommentDataHost" required="true" caption="Host" keyprimary="true" />
+    <col name="Value" type="text" required="true" caption="Treść" />
+    <col name="Created" type="datetime" required="true" caption="Data dodania"/>
+    <col name="Modified" type="datetime" caption="Data edycji"/>
+    <col name="Type" type="CommentType"/>
+    <col name="Draft" type="boolean"/>
+    <col name="EstimatedHeightInHtml" type="int"/>
+    <col name="EstimatedHeightInWin" type="int"/>
+    <col name="Public" type="boolean"/>
+  </table>
+
+  <table name="Subscription" tablename="Subscriptions" caption="Subskrypcje" config="false">
+    <key name="ByResource" keyunique="true" keyprimary="true">
+      <keycol name="ResourceTable" />
+      <keycol name="ResourceGuid" />
+      <keycol name="SubscriberTable" />
+      <keycol name="SubscriberGuid" />
+    </key>
+    <key name="BySubscriber" keyunique="false" keyprimary="false">
+      <keycol name="SubscriberTable" />
+      <keycol name="SubscriberGuid" />
+    </key>
+    <col name="ResourceTable" type="string" length="16" caption="Tabela elementu" description="Nazwa tabeli danego elementu." />
+    <col name="ResourceGuid" type="guid" caption="Guid elementu" description="Unikalny identyfikator danego elementu." />
+    <col name="SubscriberTable" type="string" length="16" caption="Tabela subskrybenta"
+			description="Nazwa tabeli subskrybenta danego elementu." />
+    <col name="SubscriberGuid" type="guid" caption="Guid subskrybenta"
+			description="Unikalny identyfikator subskrybenta danego elementu." />
+  </table>
+</module>

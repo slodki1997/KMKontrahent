@@ -1,0 +1,237 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Windykacja" namespace="Soneta.Windykacja" versionName="soneta">
+
+
+	<!--***********************************************************************************************-->
+	<!--                                      WINDYKACJA                                               -->
+	<!-- ********************************************************************************************* -->
+	
+  
+  <import>../..</import>
+  
+
+	<!--***********************************************************************************************-->
+	<!--                                         USINGS                                                -->
+	<!-- ********************************************************************************************* -->
+  
+  
+  <using>Soneta.Business.App</using>
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.Kasa</using>
+
+
+	<!--***********************************************************************************************-->
+	<!--                                          ENUMS                                                -->
+	<!-- ********************************************************************************************* -->
+  
+  
+  <enum name="StanSprawyWindykacyjnej"/>
+  <enum name="TypEtapu"/>
+	<enum name="RodzajŹródłaWindykacji"/>
+  
+
+	<!--***********************************************************************************************-->
+	<!--                                         SUBROWS                                               -->
+	<!-- ********************************************************************************************* -->
+  
+    
+  <subrow name="WindykacjaInfo">
+		<col name="Stan" type="StanWindykacji" specialaccess="true">
+			<keycol name="Termin"/>
+		</col>
+		<col name="Data" type="date" specialaccess="true"/>
+		<col name="Termin" type="date" specialaccess="true"/>
+	</subrow>
+  
+  
+	<!--***********************************************************************************************-->
+	<!--                                         TABLES                                                -->
+	<!-- ********************************************************************************************* -->
+  
+  
+  <!--POZYCJA SPRAWY WINDYKACYJNEJ-->  
+  <table name="PozycjaSprawyWindykacyjnej" tablename="PozSprawWind" name8="PozSprwW" caption="Pozycja sprawy windykacyjnej" tablecaption="Pozycje spraw windykacyjnych">
+    <col name="Sprawa"
+         name12="Sprw"
+         type="SprawaWindykacyjna"
+         required="true"
+         readonly="true"
+         children="Pozycje"
+         relname="Etapy spraw"
+         delete="cascade"         
+         reldefault="true"
+         relguided="inner"
+         relright="true"
+         keyprimary="true"
+         keyclass="Lp" keyclasscol="Lp" />
+    
+    <col name="Naleznosc"
+         type="IRozliczalny"
+         caption="Należność" 
+         readonly="true"
+         required="true" 
+         relname="Pozycje spraw" 
+         delete="cascade"  />
+
+    <col name="Lp" type="int" />
+  </table>
+  
+  
+  <!--ETAP DEFINICJI WINDYKACJI-->
+  <table name="EtapDefinicjiWindykacji" tablename="EtapyDefWind" name8="EtpDefWn" config="true" guided="Root" caption="Etap definicji windykacji" tablecaption="Etapy definicji windykacji">
+    <col name="Definicja"
+         name12="DefS"
+         type="DefinicjaSprawyWindykacyjnej"
+         required="true"
+         readonly="true"
+         category="Szablon"
+         children="Etapy"
+         relname="Etapy szablonów"
+         delete="cascade"
+         relguided="inner"
+         keyprimary="true"
+         keyclass="Lp" keyclasscol="Lp"/>
+    
+    <col name="Lp" type="int" required="true"/>
+    <col name="Typ" type="TypEtapu"/>
+    <col name="DefinicjaEtapu" type="StanWindykacji" required="true"/>
+    <col name="Nazwa" type="string" length="80" localization="dictionary" required="true"/>
+    <col name="CzasTrwania" caption="Czas trwania" type="int"/> 
+  </table> 
+  
+  
+  <!--DEFINICJA SPRAWY WINDYKACYJNEJ-->
+  <table name="DefinicjaSprawyWindykacyjnej" tablename="DefSprawWind" name8="DefSprwW" config="true" guided="Root" caption="Definicja sprawy windykacyjnej" tablecaption="Definicje spraw windykacyjnych">
+    <interface>IRightsSource</interface>
+    
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgDomyslny">
+      <keycol name="Domyslny"/>
+    </key>
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" important="true"
+			description="Skrótowa nazwa definicji dokumentu wykorzystywana do wyszukiwania definicji oraz numeracji spraw windykacyjnych." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" important="true"
+			description="Pełna nazwa definicji dokumentu wykorzystywana do wyszukiwania deifnicji." />
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja"
+				description="Ustawienia określające sposób numeracji dokumentów." />
+    <col name="WidoczneCechy" type="text" category="Formularz"
+			description="Lista cen wyświetlanych na formularzu." />
+    <col name="Domyslny" caption="Domyślna" type="boolean" />
+    <col name="Blokada" type="boolean" category="Ogólne"
+			description="Określa zablokowanie definicji. Zablokowane definicje dokumentów nie będą wyświetlane w liście wyboru." />
+  </table>
+  
+  
+  <!--SPRAWA WINDYKACYJNA-->
+  <table name="SprawaWindykacyjna" tablename="SprawyWindyk" name8="SprwyWnd" guided="Root" caption="Sprawa windykacyjna" tablecaption="Sprawy windykacyjne">
+    <interface>IEmailElement</interface>
+    <interface>IDokumentCRM</interface>
+    
+    <key name="WgStan">
+      <keycol name="Stan"/>
+    </key>
+
+    <col name="Podmiot"
+         name12="Podm"
+         type="IPodmiotKasowy"
+         required="true"
+         readonly="true"
+         category="Podmiot"
+         children="Sprawy"
+         relname="Sprawy podmiotu"
+         delete="cascade"/>
+
+    <col name="Windykator"
+         caption="Windykator"
+         type="Operator"
+         required="true"
+         category="Operator"
+         relname="Windykator sprawy"
+         delete="cascade"/>
+    
+    <col name="Definicja" type="DefinicjaSprawyWindykacyjnej" required="true" category="Dokument" relname="Definicja sprawy" keyprimary="true" relright="true">
+			<keycol name="Numer.Numer" />
+      <attribute>NumeratorRef</attribute>
+		</col>
+    
+    <col name="Numer" type="NumerDokumentu"/>
+    <col name="Data" type="date" caption="Data rozpoczęcia">
+      <attribute>NumeratorRef</attribute>
+    </col>
+    <col name="Stan" type="StanSprawyWindykacyjnej"/>
+    <col name="ZrealizowanyEtap" type="EtapDefinicjiWindykacji" caption="Zrealizowany etap" />
+    <col name="Termin" type="date" caption="Planowany termin zakończenia" />
+  </table> 
+
+
+  <!--DEFINICJA ETAPU SPRAWY vel STAN WINDYKACJI-->
+	<table name="StanWindykacji" tablename="StanyWindykacji" name8="StWindyk" guided="Root" config="true" caption="Definicja etapu sprawy" tablecaption="Definicje etapu sprawy" >
+		<key name="WgTypNazwa" keyunique="true" keyprimary="true">
+			<keycol name="Typ"/>
+			<keycol name="Nazwa"/>
+		</key>
+		<key name="WgTypLp">
+			<keycol name="Typ"/>
+			<keycol name="Lp"/>
+		</key>
+
+		<col name="Typ" type="TypRozrachunku" readonly="true" required="true"/>
+		<col name="Rodzaj" type="RodzajŹródłaWindykacji"/>
+		<col name="Lp" type="int" required="true" batchfield="false"/>
+		<col name="Nazwa" type="string" length="30" localization="dictionary" required="true"/>
+		<col name="Termin" caption="Czas trwania" type="int"/>
+		<col name="Blokada" type="boolean"/>
+
+    <!-- Nowa windykacja-->
+    <col name="TypEtapu" type="TypEtapu" />
+    <col name="Definicja" type="DefinicjaDokumentu" />
+    <col name="Code" type="text" category="Algorytm" description="Algorytm (C#) akcji">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+    <col name="AutomatycznePrzejscie" caption="Przejdź do kolejnego etapu" type="boolean" />
+	</table>
+
+  
+  <!--WINDYKACJA-->
+	<table name="Windykacja" tablename="Windykacje" name8="Windyk" namespace="Soneta.Windykacja">
+		<col name="Dokument"
+			name12="Dok"
+			type="IRozliczalny"
+			required="true"
+			readonly="true"
+			category="Dokument"
+			children="HistoriaWindykacji"
+			relname="Windykacja należności"
+			keyprimary="true"
+			delete="cascade"
+			relguided="inner"
+			relright="true"
+		/>
+		<col name="Zrodlo" type="DokRozliczBase" required="false" readonly="true" children="Windykacje" relname="Windykacje z dokumentu rozliczeniowego" />
+		<col name="Data" type="date" required="true"/>
+		<col name="Termin" type="date" required="true"/>
+		<col name="Stan" type="StanWindykacji" />
+		<col name="Opis" type="string" length="80">
+			<attribute>Dictionary("Opis windykacji", ManualList=true)</attribute>
+		</col>
+    <col name="Typ" type="TypEtapu" />
+    <col name="Nazwa" type="string" length="80" />
+    <col name="Notatka" type="text" />
+    <col name="Sprawa" 
+         type="SprawaWindykacyjna" 
+         relright="true"/>
+    <col name="Zadanie"
+         type="IDokument"/>
+    <col name="DokRozlicz" 
+         caption="Dokument rozliczeniowy"
+         type="DokRozliczBase"/>
+	</table>
+</module>
+

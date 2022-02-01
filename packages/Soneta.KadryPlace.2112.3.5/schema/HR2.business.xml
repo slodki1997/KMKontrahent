@@ -1,0 +1,366 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="HR2" namespace="Soneta.HR2" versionName="soneta">
+  <import>../..</import>
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Kadry</using>
+  <using>Soneta.CRM</using>
+  <using>Soneta.Oceny</using>
+  <using>Soneta.HR</using>
+
+  <table name="KategoriaElementuOpisuStanowiska" tablename="KatElOpisuStanow" guided="Root" config="true"
+  caption="Kategoria elementu opisu stanowiska"
+  tablecaption="Kategorie elementów opisu stanowisk"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="50" localization="dictionary" required="true"/>
+    <col name="Blokada" type="boolean"/>
+  </table>
+
+  <table name="DefinicjaElementuOpisuStanowiska" tablename="DefElOpisuStanow" guided="Root" config="true"
+		caption="Definicja elemetu opisu stanowiska"
+		tablecaption="Definicje elementów opisu stanowisk"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Kategoria" type="KategoriaElementuOpisuStanowiska" required="true"
+      children="Definicje"
+    />
+    <col name="PozycjaDokumentu" type="PozycjaDokumentuInfo"/>
+    <col name="Nazwa" type="string" length="50" required="true" localization="dictionary"/>
+    <col name="NazwaWyswietlana" type="string" length="50" readonly="set" caption="Nazwa wyświetlana" localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="EdycjaOpisu" type="boolean"/>
+    <col name="Wielokrotny" type="boolean"/>
+    <col name="Priorytet" type="int"/>
+    <col name="Opis" type="text" localization="dictionary"/>
+  </table>
+  
+  <!-- KARTA OPISU STANOWISKA -->
+  <enum name="TypyKartOpisuStanowiska"/>
+  
+  <table name="KartaOpisuStanowiskaBase" tablename="KartyOpStanowisk" guided="Root"
+    caption="Karta opisu stanowiska"
+    tablecaption="Karty opisu stanowisk"
+  >
+    <col name="Zrodlo" type="IŹródłoKartyOpisuStanowiska"
+      keyprimary="true"
+      keyunique="true"
+      readonly="true"
+			required="true"
+			delete="cascade"
+      children="KartyOpisuStanowiska"
+			relname="Karty opisu stanowiska wg źródła"
+      relright="other"
+		>
+      <keycol name="Typ"/>
+      <keycol name="Data"/>
+    </col>
+    <col name="Typ" type="TypyKartOpisuStanowiska" selector="true" readonly="true" required="true" category="Dokument" />
+    <col name="Data" type="date" category="Dokument" required="true"/>
+  </table>
+  
+  <table name="KompetencjaKartyOpisuStanowiska" tablename="KompetencjeKOS"
+    caption="Kompetencja KOS"
+    tablecaption="Kompetencje KOS"
+  >
+    <col name="Karta" type="KartaOpisuStanowiskaBase"
+      keyprimary="true"
+      keyunique="true"
+      readonly="true"
+			required="true"
+			relguided="inner"
+			delete="cascade"
+      children="Kompetencje"
+			relname="Kompetencje KOS wg karty"
+      relright="true"
+		>
+      <keycol name="Definicja"/>
+    </col>
+    <col name="Definicja" type="DefinicjaElementuOceny" required="true"/>
+    <col name="Wymagana" type="WartośćElementuOceny"/>
+    <col name="Oczekiwana" type="WartośćElementuOceny"/>
+  </table>
+
+  <table name="ElementKartyOpisuStanowiska" tablename="ElementyKOS"
+    caption="Element KOS"
+    tablecaption="Elementy KOS"
+  >
+    <col name="Karta" type="KartaOpisuStanowiskaBase"
+      keyprimary="true"
+      readonly="true"
+			required="true"
+			relguided="inner"
+			delete="cascade"
+      children="Elementy"
+			relname="Elementy kart opisu stanowiska wg karty"
+      relright="true"
+		>
+      <keycol name="Definicja"/>
+    </col>
+    <col name="Definicja" type="DefinicjaElementuOpisuStanowiska"
+			required="true"
+      relname="Elementy kart opisu stanowiska wg definicji"
+		/>
+    <col name="Opis" type="text"/>
+  </table>
+
+  <!-- KARTA KOMPETENCJI PRACOWNIKA -->
+  <table name="KartaKompetencjiPracownika" tablename="KartyKompPrac" guided="Root"
+    caption="Karta kompetencji"
+    tablecaption="Karty kompetencji"
+  >
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Dokument"
+			keyprimary="true"
+			relname="Karty kompetencji pracowników wg pracownika"
+      children="KartyKompetencji"
+			relright="true"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Zrodlo" type="IŹródłoKartyCharakterystykiPracownika"
+      readonly="true"
+			delete="cascade"
+      children="KartyKompetencji"
+			relname="Karty kompetencji pracowników wg źródła"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Data" type="date" category="Dokument" required="true"/>
+  </table>
+
+  <table name="KompetencjaPracownika" tablename="KompetencjePrac"
+    caption="Kompetencja"
+    tablecaption="Kompetencje"
+  >
+    <col name="Karta" type="KartaKompetencjiPracownika"
+      keyprimary="true"
+      keyunique="true"
+      readonly="true"
+			required="true"
+			relguided="inner"
+			delete="cascade"
+      children="Kompetencje"
+			relname="Kompetencje pracowników wg karty"
+      relright="true"
+		>
+      <keycol name="Definicja"/>
+    </col>
+    <col name="Definicja" type="DefinicjaElementuOceny"
+			required="true"
+      relname="Kompetencje pracowników wg definicji"
+		/>
+    <col name="Wartosc" type="WartośćElementuOceny"/>
+  </table>
+
+  <!-- CEL OKRESOWY PRACOWNIKA -->
+  <table name="CelOkresowyPracownika" tablename="CeleOkresowePrac" guided="Root"
+    caption="Cel okresowy"
+    tablecaption="Cele okresowe"
+  >
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Dokument"
+			keyprimary="true"
+			relname="Cele okresowe pracowników wg pracownika"
+      children="CeleOkresowe"
+			relright="true"
+		>
+      <keycol name="Termin"/>
+    </col>
+    <col name="Definicja" type="DefinicjaElementuOceny"
+			required="true"
+      relname="Cele okresowe pracowników wg definicji"
+		/>
+    <col name="Nazwa" type="string" length="50" required="true"/>
+    <col name="Anulowany" type="boolean"/>
+    <col name="Data" type="date" category="Dokument" required="true"/>
+    <col name="Termin" type="date" category="Dokument" required="true"/>
+    <col name="Wartosc" type="WartośćElementuOceny"/>
+    <col name="Opis" type="text"/>
+  </table>
+
+  <!-- KARTA REALIZACJI CELU -->
+  <table name="KartaRealizacjiCelu" tablename="KartyReazCelPrac" guided="Root"
+    caption="Karta realizacji celu"
+    tablecaption="Karty realizacji celu"
+  >
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Dokument"
+			keyprimary="true"
+			relname="Karty realizacji celu pracowników wg pracownika"
+      children="KartyRealizacjiCelu"
+			relright="true"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Data" type="date" category="Dokument" required="true"/>
+  </table>
+
+  <table name="RealizacjaCelu" tablename="RealizacjeCelPrc"
+    caption="Realizacja celu"
+    tablecaption="Realizacje celu pracowników"
+  >
+    <col name="Karta" type="KartaRealizacjiCelu"
+      keyprimary="true"
+      keyunique="true"
+      readonly="true"
+			required="true"
+			relguided="inner"
+			delete="cascade"
+      children="Realizacje"
+			relname="Realizacje celu pracowników wg karty"
+			relright="true"
+		>
+      <keycol name="Cel"/>
+    </col>
+    <col name="Cel" type="CelOkresowyPracownika" required="true" readonly="true"
+      children="Realizacje"
+      relname="Realizacje celu pracowników  wg celu"
+		/>
+    <col name="Definicja" type="DefinicjaElementuOceny" required="true" readonly="true"/>
+    <col name="Wartosc" type="WartośćElementuOceny"/>
+    <col name="Opis" type="text"/>
+  </table>
+
+<!-- REKRUTACJA -->
+
+  <interface name="IŹródłoRekrutacji"/>
+
+  <!-- Aplikacja, zgłoszenie pracownika o konkretnych kwalifikacjach, powinno być związane przynajmniej z jednym wakatem-->
+  <enum name="StanAplikacji"/>
+  
+  <table name="RekrutacjaAplikacja" tablename="RekrutAplikacje" guided="Root"
+    caption="Aplikacja"
+    tablecaption="Aplikacje"
+  >
+    <interface>IŹródłoRekrutacji</interface>
+    <key name="WgDaty">
+      <keycol name="Data"/>
+    </key>
+    <key name="WgTerminu">
+      <keycol name="PlanowanaDataZatrudnienia"/>
+    </key>
+    <col name="Stan" type="StanAplikacji" category="Dokument" required="true"/>
+    <col name="Data" type="date" category="Dokument" required="true"/>
+    
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Aplikacja"
+			keyprimary="true"
+			relname="Aplikacja wg pracownika"
+      children="Aplikacje"
+			relright="other"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Oferta" type="OfertaPracy" category="Aplikacja"
+			relname="Aplikacje wg ofert pracy"
+      children="Oferty"
+			relright="other"
+      description="Oferta pracy na podstawie której aplikacja została wprowadzona do systemu"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Stanowisko" type="DefinicjaStanowiska" readonly="true" required="true" category="Aplikacja"
+			relname="Aplikacja na stanowisko wg definicji stanowiska"
+			relright="other"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Wydzial" type="Wydzial" readonly="true" required="true" category="Aplikacja"
+      caption="Jednostka organizacyjna"
+			relname="Aplikacja na stanowisko wg wydziału i definicji stanowiska"
+			relright="true"
+		>
+      <keycol name="Stanowisko"/>
+      <keycol name="Data"/>
+    </col>
+    <col name="PlanowanaDataZatrudnienia" type="date" category="Aplikacja" required="true"/>
+  </table>
+
+  <enum name="StanZgłoszonegoWakatu"/>
+  
+  <table name="RekrutacjaWakat" tablename="RekrutWakaty" guided="Root"
+    caption="Wakat"
+    tablecaption="Wakaty"
+  >
+    <interface>IŹródłoRekrutacji</interface>
+    <interface>IŹródłoKartyOpisuStanowiska</interface>
+    <key name="WgDaty">
+      <keycol name="Data"/>
+    </key>
+    <key name="WgTerminu">
+      <keycol name="PlanowanaDataZatrudnienia"/>
+    </key>
+    <col name="Stan" type="StanZgłoszonegoWakatu" category="Dokument" required="true"/>
+    <col name="Data" type="date" category="Rekrutacja" required="true"/>
+    <col name="Stanowisko" type="DefinicjaStanowiska" readonly="true" required="true" category="Rekrutacja"
+			keyprimary="true"
+			relname="Wakat wg definicji stanowiska"
+      children="Wakaty"
+			relright="true"
+    />
+    <col name="Wydzial" type="Wydzial" readonly="true" required="true" category="Rekrutacja"
+      caption="Jednostka organizacyjna"
+			relname="Wakat wg wydziału i definicji stanowiska"
+      children="Wakaty"
+			relright="true"
+		/>
+    <col name="Odpowiedzialny" type="IOceniający" children="Wakaty"  category="Rekrutacja" relname="Osoba odpowiedzialna za obsługę zgłoszenia"/>
+    <col name="PlanowanaDataZatrudnienia" type="date" category="Rekrutacja" required="true" description="Planowana data zatrudniania pracowników"/>
+    <col name="Zapotrzebowanie" type="int" category="Rekrutacja" required="true"/>
+    <col name="Zatrudnieni" type="int" category="Rekrutacja"/>
+  </table>
+
+  <enum name="StanOfertyPracy"/>
+
+  <table name="OfertaPracy" tablename="OfertyPracy"
+    caption="Ogłoszenie o pracę"
+    tablecaption="Ogłoszenia o pracę"
+  >
+    <interface>IŹródłoRekrutacji</interface>
+    <interface>IŹródłoKartyOpisuStanowiska</interface>
+    <key name="WgDaty">
+      <keycol name="Data"/>
+    </key>
+    <col name="Definicja" type="DefinicjaDokumentu" required="true" category="Dokument"
+			relname="Definicja umowy"
+		/>
+    <col name="Seria" type="string" length="12" category="Dokument">
+      <attribute>Dictionary("Seria ofer.pracy")</attribute>
+    </col>
+    <col name="Numer" type="NumerDokumentu" category="Dokument" />
+    <col name="Stan" type="StanOfertyPracy" category="Dokument" required="true"/>
+    <col name="Data" type="date" category="Dokument" required="true"/>
+
+    <col name="Stanowisko" type="DefinicjaStanowiska" readonly="true" required="true" category="Oferta pracy"
+			keyprimary="true"
+			relname="Oferty pracy wg definicji stanowiska"
+			relright="other"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Wydzial" type="Wydzial" readonly="true" required="true" category="Oferta pracy"
+      caption="Jednostka organizacyjna"
+			relname="Oferty pracy wg wydziału i definicji stanowiska"
+			relright="true"
+		>
+      <keycol name="Stanowisko"/>
+      <keycol name="Data"/>
+    </col>
+    <col name="Wakat" type="RekrutacjaWakat" readonly="true" category="Oferta pracy"
+			relname="Oferty pracy wg wakatu"
+      children="OfertyPracy"
+			relright="other"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Odpowiedzialny" type="IOceniający" children="OfertyPracy" relname="Osoba odpowiedzialna za obsługę zgłoszenia" category="Oferta pracy"/>
+    <col name="NumerReferencyjny" type="string" length="40" category="Oferta pracy"/>
+    <col name="DataWystawienia" type="date" category="Oferta pracy" required="true"/>
+    <col name="PlanowanaDataWycofania" type="date" category="Oferta pracy" required="true"/>
+    <col name="DataWycofania" type="date" category="Oferta pracy" required="true"/>
+    <col name="EMAIL" type="string" length="100" description="Adres poczty elektronicznej" category="Dodatkowe">
+      <verifier name="OfertaPracy.EMAILVerifier" onadded="true"/>
+    </col>    
+  </table>
+</module>

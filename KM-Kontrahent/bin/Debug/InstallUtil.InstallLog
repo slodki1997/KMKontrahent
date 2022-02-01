@@ -1,0 +1,76 @@
+﻿
+Uruchamianie instalacji transakcyjnej.
+
+Rozpoczyna się faza instalacji procesu instalacji.
+Aby sprawdzić postęp zestawu D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe, zapoznaj się z zawartością pliku dziennika.
+Plik znajduje się w D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog.
+
+Podczas fazy instalacji wystąpił wyjątek.
+System.Security.SecurityException: Nie znaleziono źródła, ale nie można przeszukać niektórych lub wszystkich dzienników zdarzeń. Niedostępne dzienniki: Security, State.
+
+Rozpoczyna się faza wycofywania procesu instalacji.
+Aby sprawdzić postęp zestawu D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe, zapoznaj się z zawartością pliku dziennika.
+Plik znajduje się w D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog.
+
+Faza wycofywania została ukończona pomyślnie.
+
+Instalacja transakcyjna została ukończona.
+
+Uruchamianie instalacji transakcyjnej.
+
+Rozpoczyna się faza instalacji procesu instalacji.
+Aby sprawdzić postęp zestawu D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe, zapoznaj się z zawartością pliku dziennika.
+Plik znajduje się w D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog.
+
+Faza instalacji została ukończona pomyślnie i rozpoczyna się faza rezerwacji.
+Aby sprawdzić postęp zestawu D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe, zapoznaj się z zawartością pliku dziennika.
+Plik znajduje się w D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog.
+
+Faza rezerwacji została ukończona pomyślnie.
+
+Instalacja transakcyjna została ukończona.
+
+Uruchamianie instalacji transakcyjnej.
+
+Rozpoczyna się faza instalacji procesu instalacji.
+Aby sprawdzić postęp zestawu D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe, zapoznaj się z zawartością pliku dziennika.
+Plik znajduje się w D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog.
+
+Podczas fazy instalacji wystąpił wyjątek.
+System.ComponentModel.Win32Exception: Określona usługa już istnieje
+
+Rozpoczyna się faza wycofywania procesu instalacji.
+Aby sprawdzić postęp zestawu D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe, zapoznaj się z zawartością pliku dziennika.
+Plik znajduje się w D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog.
+
+Faza wycofywania została ukończona pomyślnie.
+
+Instalacja transakcyjna została ukończona.
+
+
+Rozpoczyna się dezinstalacja.
+Aby sprawdzić postęp zestawu D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe, zapoznaj się z zawartością pliku dziennika.
+Plik znajduje się w D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog.
+
+Dezinstalacja została ukończona.
+
+
+Rozpoczyna się dezinstalacja.
+Aby sprawdzić postęp zestawu D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe, zapoznaj się z zawartością pliku dziennika.
+Plik znajduje się w D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog.
+
+Dezinstalacja została ukończona.
+
+Uruchamianie instalacji transakcyjnej.
+
+Rozpoczyna się faza instalacji procesu instalacji.
+Aby sprawdzić postęp zestawu D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe, zapoznaj się z zawartością pliku dziennika.
+Plik znajduje się w D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog.
+
+Faza instalacji została ukończona pomyślnie i rozpoczyna się faza rezerwacji.
+Aby sprawdzić postęp zestawu D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe, zapoznaj się z zawartością pliku dziennika.
+Plik znajduje się w D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog.
+
+Faza rezerwacji została ukończona pomyślnie.
+
+Instalacja transakcyjna została ukończona.

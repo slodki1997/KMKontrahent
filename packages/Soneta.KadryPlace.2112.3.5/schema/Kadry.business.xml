@@ -1,0 +1,3053 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Kadry" namespace="Soneta.Kadry" versionName="soneta">
+  <import>../..</import>    
+    <using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.Kasa</using>
+	<using>Soneta.Place</using>
+	<using>Soneta.Kalend</using>
+  <using>Soneta.HR</using>
+  <using>Soneta.HR2</using>
+  <using>Soneta.Oceny</using>
+  <using>Soneta.CRM</using>
+  <using>Soneta.CRM.Osoba_Kontrahent</using>
+  <using>Soneta.Core.DbTuples</using>
+
+  <!-- HR2 -->
+  <interface name="IŹródłoKartyOpisuStanowiska"/>
+  <interface name="IŹródłoKartyCharakterystykiPracownika"/>
+  <interface name="IDefinicjaRCP"/>
+  <interface name="IZrodloDeklaracji" />
+	<simpletype name="StazPracy">
+		<cstype>StazPracy</cstype>
+		<cscreator>new StazPracy(creator.Read_int(), creator.Read_int(), creator.Read_int())</cscreator>
+		<nullcondition>value==StazPracy.Empty</nullcondition>
+		<dbfield type="int" postfix="Lata" />
+		<dbfield type="int" postfix="Miesiace" />
+		<dbfield type="int" postfix="Dni" />
+	</simpletype>
+	<simpletype name="TytulUbezpieczenia">
+		<cstype>TytulUbezpieczenia</cstype>
+		<cscreator>new TytulUbezpieczenia(creator.Read_int())</cscreator>
+		<nullcondition>value==TytulUbezpieczenia.Empty</nullcondition>
+		<dbfield type="int" postfix="Value" />
+	</simpletype>
+	<!-- DEFINICJA PODSTAWY STAŻU PRACY -->
+	<table name="DefPodstawyStazu" tablename="DefPodstawStazu" name8="DefPdsSt" guided="Root" config="true"
+		caption="Def. podstawy stażu pracy"
+		tablecaption="Def. podstaw stażu pracy"
+	>
+		<key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Nazwa" type="string" length="30" required="true" localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="OkresNauki" type="boolean"/>
+    <col name="StazDoUrlopu" type="boolean"/>
+    <col name="StazPracy" type="boolean"/>
+    <col name="StazPracyWFirmie" type="boolean"/>
+    <col name="OkresyNiewliczane" type="boolean"/>
+  </table>
+  <!-- DEFINICJAWYDZIAŁU -->
+  <table name="DefinicjaWydziału" tablename="DefWydzialow" guided="Root" config="true"
+  caption="Kategoria jednostki organizacyjnej"
+  tablecaption="Kategorie jednostek organizacyjnych"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="30" localization="dictionary" required="true"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="PierwszySegment" type="boolean" modifier="public virtual"/>
+		<col name="SeparatorSegmentu" type="string" length="1" modifier="public virtual"/>
+  </table>
+  <!-- WYDZIAŁ -->
+  <enum name="TypJeżeliWolnyDzień"/>
+  <enum name="TypJeżeliNastępnyMiesiąc"/>
+  <subrow name="DefinicjaBlokady">
+    <col name="Aktywna" type="boolean" />
+    <col name="OpoznienieMies" type="int" />
+    <col name="OdKonca" type="boolean"/>
+    <col name="Dzien" type="int"/>
+    <col name="JezeliWolnyDzien" type="TypJeżeliWolnyDzień"/>
+  </subrow>
+  <enum name="MiastoWieś"/>
+	<subrow name="StatystykaGUSWdz">
+		<col name="MiastoWies" name12="MiasWies" type="MiastoWieś"/>
+		<col name="Gmina" type="string" length="26" description="Gmina">
+			<attribute>Dictionary("Gmina")</attribute> 
+		</col>
+    <col name="Dzialalnosc" type="string" length="32" description="Opis rodzaju działalności">
+      <attribute>Dictionary("Działalność")</attribute>
+    </col>
+  </subrow>
+  <subrow name="AgencjaPracyTymczasowejWdz">
+    <col name="KlientAgencji" type="boolean" category="Ogólne" />
+    <col name="Pracodawca" type="Kontrahent" category="Ogólne" caption="Pracodawca użytkownik"/>
+  </subrow>
+  <table name="Wydzial" tablename="Wydzialy" guided="Root" config="true"
+		caption="Jednostka organizacyjna" 
+		tablecaption="Jednostki organizacyjne" 
+	>
+		<interface>IRightsSource</interface>
+    <interface>IElementStrukturyFirmy</interface>
+    <interface>IElementSlownika</interface>
+    <key name="WgKodu" keyunique="true">
+			<keycol name="Kod" />
+		</key>
+		<key name="WgNazwy" keyunique="true">
+			<keycol name="Nazwa" />
+		</key>
+		<col name="Nadrzedny" type="Wydzial" readonly="set" category="Ogólne" 
+			keyprimary="true" 
+			relname="Podwydziały wydziału" 
+			reldefault="true" 
+			children="Podwydzialy" 
+		/>
+		<col name="CentrumKosztow" type="CentrumKosztow" category="Ogólne"
+			relname="Centrum kosztów wydziału" 
+		/>
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne"
+			relname="Oddział firmy do którego należy wydział"
+		/>		
+		<col name="Gotowka" type="EwidencjaSP" category="Ogólne" 
+			description="Kasa, z której wypłacane są wynagrodzenia w gotówce" 
+		/>
+		<col name="Przelew" type="EwidencjaSP" category="Ogólne" 
+			description="Rachunek bankowy, z którego realizowane są przelewy za wynagrodzenia" 
+		/>
+		<col name="Nazwa" type="string" length="100" required="true" localization="dictionary" category="Ogólne"/>
+    <col name="NazwaPomocnicza" type="string" length="100" modifier="public virtual" localization="dictionary" category="Ogólne" />
+		<col name="Kod" type="string" length="20" required="true" category="Ogólne" />
+		<col name="SegmentKodu" type="string" length="6" category="Ogólne" modifier="public virtual"/>
+    <col name="Definicja" type="DefinicjaWydziału" required="true" caption="Kategoria"/>
+    <col name="ListaPlac" type="boolean" category="Ogólne" />
+		<col name="Symbol" type="string" length="20" category="Ogólne" />
+		<col name="GUS" type="StatystykaGUSWdz" category="Inne" />
+    <col name="Blokada" type="boolean" category="Ogólne" />
+    <col name="Okres" type="FromTo" category="Ogólne" required="true" modifier="public virtual"/>
+    <col name="AgencjaPT" type="AgencjaPracyTymczasowejWdz" category="Ogólne" />
+    <col name="BlokadaKadry" type="DefinicjaBlokady"/>
+    <col name="BlokadaPlace" type="DefinicjaBlokady"/>
+    <col name="BlokadaWeb" type="DefinicjaBlokady"/>
+  </table>
+  
+  <interface name="IMetrykaWydziałuHost"/>
+  
+  <table name="WydzialRef" tablename="WydzialyRef" config="true" caption="Zmiana jednostki nadrzędnej" tablecaption="Zmiana jednostek nadrzędnych">
+    <interface>IMetrykaWydziałuHost</interface>
+    <col name="Wydzial" type="Wydzial" required="true" readonly="true"
+      relname="Historia podległości wydziału"
+      relguided="inner"
+      children="HistoriaPodleglosci"
+			keyclass="History" 
+			keyclasscol="Aktualnosc" 
+      delete="cascade"
+      keyprimary="true"
+      keyunique="true"/>
+    <col name="Aktualnosc" type="FromTo" required="true" modifier="internal"/>
+    <col name="Nadrzedny" type="Wydzial" required="true" readonly="set"
+      children="PodwydziałyWgAktualnosci"/>
+  </table>
+
+  <table name="HistoriaDanychWydziału" tablename="HstDanychWydzial" config="true"
+		caption="Historia danych jednostki organizacyjnej"
+		tablecaption="Historia danych jednostek organizacyjnych"
+	>
+    <interface>IMetrykaWydziałuHost</interface>
+    <col name="Wydzial" type="Wydzial" required="true" readonly="true"
+      relname="Historia zmian wydziału"
+      relguided="inner"
+      children="HistoriaZmian"
+			keyclass="History" 
+			keyclasscol="Aktualnosc" 
+      delete="cascade"
+      keyprimary="true"
+      keyunique="true"/>
+    <col name="Aktualnosc" type="FromTo" required="true" modifier="internal virtual"/>
+		<col name="Nazwa" type="string" length="100" required="true" localization="dictionary" modifier="public virtual"/>
+    <col name="NazwaPomocnicza" type="string" length="100" modifier="public virtual" localization="dictionary"/>
+		<col name="Kod" type="string" length="20" required="true"  modifier="public virtual"/>
+    <col name="Definicja" type="DefinicjaWydziału" required="true" caption="Kategoria"  modifier="public virtual"/>
+  </table>
+
+  <enum name="RodzajMetryki"/>
+  
+  <table name="MetrykaWydziału" tablename="MetrykiWydzialow" config="true"
+		caption="Wpis do metryki"
+		tablecaption="Wpisy do metryki jednostek organizacyjnych"
+	>
+    <col name="Wydzial" type="Wydzial" required="true" readonly="true" category="Ogólne"
+      children="Metryka"
+      keyprimary="true"
+      relguided="inner"
+      delete="cascade"
+    >
+      <keycol name="Data"/>
+    </col>     
+    <col name="Host" type="IMetrykaWydziałuHost" readonly="true" category="Ogólne"
+      delete="cascade"
+    />
+    <col name="Rodzaj" type="RodzajMetryki" required="true" caption="Rodzaj wpisu" modifier="public virtual"/>
+    <col name="Data" type="date" required="true" caption="Data zmiany" modifier="public virtual"/>
+    <col name="Przyczyna" type="string" length="80" required="true" caption="Przyczyna zmiany" modifier="public virtual"/>
+  </table>
+  
+  <!-- ZGODA NA EDYCJĘ-->
+  <table name="ZgodaNaEdycję" tablename="ZgodyNaEdycje" guided="Root"
+  caption="Zgoda na edycję danych"
+  tablecaption="Zgody na edycję danych"
+	>
+    <col name="Wydzial" type="Wydzial" readonly="true" required="true"
+      caption="Jednostka organizacyjna"
+			keyprimary="true"
+			relname="Zgody na edycję danych wydziału"
+			reldefault="true"
+      relright="true"
+         children="Zgody"
+		>
+      <keycol name="Termin"/>
+    </col>
+    <!-- OGÓLNE -->
+    <col name="Termin" type="date" required="true"/>
+    <col name="Poczatek" type="YearMonth" required="true"/>
+    <col name="Wycofana" type="boolean" readonly="set"/>
+    <col name="Kadry" type="boolean">
+      <verifier name="ZgodaNaEdycję.OpcjaWłączonaVerivier" onadded="true"/>
+    </col>
+    <col name="Place" type="boolean">
+      <verifier name="ZgodaNaEdycję.OpcjaWłączonaVerivier"/>
+    </col>
+    <col name="Web" type="boolean">
+      <verifier name="ZgodaNaEdycję.OpcjaWłączonaVerivier"/>
+    </col>
+    <col name="LimityNieobecnosci" type="boolean"/>
+    <col name="Opis" type="text" category="Dokument"/>
+  </table>
+
+  <!-- GRUPA ZASZEREGOWANIA -->
+	<enum name="TypStawkiZaszeregowania" />
+	<enum name="RodzajStawkiZaszeregowania" />
+	<subrow name="Zaszeregowanie">
+		<col name="Wymiar" name12="Wym" type="Fraction" required="true">
+      <verifier name="Zaszeregowanie.StawkaVerivier"/>
+      <verifier name="Zaszeregowanie.ZakresStawkiVerivier"/>
+		</col>
+		<col name="Stawka" name12="St" type="currency">
+      <verifier name="Zaszeregowanie.StawkaVerivier"/>
+      <verifier name="Zaszeregowanie.ZakresStawkiVerivier"/>
+		</col>
+    <col name="WskaznikNazwa" type="string" length="40" category="Wynagrodzenie wskaźnikowe">
+      <verifier name="Zaszeregowanie.WskaznikNazwaRequiredVerivier"/>
+    </col>
+    <col name="WskaznikKrotnosc" type="double" category="Wynagrodzenie wskaźnikowe">
+      <verifier name="Zaszeregowanie.WskaznikKrotnoscRequiredVerivier"/>
+    </col>
+    <col name="RodzajStawki" type="RodzajStawkiZaszeregowania">
+      <verifier name="Zaszeregowanie.RodzajStawkiDefinicjaVerivier"/>
+      <verifier name="Zaszeregowanie.RodzajStawkiGrupaVerivier"/>
+    </col>
+    <col name="Element" type="DefinicjaElementu" relname="Definicja elementu grupy zaszeregowania" required="true">
+      <verifier name="Zaszeregowanie.ElementDefinicjaVerivier"/>
+      <verifier name="Zaszeregowanie.ElementGrupaVerivier"/>
+    </col>
+	</subrow>
+	<table name="GrupaZaszeregowania" tablename="GrupyZaszer" name8="GrupZasz" config="true" guided="Root"
+		caption="Grupa zaszeregowania" 
+		tablecaption="Grupy zaszeregowania" 
+	>
+		<key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Nazwa" type="string" length="30" required="true" localization="dictionary" category="Ogólne" />
+		<!-- ZASZEREGOWANIE -->
+		<col name="UwzgledniajWymiar" type="boolean" category="Ogólne" />
+		<col name="TypStawki" type="TypStawkiZaszeregowania" category="Zaszeregowanie" />
+		<col name="Zaszeregowanie" name12="Zas" type="Zaszeregowanie" category="Ogólne" />
+		<col name="ZakresOstrzezenie" name12="Ostrzezenie" type="boolean" category="Zakres" />
+		<col name="ZakresOd" name12="Od" type="currency" category="Zakres" />
+		<col name="ZakresDo" name12="Do" type="currency" category="Zakres" />
+    <col name="Blokada" type="boolean" category="Ogólne" />
+  </table>
+	<!-- TYTUŁ UBEZPIECZENIA4 -->
+	<enum name="UbezpieczenieDotyczy" />
+	<enum name="PłatnikSkładek"/>
+	<table name="TytulUbezpieczenia4" tablename="TytulyUbezpiecz4" name8="Tyub4" guided="Root" config="true"
+         caption="Tytuł ubezpieczenia" tablecaption="Tytuły ubezpieczenia">
+		<key name="WgKodu" keyunique="true" keyprimary="true">
+			<keycol name="Kod" />
+		</key>
+		<col name="Kod" type="int" required="true" category="Ogólne" />
+		<col name="Opis1" type="string" length="255" required="true" category="Ogólne" modifier="protected"/>
+		<col name="Opis2" type="string" length="255" category="Ogólne" modifier="protected"/>
+    <col name="Opis3" type="string" length="255" category="Ogólne" modifier="protected"/>
+    <col name="Opis4" type="string" length="255" category="Ogólne" modifier="protected"/>
+    <col name="Kategoria" type="string" length="120" category="Ogólne" />
+		<col name="Okres" type="FromTo" category="Ogólne"/>
+		<!-- UBEZPIECZENIE -->
+		<col name="Dotyczy" type="UbezpieczenieDotyczy" category="Ubezpieczenie" />
+		<col name="Platnik" type="PłatnikSkładek" category="Ubezpieczenie"/>
+		<col name="Emerytalne" type="TypUbezpieczenia" category="Ubezpieczenie" />
+		<col name="Rentowe" type="TypUbezpieczenia" category="Ubezpieczenie" />
+		<col name="Chorobowe" type="TypUbezpieczenia" category="Ubezpieczenie" />
+		<col name="Wypadkowe" type="TypUbezpieczenia" category="Ubezpieczenie" />
+		<col name="Zdrowotne" type="TypUbezpieczenia" category="Ubezpieczenie" />
+	</table>
+  <!-- KOD WYKONYWANEGO ZAWODU-->
+  <table name="KodWykonywanegoZawodu" tablename="KodyWykZawodow"
+    caption="Kod GUS zawodu"
+    tablecaption="Kody GUS zawodów"
+    config="true"
+    guided="Root"
+  >
+    <key name="WgKoduGUS" keyprimary="true" keyunique="true">
+      <keycol name="KodGUS"/>
+    </key>
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="KodGUS" type="string" length="10" required="true" important="true" caption="Kod GUS" description="Kod GUS zawodu.">
+      <verifier name="KodWykonywanegoZawodu.KodVerifier"/>
+    </col>
+    <col name="Nazwa" type="string" required="true" length="128" description="Nazwa zawodu." localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+  </table>
+  <!-- FORMA ORGANIZACJI PRACY-->
+  <table name="FormaOrganizacjiPracy" tablename="FormyOrgPracy"
+    caption="Forma organizacji pracy"
+    tablecaption="Formy organizacji pracy"
+    config="true"
+    guided="Root"
+  >
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" required="true" localization="dictionary" length="128"  important="true" description="Nazwa formy organizacji pracy" />
+    <col name="Blokada" type="boolean"/>
+  </table>
+  <!-- PRZYCZYNA ZAWARCIA UMOWY O PRACĘ-->
+  <table name="PrzyczynaZawUmowy" tablename="PrzyczZawUmow"
+    caption="Przyczyna zawarcia umowy o pracę"
+    tablecaption="Przyczyna zawarcia umów o pracę"
+    config="true"
+    guided="Root"
+  >
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" required="true" localization="dictionary" length="80"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Opis" type="string" localization="dictionary" length="255"/>
+  </table>
+  <!-- PRZYCZYNA ROZWIĄZANIA UMOWY O PRACĘ-->
+  <enum name="TypPrzyczynyRozwUmowy"/>
+  <enum name="KodPodstawyPrawnejZwolnienia"/>
+  <enum name="KodZwolnienia"/>
+  <enum name="KodInicjatywyZwolnienia"/>
+  <table name="PrzyczynaRozwUmowy" tablename="PrzyczRozwUmow"
+    caption="Przyczyna rozwiązania umowy o pracę"
+    tablecaption="Przyczyna rozwiązania umów o pracę"
+    config="true"
+    guided="Root"
+  >
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" required="true" localization="dictionary" length="80"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="ZaOdszkodowaniem" type="boolean"/>
+    <col name="Opis" type="string" localization="dictionary" length="255"/>
+    <col name="Typ" type="TypPrzyczynyRozwUmowy"/>
+    <col name="PodstawaPrawna" type="KodPodstawyPrawnejZwolnienia"/>
+    <col name="KodZwolnienia" type="KodZwolnienia"/>
+    <col name="Inicjatywa" type="KodInicjatywyZwolnienia"/>
+  </table>
+  <!-- PODSTAWA STAŻU -->
+  <table name="PodstawaStazu" tablename="PodstawyStazow" name8="PodstSt"
+		caption="Podstawa stażu pracy"
+		tablecaption="Podstawy stażu pracy"
+    guided="Root"
+	>
+    <col name="Zatrudnienie" type="HistoriaZatrudnieniaBase" readonly="true" required="true"
+      keyprimary="true"
+			relname="Podstawa stażu historii zatrudnienia"
+			children="Podstawy"
+			delete="cascade"
+			keyunique="true"
+			relright="true"
+      relguided="inner"
+		>
+      <keycol name="Definicja"/>
+    </col>
+    <col name="Definicja" type="DefPodstawyStazu" required="true"
+			relname="Podstawa stażu definicji"
+		/>
+  </table>
+  <!-- OKRES WYKONYWANIA PRACY TYMCZASOWEJ-->
+  <table name="OkresWykonywaniaPracyTymczasowej" tablename="OkresyPracyTymcz"
+		caption="Okres wykonywania pracy tymczasowej"
+		tablecaption="Okresy wykonywania pracy tymczasowej"
+	>
+    <col name="Zatrudnienie" type="HistoriaZatrudnieniaBase" readonly="true" required="true"
+      keyprimary="true"
+			relname="Okresy wykonywania pracy tymczasowej"
+			children="OkresyPracyTymczasowej"
+			delete="cascade"
+			relright="true"
+      relguided="inner"
+		/>
+    <col name="Pracodawca" type="Kontrahent" required="true" modifier="public virtual" caption="Pracodawca użytkownik"/>
+    <col name="Okres" type="FromTo" required="true" modifier="public virtual">
+      <verifier name="OkresWykonywaniaPracyTymczasowej.OkresVerifier"/>
+    </col>
+  </table>
+  <!-- HISTORIA ZATRUDNIENIA -->
+	<subrow name="StazPracyPracownika">
+		<col name="Staz" type="StazPracy" />
+	</subrow>
+	<enum name="TypHistoriiZatrudnienia" />
+  <enum name="TypSzkoły"/>
+  <table name="HistoriaZatrudnieniaBase" tablename="HistZatrudnien" name8="HistZatr"
+		caption="Historia zatrudnienia"
+		tablecaption="Historia zatrudnienia"
+    guided="Root"
+	>
+    <interface>IManagedRowInfoHost</interface>
+    <!-- RELACJE -->
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Pracownik" 
+			relname="Poprzednie miejsca pracy" 
+			children="HistoriaZatrudnienia" 
+      keyprimary="true"
+			delete="cascade" 
+			relright="true"
+		/>
+		<!-- OGÓLNE -->
+		<col name="Typ" type="TypHistoriiZatrudnienia" selector="true" readonly="true" required="true"/>
+		<col name="Nazwa" type="string" length="240" required="true" />
+		<col name="Adres1" type="string" length="60" />
+		<col name="Adres2" type="string" length="60" />
+    <col name="AgencjaPracyTyczasowej" type="boolean" modifier="public virtual"/>
+    <col name="Okres" name12="Okr" type="FromTo">
+      <verifier name="HistoriaZatrudnieniaBase.OkresVerifier"/>
+      <verifier name="HistoriaZatrudnieniaBase.OkresAPTVerifier"/>
+      <verifier name="HistoriaZatrudnieniaBase.EfektywnyOkresVerifier"/>
+      <verifier name="HistoriaZatrudnieniaBase.OkresZatrudnieniaWFirmieVerifier"/>
+    </col>
+		<col name="EfektywnyOkres" name12="EfOkr" type="FromTo">
+			<verifier name="HistoriaZatrudnieniaBase.OkresVerifier"/>
+			<verifier name="HistoriaZatrudnieniaBase.EfektywnyOkresVerifier"/>
+      <verifier name="HistoriaZatrudnieniaBase.OkresZatrudnieniaWFirmieVerifier"/>
+      <verifier name="HistoriaZatrudnieniaBase.KorektaVerifier"/>
+      <verifier name="HistoriaZatrudnieniaBase.NiewliczaneVerifier"/>
+    </col>
+		<col name="Korekta" type="StazPracy">
+			<verifier name="HistoriaZatrudnieniaBase.KorektaVerifier"/>
+		</col>
+		<col name="Staz" type="StazPracyPracownika" />
+		<col name="Informacja1" type="string" length="50" modifier="protected" />
+		<col name="Informacja2" type="string" length="50" modifier="protected" />
+		<col name="KodWykonywanegoZawodu" type="int" modifier="protected" />
+    <col name="Szkola" type="TypSzkoły" modifier="protected" />
+    <col name="SzkolaStaz" type="StazPracy" modifier="protected" />
+    <col name="TyUb" type="TytulUbezpieczenia" modifier="protected" />
+	</table>
+  <table name="OkresNiewliczany" tablename="OkrNiewliczane" caption="Okres niewliczany do stażu pracy" tablecaption="Okresy niewliczane do stażu pracy">
+    <col name="Zatrudnienie" type="HistoriaZatrudnieniaBase" readonly="true" required="true" category="Zatrudnienie"
+			relname="Zatrudnienie dla przerwy"
+			children="OkresyNiewliczane"
+      keyprimary="true"
+			keyclass="FromTo" 
+			keyclasscol="Okres"
+			delete="cascade"
+			relright="true"
+      relguided="inner"
+		/>
+    <col name="Okres" type="FromTo" required="true" category="Ogólne"/>
+    <col name="Staz" type="StazPracy" required="true"/>
+    <col name="Przyczyna" type="string" length="40" category="Ogólne">
+      <attribute>Dictionary("Przycz.ok.niewl.")</attribute>
+    </col>
+    <!--7.8 -->
+    <col name="Naliczony" type="boolean" required="false" readonly="true"/>
+  </table>
+	<!-- INNY DOCHÓD -->
+	<table name="InnyDochod" tablename="InneDochody" name8="InneDoch"
+		caption="Inny dochód"
+		tablecaption="Inne dochody"
+	>
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true"
+			relname="Inne dochody pracownika" 
+			children="InneDochody" 
+			delete="cascade" 
+			keyunique="true"
+      keyprimary="true"
+			relguided="inner"
+			relright="true"
+		>
+			<keycol name="Miesiac"/>
+		</col>
+		<col name="Miesiac" type="int" required="true"/>
+		<col name="Dochod" type="decimal" caption="Dochód"/>
+	</table>
+	<!-- INNY DOCHÓD -->
+	<table name="ZbiegUbezpieczenia" tablename="ZbiegiUbezpiecz" name8="ZbiegUb"
+		caption="Zbieg ubezpieczenia"
+		tablecaption="Zbiegi ubezpieczeń"
+	>
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true"
+			relname="Zbiegi ubezpieczeń pracownika" 
+			children="ZbiegiUbezpieczen" 
+			delete="cascade" 
+			keyclass="FromTo" 
+			keyclasscol="Okres"
+      keyprimary="true"
+			relguided="inner"
+			relright="true"
+		/>
+		<col name="Okres" type="FromTo" required="true"/>
+		<col name="Spoleczne" type="boolean" caption="Społeczne">
+			<verifier name="ZbiegUbezpieczenia.UbezpieczenieVerifier" onadded="true"/>
+		</col>
+		<col name="Zdrowotne" type="boolean" caption="Zdrowotne">
+			<verifier name="ZbiegUbezpieczenia.UbezpieczenieVerifier" />
+		</col>
+	</table>
+	<!-- PRACOWNIK -->
+	<enum name="TypPracownika" />
+  <enum name="TypyWieloetatowosci"/>
+  <enum name="InformacjeOArchiwum"/>
+  <enum name="RodzajPracownika" />
+  <table name="Pracownik" tablename="Pracownicy" name8="Prac" tablecaption="Pracownicy" guided="Root">
+		<interface>IZrodloNieobecnosci</interface>
+		<interface>IBazaZrodlaWyplaty</interface>
+		<interface>IPodmiot</interface>
+		<interface>IPodmiotKasowy</interface>
+    <interface>IKontrahent</interface>
+    <interface>IZrodloPodzielnikaKosztow</interface>
+		<interface>IElementSlownika</interface>
+		<interface>IZasobCRM</interface>
+		<interface>ITaskUser</interface>
+    <interface>IŹródłoPowiązaniaStrukturyOrganizacyjnej</interface>
+    <interface>IWebOperator</interface>
+    <!-- [15486][9.1][Net 9.1]: Obsługa GIODO -->
+    <interface>IGIODOZgodnyHost</interface>
+    <!-- [19055][9.4] Oceny, rozbudowa-->
+    <interface>IOceniany</interface>
+    <interface>IOceniający</interface>
+    <interface>IOdpowiedzialnyZaOcenę</interface>
+    <interface>IŹródłoKartyOpisuStanowiska</interface>
+    <interface>IGIODOWymianaDanychHost</interface>
+    <interface>IGIODOOświadczenieHost</interface>
+    <interface>IGIODOUprawnienieHost</interface>
+    <interface>IEmailElement</interface>
+    <interface>IRozliczenieWynagrodzeniaHost</interface>
+    <interface>IZestawienieDietZagrHost</interface>
+
+    <key name="WgKodu" keyunique="true" keyprimary="true">
+			<keycol name="Kod" />
+      <keyinclude name="Typ"/>
+		</key>
+		<key name="WgNazwiska" keyunique="true">
+			<keycol name="Nazwisko" />
+			<keycol name="Imie" />
+			<keycol name="Kod" />
+      <keyinclude name="Typ"/>
+    </key>
+		<key name="WgPESEL">
+			<keycol name="PESEL" />
+      <keyinclude name="Typ"/>
+    </key>
+    <col name="Wydzial" type="Wydzial" category="System"
+      caption="Jednostka organizacyjna"
+			relname="Jednostka organizacyjna praw pracownika"
+			relright="true"
+		>
+      <verifier name="Pracownik.WydziałRequiredVerifier" onadded="true"/>
+    </col>
+		<col name="Wlasciciel" type="Pracownik" category="Ogólne"
+			modifier="public virtual"
+			relname="Właściciel osoby współpracującej"
+			children="Pracownicy"
+		/>
+		<col name="Typ" type="TypPracownika" selector="true" readonly="true" required="true" category="Ogólne"/>
+		<col name="Kod" type="string" length="12" required="true" important="true" category="Ogólne" />
+		<col name="Nazwisko" type="string" length="81" required="true" category="Ogólne" />
+		<col name="Imie" type="string" length="30" required="true" category="Ogólne"/>
+		<col name="PESEL" type="string" length="11" readonly="set" category="Ogólne" />
+		<col name="IndywidualnaDRA" type="boolean" category="Ogólne"/>
+    <col name="NaDRAUmieszczajREGON" type="boolean" category="Ogólne"/>
+    <col name="NumerRachunkuZUS" type="NumerRachunkuZUS"/>
+    <col name="NumerRachunkuUS" type="NumerRachunkuUS"/>
+    <!-- DODATKOWE -->
+		<col name="Kwota" type="currency" category="Dodatkowe" modifier="private" description="Pole nieużywane od wersji 12.3"/>
+		<col name="Procent" type="percent" category="Dodatkowe" modifier="private" description="Pole nieużywane od wersji 12.3"/>
+		<col name="Uwagi" type="text" category="Dodatkowe"/>
+    <col name="Wieloetatowosc" type="TypyWieloetatowosci" category="Wieloetatowość"/>
+		<col name="HistZatrWgGlownego" type="boolean" category="Wieloetatowość"/>
+    <col name="InneDochodyWgGlownego" type="boolean" category="Wieloetatowość"/>
+    <col name="ZbiegUbespWgGlownego" type="boolean" category="Wieloetatowość"/>
+    <col name="ZajeciaWynagrWgGlownego" type="boolean" category="Wieloetatowość"/>
+    <col name="WieloetatowoscImportujNBPUE" type="boolean" category="Wieloetatowość"/>
+    <col name="SposobZaplaty" type="FormaPlatnosci" category="Kontrahent"/>
+    <col name="ArchiwumInfo" type="InformacjeOArchiwum"  category="Dodatkowe" readonly="set"/>
+    <col name="Rodzaj" type="RodzajPracownika" category="Ogólne" />
+    <!-- Net -->
+	<col name="Net" name12="PNet" type="PracownikNet" category="Net"/>
+
+    <col name="PowiazanyKontrahent" type="Kontrahent" category="Ogólne"/>
+  </table>
+
+	<!-- Net -->
+	<subrow name="PracownikNet">
+		<col name="WidocznyWNet" type="boolean" description="Czy pracownik jest widoczny na listach programu Net" category="Net"/>
+		<col name="AutoZatwWniosku" type="boolean" description="Automatyczne zatwierdzanie wniosku urlopowego" category="Net"/>
+		<col name="PodwladniNizszegoPoziomu" type="boolean" description="Określa czy wyświetlać w Net, dane podwładnych z niższych poziomów podległości." category="Net"/>
+  </subrow>
+
+	<!-- CZŁONEK RODZINY -->
+	<subrow name="Urodzony">
+		<col name="Data" type="date">
+			<verifier name="PeselDataVerifier" />
+		</col>
+		<col name="Miejsce" type="string" length="26">
+			<attribute>Dictionary("Miejscowość")</attribute> 
+		</col>
+	</subrow>
+	<enum name="KodRodzajuDokumentu" />
+  <enum name="KodRodzajNumeruPodatnika"/>
+  <subrow name="DokumentOsoby">
+		<col name="Rodzaj" type="KodRodzajuDokumentu">
+			<verifier name="DokumentOsoby.SeriaNumerVerifier" />
+		</col>
+		<col name="SeriaNumer" type="string" length="50">
+			<verifier name="DokumentOsoby.SeriaNumerVerifier" />
+		</col>
+		<col name="WydanyPrzez" type="string" length="50" />
+		<col name="DataWydania" type="date" />
+		<col name="DataWaznosci" type="date" />
+	</subrow>
+  <enum name="RodzajKartyPobytu"/>
+  <subrow name="KartaPobytu">
+    <col name="Rodzaj" type="RodzajKartyPobytu" modifier="public virtual">
+      <verifier name="KartaPobytu.SeriaNumerVerifier" />
+    </col>
+    <col name="SeriaNumer" type="string" length="50" modifier="public virtual">
+      <verifier name="KartaPobytu.SeriaNumerVerifier" />
+    </col>
+    <col name="WydanyPrzez" type="string" length="50" modifier="public virtual"/>
+    <col name="DataWydania" type="date" modifier="public virtual"/>
+    <col name="DataWaznosci" type="date" modifier="public virtual"/>
+  </subrow>
+  <subrow name="Obywatelstwo">
+		<col name="Nazwa" type="string" required="true" length="22">
+			<attribute>Dictionary("Obywatelstwo")</attribute> 
+		</col>
+    <col name="KodKraju" type="string" length="2" description="Kod kraju obywatelstwa" modifier="public virtual"/>
+    <col name="DataZmiany" type="date" />
+		<col name="PodstawaPrawnaZmiany" name12="PdstPrawZm" type="string" length="64" />
+    <col name="PodstZdrowCudzoziemca" name12="PdstZdrow" type="PodstZdrowCudzoziemca" modifier="public virtual"/>
+    <col name="ZdrowCudzoziemcaDo" type="date" modifier="public virtual"/>
+    <col name="ZdrowCudzoziemcaUwagi" type="string" length="50" modifier="public virtual"/>
+    <col name="RodzajNumeruPodatnika" type="KodRodzajNumeruPodatnika"/>
+    <col name="NumerPodatnika" name12="NrPodat" type="string" length="50"/>
+    <col name="RodzajDokumentu" name12="RodzDok" type="string" length="20">
+			<attribute>Dictionary("RodzajDokUbezp")</attribute>
+      <attribute>Browsable(false)</attribute>
+      <attribute>Obsolete</attribute>
+    </col>
+    <col name="KrajDokumentu" type="string" length="26" description="Kraj">
+      <attribute>Dictionary("Kraj")</attribute>
+    </col>
+    <col name="KodKrajuDokumentu" type="string" length="2" description="Kod kraju"/>
+    <col name="OgraniczonyObowiazekPodatkowy" type="boolean" />
+    <col name="KartaPobytu" type="KartaPobytu" />
+  </subrow>
+	<enum name="StanCywilny" />
+	<enum name="KodStPokrewienstwa" />
+	<enum name="KodStNiepelnosprawnosci" />
+	<table name="CzlonekRodziny" tablename="Rodzina" guided="Root"
+		caption="Członek rodziny"
+	>
+		<interface>IZrodloDeklaracji</interface>
+		<interface>IAdresHost</interface>
+    <interface>IPowiązanieDodatku</interface>
+    <!-- RELACJE -->
+    <key name="WgNazwiska">
+      <keycol name="Nazwisko"/>
+      <keycol name="Imie"/>
+      <keycol name="PESEL"/>
+      <keyinclude name="Ubezpieczony"/>
+    </key>
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true"  category="Pracownik"
+			relname="Członek rodziny pracownika"
+			children="Rodzina"
+			keyprimary="true"
+			delete="cascade"
+			relright="true"
+		>
+      <keycol name="Nazwisko"/>
+      <keycol name="Imie"/>
+    </col>
+		<!-- OGÓLNE -->
+		<col name="Nazwisko" type="string" length="81" required="true" category="Ogólne" />
+		<col name="Imie" type="string" length="30" required="true" category="Ogólne">
+			<attribute>Dictionary("Imiona")</attribute> 
+		</col>
+		<col name="Urodzony" type="Urodzony" category="Ogólne" />
+		<col name="PESEL" type="string" length="11" category="Ogólne">
+			<verifier name="PeselVerifier" />
+			<verifier name="PeselDataVerifier" />
+		</col>
+		<col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+		<col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual">
+			<verifier name="EuVatVerifier"/>
+		</col>
+		<col name="Dokument" name12="Dok" type="DokumentOsoby" category="Ogólne" />
+		<!-- DANE EWIDENCYJNE -->
+		<col name="ImieDrugie" type="string" length="30" category="Ogólne">
+			<attribute>Dictionary("Imiona")</attribute> 
+		</col>
+		<!-- UBEZPIECZENIE -->
+		<col name="Ubezpieczony" name12="Ubezp" type="boolean" category="Ubezpieczenie">
+			<verifier name="CzlonekRodziny.UbezpieczenieOkresVerifier" />
+		</col>
+		<col name="UbezpieczenieOkres" name12="UbezpOkres" type="FromTo" category="Ubezpieczenie">
+			<verifier name="CzlonekRodziny.UbezpieczenieOkresVerifier" />
+		</col>
+		<col name="StPokrewienstwa" type="KodStPokrewienstwa" category="Ubezpieczenie" />
+		<col name="StNiepelnosprawnosci" type="KodStNiepelnosprawnosci" category="Ubezpieczenie" />
+		<col name="WspolneGospDomowe" type="boolean" category="Ubezpieczenie" />
+		<col name="NaUtrzymaniu" type="boolean" category="Ubezpieczenie" />
+		<!-- ADRES -->
+		<!--col name="Adres" name12="Adr" type="Adres" category="Adres zamieszkania" /-->
+	</table>
+	<!-- PRÓG PODATKOWY -->
+	<table name="ProgPodatkowy" tablename="ProgiPodatkowe" name8="ProgiPod">
+		<!-- RELACJE -->
+		<col name="Historia" type="PracHistoria" readonly="true" required="true" category="Pracownik" 
+			relname="Prog podatkowy pracownika" 
+			children="ProgiPodatkowe" 
+			keyprimary="true" 
+			delete="cascade"
+			relguided="inner"
+			relright="true"
+		>
+			<keycol name="Prog" />
+		</col>
+		<!-- OGÓLNE -->
+		<col name="Zerowy" type="boolean" readonly="true" category="Próg podatkowy" />
+		<col name="Prog" type="decimal" category="Próg podatkowy">
+			<verifier name="ProgPodatkowy.ProgVerifier" onadded="true"/>
+			<verifier name="ProgPodatkowy.DuplicateVerifier" onadded="true"/>
+		</col>
+		<col name="Wartosc" type="percent" category="Próg podatkowy" />
+	</table>
+  
+  <!-- ====================================================================================== -->
+  <!-- BLOKADA PRACOWNIKA -->
+  <table name="BlokadaPracownika" tablename="BlokadyPrac"
+		caption="Blokada pracownika"
+		tablecaption="Blokady pracowników"
+	>
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Blokady pracownika"
+			delete="cascade"
+			keyunique="true"
+      keyprimary="true"
+			relright="true"
+    >
+      <keycol name="TableName"/>
+    </col>
+    <col name="TableName" type="string" length="16" required="true" readonly="true"/>
+  </table>
+
+  <!-- ====================================================================================== -->
+  <!-- PRACOWNIK AKTYWNY -->
+  <table name="PracownikWArchiwum" tablename="PracWArchiwum"
+		caption="Pracownik w archiwum"
+		tablecaption="Pracownicy w archiwum"
+	>
+    <!-- OGÓLNE -->
+    <col name="Pracownik" type="Pracownik" readonly="true" required ="true" category="Ogólne"
+			relname="Zestawienia okresów w archiwum"
+			children="InformacjeOArchiwum"
+			keyclass="FromTo"
+			keyclasscol="Okres"
+			delete="cascade"
+			keyprimary="true"
+			relguided="inner"
+      relright="true"
+		/>
+    <col name="Okres" type="FromTo" required="true" category="Ogólne"/>
+  </table>
+
+  <!-- WYKONUJĄCY (OPERATOR, PRACOWNIK) <=> PRACOWNIK -->
+  <table name="RelacjaWykonPrac" tablename="RelacjeWykonPrac" guided="Child"
+    caption="Powiązanie Wykonujący Pracownik" tablecaption="Powiązanie Wykonujący Pracownik">
+      
+    <col name="Wykonujacy" type="IWykonujacy" required="true" readonly="true"
+        relname="Relacja do wykonującego"
+        children="PracownikWykonujacego"
+        keyprimary="true"
+        keyunique="true"
+        delete="cascade"/>
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+        relname="Relacja do pracownika"
+        children="WykonujacyPracownika"
+        keyunique="true"
+        relguided="outer"
+        delete="cascade"/>
+  </table>
+
+  <!-- KOD PRACY W SZCZEGÓLNYCH WARUNKACH/CHARAKTERZE-->
+  <enum name="KategoriaPracyWSzególnychWarunkachCharakterze"/>
+  <table name="KodPracyWSzególnychWarunkachCharakterze" tablename="KodyPracySzWaCha" guided="Root" config="true"
+         caption="Kod pracy w szczególnych warunkach lub o szczególnym charakterze" tablecaption="Kody pracy w szczególnych warunkach lub o szczególnym charakterze" >
+    <key name="WgKod" keyunique="true" keyprimary="true">
+      <keycol name="Kod"/>
+    </key>
+    <key name="WgNazwa1">
+      <keycol name="Nazwa1"/>
+    </key>
+    <col name="Kategoria" type="KategoriaPracyWSzególnychWarunkachCharakterze" required="true" category="Ogólne" />
+    <col name="Kod" type="string" length="3" required="true" category="Ogólne" />
+    <col name="Nazwa1" type="string" length="255" required="true" category="Ogólne">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <col name="Nazwa2" type="string" length="255" category="Ogólne">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <col name="Blokada" type="boolean" category="Ogólne" />
+  </table>
+  <!-- HISTORIA PRACOWNIKA -->
+	<enum name="KodStNiezdolnDoPracy" />
+	<subrow name="StNiezdolnDoPracy">
+		<col name="Kod" type="KodStNiezdolnDoPracy" required="true" />
+		<col name="Okres" name12="Okr" type="FromTo" />
+	</subrow>
+	<enum name="PodstZdrowCudzoziemca" />
+	<enum name="KodPrawaEmRent" />
+	<subrow name="PrawoEmRent">
+		<col name="Kod" type="KodPrawaEmRent" />
+		<col name="EmeryturaOd" type="date" />
+		<col name="RentaOkres" name12="RenOkr" type="FromTo" />
+    <col name="Numer" type="string" length="30" description="Numer emerytury lub renty"/>
+    <col name="DataWniosku" type="date" />
+  </subrow>
+	<enum name="StNiepełnosprawności"/>
+  <enum name="OrzeczenieStopienNiepelnosp"/>
+  <subrow name="StopienNiepelnosp">
+    <col name="Kod" type="KodStNiepelnosprawnosci" >
+      <verifier name="StopienNiepelnosp.OkresRequiredVerifier"/>
+    </col>
+		<col name="Stopien" type="StNiepełnosprawności" />
+    <col name="Okres" name12="Okr" type="FromTo" />
+    <col name="Orzeczenie" type="OrzeczenieStopienNiepelnosp" />
+    <col name="DataWniosku" type="date" />
+  </subrow>
+	<enum name="PoziomWykształcenia"/>
+	<enum name="MiejsceZamieszkania"/>
+  <enum name="SzczegolneSchorzenia"/>
+  <enum name="SzczególneSchorzeniaSOD"/>
+  <enum name="StanowiPomocPubliczną"/>
+  <enum name="KodStNiepelnosprawnosciPFRON"/>
+  <subrow name="DanePFRON">
+		<col name="MiejsceZamieszkania" name12="MscZam" type="MiejsceZamieszkania"/>
+		<col name="PoziomWyksztalcenia" name12="PozWyk" type="PoziomWykształcenia"/>
+		<col name="TypSchorzenia" name12="TypSch" type="SzczegolneSchorzenia"/>
+    <col name="TypSchorzeniaSOD" name12="TypSch" type="SzczególneSchorzeniaSOD"/>
+    <col name="TypSchorzenia2SOD" name12="TypSch2" type="SzczególneSchorzeniaSOD"/>
+    <col name="TypSchorzenia3SOD" type="SzczególneSchorzeniaSOD"/>
+    <col name="TypSchorzenia4SOD" type="SzczególneSchorzeniaSOD"/>
+    <col name="DodatkoweDofinansowanieSOD" type="boolean" />
+    <col name="WiekEmerytalnyOd" name12="EmerOd" type="date"/>
+		<col name="Stopien" type="StNiepełnosprawności" />
+    <col name="StopienPFRON" type="KodStNiepelnosprawnosciPFRON" />
+		<col name="Okres" name12="Okr" type="FromTo" />
+    <col name="DataOrzeczenia" type="date" description="Data orzeczenia o stopniu niepełnosprawności"/>
+    <col name="DataDostarczenia" type="date" description="Data dostarczenia orzeczenia o stopniu niepełnosprawności"/>
+    <col name="DataWniosku" type="date" />
+    <col name="Koszty2007" type="decimal" />
+    <col name="ZgodaNaPrzekazanieDanych" type="boolean" />
+    <col name="WymiarUPodstawowego" type="Fraction"/>
+    <col name="ObnizonyLimitDofinansowania" type="boolean"/>
+    <col name="PomocPubliczna" type="StanowiPomocPubliczną" description="Dofinansowanie stanowi pomoc publiczną"/>
+    <col name="WzrostNettoZatrudnienia" type="boolean" description="Zatrudnienie pracownika spowodowało u pracodawcy wykonującego działalność gospodarczą wzrost netto zatrudnienia ogółem i zatrudnienia pracowników niepełnosprawnych."/>
+    <col name="StanowiskoZwolnione" type="boolean" description="Stanowisko pracy, na którym został zatrudniony pracownik zostało zwolnione w wyniku zdarzeń określonych w art. 26b ust. 4 pkt 1-4 lub ust. 5 pkt 1-2 ustawy."/>
+    <col name="DataZgloszeniaDoEwidencji" type="date" description="Data zgłoszenia pracownika do ewidencji zatrudnionych osób niepełnosprawnych PFRON."/>
+    <col name="PracownikZwolniony" type="Pracownik"/>
+    <col name="NaliczajUrlopDodatkowy" type="boolean"/>
+    <col name="NaliczajUrlopDodatkowyOd" type="date"/>
+    <col name="DzialalnoscNieGospodarcza" type="boolean" description="Pracownik jest zatrudniony u pracodawcy prowadzącego działalność gospodarczą, lecz wykonuje pracę związaną z wyodrębnioną działalnością niebędącą działalnością gospodarczą."/>
+    <col name="EfektZachety" type="boolean" description="Pracownik zatrudniony w warunkach efektu zachęty."/>
+  </subrow>
+  <enum name="StNiezdolnościDoPracy"/>
+  <subrow name="DaneZUS">
+    <col name="Orzeczenie" type="StNiezdolnościDoPracy" />
+    <col name="Okres" name12="Okr" type="FromTo" />
+    <col name="DataWniosku" type="date" />
+  </subrow>
+  <enum name="KodPrzekrPodstSkladek" />
+	<enum name="TypPrzekrPodstSkladek" />
+	<subrow name="PrzekrPodstSkladek">
+		<col name="Przekazal" type="KodPrzekrPodstSkladek">
+			<verifier name="PrzekrPodstSkladek.DataVerifier" />
+		</col>
+		<col name="Data" type="date">
+			<verifier name="PrzekrPodstSkladek.DataVerifier" />
+		</col>
+		<col name="Kwota" type="decimal" />
+		<col name="TypKwoty" type="TypPrzekrPodstSkladek" />
+		
+		<col name="InneDochody" type="decimal">
+			<verifier name="PrzekrPodstSkladek.ZaRokVerifier" />
+		</col>
+		<col name="ZaRok" type="int">
+			<verifier name="PrzekrPodstSkladek.ZaRokVerifier" />
+		</col>			
+	</subrow>
+	<enum name="KodStosDoSluzbyWojskowej" />
+	<subrow name="Wojsko">
+		<col name="Stosunek" type="KodStosDoSluzbyWojskowej" />
+		<col name="NrSpecjalnosci" type="string" length="20"/>
+		<col name="Stopien" type="string" length="30" />
+		<col name="WKU" type="string" length="26" />
+		<col name="NrKsiazeczki" type="string" length="12" />
+		<col name="PrzydzialMobilizacyjny" type="string" length="30" />
+	</subrow>
+	<enum name="KodWyksztalcenia" />
+  <subrow name="Wyksztalcenie">
+    <col name="Kod" type="KodWyksztalcenia" />
+    <col name="StopienNaukowy" name12="StopNauk" type="string" length="30" />
+		<col name="TytulNaukowy" name12="TytNauk" type="string" length="30" />
+	</subrow>
+	<enum name="StosPracyNaPodstawie" />
+	<enum name="TypUmowyOPrace" />
+	<enum name="InterpretacjaKalendarza" />
+  <enum name="InterpretacjaKalendarzaPozaOkrZatr"/>
+  <subrow name="PracaGornicza">
+		<col name="Kod" type="int" />
+		<col name="Okres" name12="Okr" type="FromTo" />
+	</subrow>
+  <subrow name="PracaWSzczWarunkach">
+    <col name="Kod" type="int" modifier="protected virtual"/>
+    <col name="Opis" type="string" length="40" />
+    <col name="Okres" name12="Okr" type="FromTo" />
+  </subrow>
+  <subrow name="PracaWSzczWarunkach2009">
+    <col name="Kod" type="KodPracyWSzególnychWarunkachCharakterze">
+      <verifier name="PracaWSzczWarunkach2009.OkresVerifier"/>
+    </col>
+    <col name="Okres" type="FromTo">
+      <verifier name="PracaWSzczWarunkach2009.OkresVerifier"/>
+    </col>
+    <col name="DataWniosku" type="date" caption="Data wniosku" description="Data złożenia wniosku o przyznanie emerytury pomostowej" />
+  </subrow>
+  <subrow name="UmowaOPrace">
+    <col name="OkresWypowiedzenia" type="int" category="Inne"/>
+  </subrow>
+  <subrow name="ZawarcieUmowy">
+    <col name="PrzyczynaZawUmowy" type="PrzyczynaZawUmowy" category="Inne"/>
+    <col name="PrzyczynaZawUmowyOpis" name12="ZawUm" type="string" length="255" category="Inne"/>
+  </subrow>
+  <subrow name="RozwiazanieUmowy">
+    <col name="PrzyczynaRozwUmowy" type="PrzyczynaRozwUmowy" category="Inne"/>
+    <col name="PrzyczynaRozwUmowyOpis" name12="RozUm" type="string" length="255" category="Inne"/>
+    <col name="ZaOdszkodowaniem" type="boolean"/>
+    <col name="PodstawaPrawna" type="KodPodstawyPrawnejZwolnienia"/>
+    <col name="KodZwolnienia" type="KodZwolnienia"/>
+    <col name="Inicjatywa" type="KodInicjatywyZwolnienia"/>
+  </subrow>
+  <subrow name="OkresWypowiedzenia">
+    <col name="DataZlozenia" type="date" caption="Data złożenia" description="Data złożenia wypowiedzenia">
+      <verifier name="OkresWypowiedzenia.ZwolnionyZObowiazkuPracyOdVerifier"/>
+    </col>
+    <col name="ZwolnionyZObowiazkuPracyOd" type="date" caption="Data zwolnienia z obowiązku pracy" description="Data zwolnienia z obowiązku pracy">
+      <verifier name="OkresWypowiedzenia.ZwolnionyZObowiazkuPracyOdVerifier"/>
+    </col>
+    <col name="Skrocony" type="boolean" caption="Skrócony" description="Skrócony okres wypowiedzenia"/>
+		<col name="Miesiace" type="int" caption="Miesiące" description="Okres wypowiedzenia - miesiące"/>
+		<col name="Tygodnie" type="int" caption="Tygodnie" description="Okres wypowiedzenia - tygodnie" />
+    <col name="Dni" type="int" caption="Dni" description="Okres wypowiedzenia - dni" />
+    <col name="Uplywa" type="date" caption="Upływa" description="Data upływu ukresu wypowiedzenia">
+      <verifier name="OkresWypowiedzenia.ZwolnionyZObowiazkuPracyOdVerifier"/>
+    </col>
+	</subrow>
+	<enum name="TypUbezpieczenia" />
+	<enum name="PrzyczynaWyrejestrowania" />
+	<subrow name="Spoleczne">
+		<col name="Typ" type="TypUbezpieczenia" modifier="protected"/>
+		<col name="Od" type="date" modifier="protected">
+			<verifier name="Spoleczne.OdVerifier"/>
+		</col>
+		<col name="Do" type="date" />
+		<col name="Przyczyna" type="PrzyczynaWyrejestrowania" modifier="protected"/>
+	</subrow>
+	<subrow name="Zdrowotne">
+		<col name="Typ" type="TypUbezpieczenia" modifier="protected" />
+		<col name="Od" type="date" modifier="protected" />
+		<col name="Do" type="date" />
+		<col name="Przyczyna" type="PrzyczynaWyrejestrowania" modifier="protected"/>
+		<col name="Skladka" name12="Skl" type="decimal" />
+	</subrow>
+	<subrow name="KontynuacjaUbezpieczenia">
+		<col name="Tyub4" type="TytulUbezpieczenia4" 
+			caption="Tytuł ubezpieczenia"
+			relname="Tyub4 kontynuacji ubezpieczenia" 
+		/>
+		<col name="OdDnia" type="date" />
+	</subrow>
+	<subrow name="Ubezpieczenia">
+		<col name="Tyub4" type="TytulUbezpieczenia4" 
+			caption="Tytuł ubezpieczenia"
+			relname="Tyub4 ubezpieczenia" 
+		/>
+		<col name="ObowiazkoweOd" type="date"/>
+		<col name="Emerytalne" name12="Em" type="Spoleczne" />
+		<col name="Rentowe" name12="Rent" type="Spoleczne" />
+		<col name="Chorobowe" name12="Chor" type="Spoleczne" />
+		<col name="Wypadkowe" name12="Wyp" type="Spoleczne" />
+		<col name="Zdrowotne" name12="Zdr" type="Zdrowotne" />
+		<col name="Kontynuacja" name12="Knt" type="KontynuacjaUbezpieczenia" />
+	</subrow>
+  <subrow name="WynagrodzeniePostojowe">
+    <col name="Procent" type="percent" modifier="public virtual"/>
+  </subrow>
+  <enum name="ObniżenieWymiaruEtatuInfo"/>
+  <subrow name="ObniżenieWymiaruEtatu">
+    <col name="Info" type="ObniżenieWymiaruEtatuInfo" readonly="set"/>
+    <col name="TypStawki" type="TypStawkiZaszeregowania" readonly="set" modifier="public virtual"/>
+    <col name="Wymiar" type="Fraction" readonly="set" modifier="public virtual"/>
+    <col name="Stawka" type="currency" readonly="set" modifier="public virtual"/>
+    <col name="WskaznikNazwa" type="string" length="40" readonly="set" modifier="public virtual"/>
+    <col name="WskaznikKrotnosc" type="double" readonly="set" modifier="public virtual"/>
+    <col name="RodzajStawki" type="RodzajStawkiZaszeregowania" readonly="set" modifier="public virtual"/>
+    <col name="Element" type="DefinicjaElementu" readonly="set" modifier="public virtual"/>
+    <col name="Kalendarz" type="KalendarzBase" readonly="set"/>
+  </subrow>
+  <enum name="RodzajZatrudnienia"/>
+  <enum name="SposobyUnikaniaPodwójnegoOpodatkowania"/>
+  <enum name="OgraniczeniePrzerwyCovid"/>
+  <interface name="IKrajDelegacji"/>
+	<subrow name="Etat">
+		<!-- ETAT - RELACJE -->
+		<col name="Wydzial" type="Wydzial" category="Relacje" 
+      caption="Jednostka organizacyjna"
+			relname="Jednostka organizacyjna etatu"
+		>
+      <verifier name="Etat.WydzialRequiredVerifier"/>
+      <verifier name="Etat.CięcieOkresuVerifier"/>
+      <verifier name="Etat.OkresPracyTymczasowejVerifier"/>
+    </col>
+		<!-- 1.2 -->
+    <col name="Definicja" type="DefinicjaStanowiska" category="Relacje"
+			relname="Etaty stanowiska"
+		>
+      <verifier name="Zaszeregowanie.RodzajStawkiDefinicjaVerivier"/>
+      <verifier name="Zaszeregowanie.ElementDefinicjaVerivier"/>
+    </col>
+		<!-- ETAT - DANE PODSTAWOWE -->
+		<col name="DataZawarcia" type="date" category="Ogólne">
+			<verifier name="Etat.DataZawarciaRequiredVerifier"/>
+		</col>
+		<col name="DataRozpPracy" type="date" category="Ogólne">
+			<verifier name="Etat.DataRozpPracyRequiredVerifier"/>
+		</col>
+		<col name="Okres" type="FromTo" category="Ogólne">
+			<verifier name="Etat.WydzialRequiredVerifier"/>
+			<verifier name="Etat.StanowiskoRequiredVerifier"/>
+			<verifier name="Etat.DataZawarciaRequiredVerifier"/>
+			<verifier name="Etat.DataRozpPracyRequiredVerifier"/>
+      <verifier name="Etat.CięcieOkresuVerifier"/>
+      <verifier name="Etat.OkresPracyTymczasowejVerifier"/>
+    </col>
+		<col name="Podstawa" type="StosPracyNaPodstawie" category="Ogólne"/>
+		<col name="TypUmowy" type="TypUmowyOPrace" category="Ogólne"/>
+    <col name="RodzajZatrudnienia" type="RodzajZatrudnienia" category="Ogólne">
+      <verifier name="Etat.CięcieOkresuVerifier"/>
+    </col>
+    <col name="OddelegowanyDo" type="KrajDelegacji" cstype="IKrajDelegacji" category="Pracownik za granicą">
+      <verifier name="Etat.CięcieOkresuVerifier"/>
+    </col>
+    <col name="PodatekZaGranica" type="boolean" category="Pracownik za granicą">
+      <verifier name="Etat.CięcieOkresuVerifier"/>
+    </col>
+    <col name="Stanowisko" type="string" length="50" category="Ogólne">
+			<attribute>Dictionary("Etat.Stanowisko")</attribute> 
+			<verifier name="Etat.StanowiskoRequiredVerifier"/>
+    </col>
+    <col name="DefinicjaFunkcji" type="DefinicjaFunkcji"/>
+    <col name="Funkcja" type="string" length="50" category="Ogólne">
+			<attribute>Dictionary("Etat.Funkcja")</attribute> 
+		</col>
+		<col name="Specjalosc" type="string" length="50" category="Ogólne">
+			<attribute>Dictionary("Etat.Specjalność")</attribute> 
+		</col>
+		<col name="KodWykonywanegoZawodu" type="int" category="Dodatkowe" />
+    <col name="FormaOrganizacjiPracy" type="FormaOrganizacjiPracy" category="Dodatkowe" />
+    <!-- KALENDARZ -->
+    <col name="Kalendarz" type="KalendarzBase" required="true" modifier="protected" category="Kalendarz" 
+			relname="Kalendarz pracownika" 
+		>
+      <verifier name="Etat.CięcieOkresuVerifier"/>
+    </col>
+    <col name="InterpretacjaKalendarza" name12="IntKal" type="InterpretacjaKalendarza" category="Kalendarz">
+      <verifier name="Etat.CięcieOkresuVerifier"/>
+    </col>
+    <col name="InterpretacjaKalendarzaPozaOkrZatr" type="InterpretacjaKalendarzaPozaOkrZatr" category="Kalendarz"/>
+    <col name="MagazynNadgodzin" type="YearMonth" category="Kalendarz" modifier="public virtual"/>
+    <col name="GodzinyPonadwymiarowe" type="time" category="Kalendarz" modifier="public virtual"/>
+    <col name="WspolczynnikLimitu" name12="WspLim" type="double" category="Kalendarz"/>
+		<!-- ETAT - ZASZEREGOWANIE -->
+    <col name="Grupa" type="GrupaZaszeregowania" category="Zaszeregowanie">
+      <verifier name="Etat.CięcieOkresuVerifier"/>
+      <verifier name="Zaszeregowanie.RodzajStawkiGrupaVerivier"/>
+      <verifier name="Zaszeregowanie.ElementGrupaVerivier"/>
+    </col>
+		<col name="TypStawki" type="TypStawkiZaszeregowania" category="Zaszeregowanie" />
+		<col name="Zaszeregowanie" name12="Zas" type="Zaszeregowanie" category="Zaszeregowanie" />
+		<!-- ETAT - INNE -->
+		<col name="Seria" type="string" length="12" category="Ogólne">
+			<attribute>Dictionary("Seria listy płac")</attribute> 
+		</col>
+		<col name="Ubezpieczenia" name12="Ub" type="Ubezpieczenia" category="Ubezpieczenie" />
+    <col name="UmowaOPrace" type="UmowaOPrace" category="Inne" />
+    <col name="ZawarcieUmowy" type="ZawarcieUmowy" category="Inne" />
+    <col name="RozwiazanieUmowy" type="RozwiazanieUmowy" category="Inne" />
+    <col name="OkresWypowiedzenia" name12="OkWyp" type="OkresWypowiedzenia" category="Inne" />
+    <col name="PracownikZwolniony" type="boolean" category="Inne"/>
+    <col name="LimitNadgodzin" name12="LimNad" type="int" category="Inne"/>
+		<col name="NormaDobowa" name12="NrmDb" type="time" category="Inne"/>
+		<col name="NormaTygodniowa" name12="NrmTg" type="time" category="Inne"/>
+		<col name="NormaDobowaTygodniowa" name12="NrmDbTg" type="time" category="Inne"/>
+		<col name="ProcentMinimalnego" name12="PrcMin" type="percent" category="Inne"/>
+    <col name="ProcentMinimalnegoDoDnia" type="date" category="Inne"/>
+    <col name="RodzajPracy" name12="RodzPrc" type="string" length="80" 
+			description="Rodzaj wykonywanej pracy">
+			<attribute>Dictionary("Etat.RodzajPracy")</attribute> 
+		</col>
+		<col name="MiejscePracy" name12="MscPrc" type="string" length="80" 
+			description="Miejsce wykonywania pracy">
+			<attribute>Dictionary("Etat.MiejscePrc")</attribute> 
+		</col>
+		<col name="BezCieciaOkresu" type="boolean" modifier="protected" />
+    <col name="ZbiorowyUkladPracy" type="boolean" description="Pracownik objęty układem zbiorowym pracy"/>
+    <col name="DataPrzejeciaPracownika" type="date" caption="Data przejęcia" description="Data przejęcia pracownika w trybie art. 23' K.P.">
+      <verifier name="Etat.PrzejęciePracownikaVerifier"/>
+    </col>
+    <col name="PoprzedniPracodawca" type="string" length="80" category="Ogólne">
+      <verifier name="Etat.PrzejęciePracownikaVerifier"/>
+      <attribute>Dictionary("Etat.PopPracodaw")</attribute>
+    </col>
+    <col name="PrzejetyPrzezInnego" type="boolean" caption="Przekazany" description="Pracownik przejęty przez innego pracodawcę w trybie art. 23' K.P."/>
+    <col name="Oddzial" type="OddzialFirmy"/>
+    <col name="WynagrodzenieAkordowe" type="boolean"/>
+    <col name="OkresPrzechowywania" type="int"/>
+    <col name="TerminPrzechowywania" type="date"/>
+    <col name="OgraniczeniePrzerwy" type="OgraniczeniePrzerwyCovid"/>
+    <col name="Postojowe" type="WynagrodzeniePostojowe"/>
+    <col name="PracownikNiepelnosprawnyZgodaNaPrace8h" name12="PracNpZg8h" type="boolean" category="Inne"/>
+    <col name="PracownikNiepelnosprawnyZgodaNaPraceNadgodziny" name12="PracNpZgNg" type="boolean" category="Inne"/>    
+    <col name="PrzeliczeniePodstawyZasilku" type="boolean"/>
+  </subrow>
+	<enum name="PopMiejsceZatrudnienia" />
+  <enum name="KodWykształceniaGUS" />
+  <enum name="RodzajZatrudnieniaGUS"/>
+  <subrow name="StatystykaGUS">
+		<col name="StRobotnicze" name12="StRobotn" type="boolean" category="GUS" />
+		<col name="PracaWNocy" name12="PracNoc" type="boolean" category="GUS" />		
+		<col name="PierwszaPraca" name12="Pierwsza" type="boolean" category="GUS" />
+		<col name="PraceInterwencyjne" name12="PraceInt" type="boolean" category="GUS" />
+		<col name="GlowneMiejscePracy" name12="GloPraca" type="boolean" category="GUS" />
+		<col name="PopMiejsceZatrudnienia" type="PopMiejsceZatrudnienia" />
+		<col name="SezonowyDorywczy" name12="Sezonowy" type="boolean" />
+    <col name="KodWyksztalcenia" type="KodWykształceniaGUS" />
+    <col name="RodzajZatrudnienia" type="RodzajZatrudnieniaGUS" category="GUS"/>
+  </subrow>
+	<enum name="TypProgowPodatkowych" />
+  <enum name="RodzajKosztowUzyskania" />
+  <enum name="NaliczajPit26"/>
+  <subrow name="PodatkiInfo">
+		<col name="UrzadSkarbowy" type="UrzadSkarbowy" cstype="IPodmiotUI" relname="Urząd skarbowy pracownika" />
+		<col name="TypProgow" type="TypProgowPodatkowych" />
+		<col name="KosztyRodzaj" type="RodzajKosztowUzyskania" />
+		<col name="KosztyMnoznik" type="decimal" />
+		<col name="Koszty50Procent" type="percent" />
+    <col name="Koszty50Limit" type="decimal" />
+    <col name="Koszty50NieNaliczajOd" type="YearMonth" />
+    <col name="Koszty50NieNaliczajOdDnia" type="date" />
+    <col name="UlgaMnoznik" type="decimal" />
+    <col name="NaPITAdresZameldowania" type="boolean" />
+    <col name="Pit26" type="NaliczajPit26" />
+    <col name="PodwProg2019" type="boolean" description="Podwyższona zaliczka podatku za okres od października do grudnia 2019"/>
+    <col name="UlgaKlasaSrednia" type="boolean" />
+    <col name="RezygnacjaRozp070122" type="boolean" />
+    <col name="RezygnacjaRozp070122Umowa" type="boolean" />
+    <col name="UmowaKwotaWolna" type="boolean" />
+    <col name="UlgaDuzaRodzina" type="boolean" />
+    <col name="UlgaEmeryt" type="boolean" />
+    <col name="UlgaZagranica" type="boolean" />
+  </subrow>
+	<subrow name="OddzialNFZ">		
+		<col name="KodGminy" name12="KdGm" type="string" length="7"/>
+	</subrow>
+	<subrow name="KasaChorych">
+		<col name="Kod" type="string" length="3">
+			<verifier name="KasaChorych.KodVerifier"/>
+			<verifier name="KasaChorych.BranżowaVerifier"/>
+		</col>
+		<col name="OdDnia" type="date" />
+	</subrow>
+	<subrow name="StanRodzinny">
+		<col name="StanCywilny" name12="StCyw" type="StanCywilny" modifier="protected" category="Rodzina" />
+		<col name="DataSlubu" name12="DtSlub" type="date" category="Rodzina" />
+		<col name="NrAktuMalzenstwa" name12="NaAktM" type="string" length="12" category="Rodzina" />
+		<col name="USCMiasto" name12="USC" type="string" length="26" category="Rodzina" />
+	</subrow>
+	<enum name="KodOkresuRGA" />
+	<enum name="KodDruzynyRatowniczejRGA" />
+	<enum name="KodDniowekZjazdowRGA" />
+  <enum name="TypNaliczaniaFP"/>
+  <enum name="TypNaliczaniaFGŚP"/>
+  <subrow name="DaneDlaRGA">
+		<col name="Umieszczaj" type="boolean" />
+		<col name="KodOkresu" type="KodOkresuRGA" />
+		<col name="KodDruzynyRatowniczej" type="KodDruzynyRatowniczejRGA" />
+		<col name="KodDniowek" type="KodDniowekZjazdowRGA" />
+	</subrow>
+	<subrow name="PodstawaFP">
+		<col name="Naliczaj" type="TypNaliczaniaFP"/>
+    <col name="PozostawalWEwidencjiPup" type="boolean"/>
+    <col name="PozostawalWEwidencjiPupDo30" type="boolean"/>
+  </subrow>
+  <subrow name="PodstawaFGSP">
+    <col name="Naliczaj" type="TypNaliczaniaFGŚP"/>
+  </subrow>
+  <enum name="OkresZasilkowy"/>
+	<subrow name="RozliczanieNieobecnosci">
+		<col name="PodstawaUrlopu" name12="PdUrl" type="int"/>
+		<col name="PodstawaUrlopuZmienne" name12="PdZmn" type="int"/>
+		<col name="PodstawaZasilku" name12="PdZas" type="int"/>
+		<col name="OkresZasilkowy" name12="OkrZas" type="OkresZasilkowy"/>
+	</subrow>
+	<subrow name="ChorobowyBO">
+		<col name="Data" type="date">
+			<verifier name="ChorobowyBO.ZasilekOdDniaVerifier" onadded="true"/>
+		</col>
+		<col name="ZasilekOdDnia" name12="ZasOd" type="date">
+			<verifier name="ChorobowyBO.ZasilekOdDniaVerifier"/>
+		</col>
+		<col name="DniWynagrodzenia" type="int"
+			description="Liczba dni zwolnienia chorobowego finansowanego ze środków pracodawcy"
+		/>
+		<col name="DniZwolnienia" type="int"
+			description="Liczba dni nieprzerwanego (ciągłego) dobrowolnego zwolnienia chorobowego"
+		/>
+		<col name="DniZasilkowe" type="int"
+			description="Liczba dni zwolnienia wliczana do aktualnego okresu zasiłkowego"
+		/>
+    <col name="PrzedluzenieOZ" type="boolean"
+			description="Okres zasiłkowy został przedłużony o 3 miesiące"
+		/>
+    <col name="MiesiacPodstawy" type="YearMonth" caption="Miesiąc podstawy" modifier="public virtual"/>
+    <col name="Podstawa" type="decimal" modifier="public virtual"/>
+  </subrow>
+	<subrow name="OpiekunczyBO">
+		<col name="Dziecko" type="int"
+			description="Liczba dni wykorzystanego urlopu opiekuńczego – opieka nad dzieckiem (maksymalnie 60 dni w roku kalendarzowym)"
+		/>
+    <col name="Dorosly" type="int"
+			description="Liczba dni wykorzystanego urlopu opiekuńczego – opieka nad innym członkiem rodziny (maksymalnie 14 dni w roku kalendarzowym)"
+		/>
+    <col name="DzieckoNiepelnosp" type="int"
+			description="Liczba dni wykorzystanego urlopu opiekuńczego – opieka nad dzieckiem niepełnosprawnym w wieku od 8/14 lat do ukończenia 18 lat (maksymalnie 30 dni w roku)"
+		/>    
+  </subrow>	
+	<subrow name="WypoczynkowyBO">
+		<col name="NaZadanie" type="int"
+			description="Liczba dni wykorzystanego urlopu wypoczynkowego 'na żądanie' (maksymalnie 4 dni w roku kalendarzowym)"
+		/>
+    <col name="Wykorzystany" type="time"
+			description="Limit urlopu wypoczynkowego wykorzystanego u poprzednich pracodawców przypadający na bieżące zatrudnienie (godz.)"
+         />
+    <col name="UPoprzednich" type="decimal"
+			description="Limit urlopu wypoczynkowego wykorzystanego u poprzednich pracodawców (dni)"
+         />
+    <col name="BezPierwszego" type="boolean" modifier="public virtual"
+			description="Prawo do urlopu w pierwszym miesiącu zatrudnienia pracownik nabył u poprzedniego pracodawcy"
+         />
+  </subrow>
+  <subrow name="DodatkowyBO">
+    <col name="Wykorzystany" type="time"
+			description="Limit urlopu dodatkowego wykorzystanego u poprzednich pracodawców przypadający na bieżące zatrudnienie (godz.)"/>
+    <col name="UPoprzednich" type="decimal"
+			description="Limit urlopu dodatkowego wykorzystanego u poprzednich pracodawców (dni)"/>
+    <col name="BezPierwszego" type="boolean" modifier="public virtual"
+			description="Prawo do urlopu w pierwszym miesiącu zatrudnienia pracownik nabył u poprzedniego pracodawcy"
+         />
+  </subrow>
+  <enum name="RodzajLimituOp188"/>
+  <subrow name="Opiekunczy188BO">
+    <col name="UPoprzednich" type="int"
+			description="Limit urlopu dodatkowego wykorzystanego u poprzednich pracodawców (dni)"/>
+    <col name="UPoprzednichGodz" type="time"
+			description="Limit urlopu dodatkowego wykorzystanego u poprzednich pracodawców (godz.)"/>
+    <col name="DataWniosku" type="date"
+			description="Data złożenia wniosku"/>
+    <col name="RodzajLimitu" type="RodzajLimituOp188"
+			description="Wniosek o urlop na dni/godziny"/>
+  </subrow>
+  <subrow name="OjcowskiBO">
+    <col name="UPoprzednich" type="int"
+			description="Limit urlopu ojcowskiego wykorzystanego u poprzednich pracodawców (dni)"/>
+  </subrow>
+  <subrow name="RodzicielskiBO">
+    <col name="UPoprzednich" type="int"
+			description="Limit urlopu rodzicielskiego wykorzystanego u poprzednich pracodawców (dni)"/>
+  </subrow>
+  <subrow name="BilansOtwarciaPIT5">
+		<col name="Miesiac" type="YearMonth"/>
+		<col name="Spoleczne" type="decimal"/>
+		<col name="Zdrowotne" type="decimal"/>
+		<col name="Przychod" type="decimal"/>
+		<col name="Koszty" type="decimal"/>
+		<col name="ZaliczkaFis" type="decimal"/>
+		<col name="Ograniczenia" type="decimal"/>
+		<col name="Reklama" type="decimal"/>
+		<col name="ReklamaLimit" type="decimal"/>				
+	</subrow>
+  <subrow name="DaneDodatkowePIT40">
+    <col name="Naliczaj" type="boolean"/>
+    <col name="KosztyIndywidualne" type="boolean"/>
+    <col name="KosztyKwota" type="decimal"/>
+    <col name="ZwrotSwiadczen" type="decimal" caption="Zwrot świadczeń"/>    
+  </subrow>
+  <subrow name="InneDaneHistoryczne">
+    <col name="KierownikDzialu" type="Wydzial"/>
+    <col name="Zastepca" type="Pracownik"/>
+    <col name="KorespondencjaNazwaFirmy" type="string" length="100" description="Nazwa firmy, na którą kierowana jest korespondencja"/>
+  </subrow>
+  <subrow name="PIT5DochodyInneBazy">
+    <col name="Baza2" type="string" length="80" category="Właściciel" description="Nazwa drugiej bazy z dochodami"/>
+    <col name="Udzialy2" type="Fraction" category="Właściciel"  description="Udziały w drugiej bazie z dochodami"/>
+    <col name="Baza3" type="string" length="80" category="Właściciel" description="Nazwa trzeciej bazy z dochodami"/>
+    <col name="Udzialy3" type="Fraction" category="Właściciel"  description="Udziały w trzeciej bazie z dochodami"/>
+    <col name="Baza4" type="string" length="80" category="Właściciel" description="Nazwa czwartej bazy z dochodami"/>
+    <col name="Udzialy4" type="Fraction" category="Właściciel"  description="Udziały w czwartej bazie z dochodami"/>
+    <col name="Baza5" type="string" length="80" category="Właściciel" description="Nazwa piątej bazy z dochodami"/>
+    <col name="Udzialy5" type="Fraction" category="Właściciel"  description="Udziały w pipątej bazie z dochodami"/>
+    <col name="Baza6" type="string" length="80" category="Właściciel" description="Nazwa szóstej bazy z dochodami"/>
+    <col name="Udzialy6" type="Fraction" category="Właściciel"  description="Udziały w szóstej bazie z dochodami"/>
+    <col name="Baza7" type="string" length="80" category="Właściciel" description="Nazwa siódmej bazy z dochodami"/>
+    <col name="Udzialy7" type="Fraction" category="Właściciel"  description="Udziały w siódmej bazie z dochodami"/>
+    <col name="Baza8" type="string" length="80" category="Właściciel" description="Nazwa ósmej bazy z dochodami"/>
+    <col name="Udzialy8" type="Fraction" category="Właściciel"  description="Udziały w ósmej bazie z dochodami"/>
+  </subrow>
+  <enum name="RodzajeDodatkowychŚwiadczeńZUS"/>
+  <subrow name="DodatkoweŚwiadczeniaZUS">
+    <col name="Rodzaj" type="RodzajeDodatkowychŚwiadczeńZUS">
+      <verifier name="DodatkoweŚwiadczeniaZUS.RodzajOkresVerifier" />
+    </col>
+    <col name="Okres" type="FromTo"/>
+    <col name="Numer" type="string" length="32"/>
+    <col name="OddzialZUS" type="OddziałZUS"/>
+  </subrow>
+  <subrow name="EmeryturaMundurowa">
+    <col name="Data" type="date" caption="Data przyznania"/>
+    <col name="Numer" type="string" length="30"/>
+    <col name="WydanyPrzez" type="string" length="50" >
+      <attribute>Dictionary("EM.WydanyPrzez")</attribute>
+    </col>
+  </subrow>
+  <enum name="RodzajPracownikaOświaty"/>
+  <subrow name="PracownikOświaty">
+    <col name="Rodzaj" type="RodzajPracownikaOświaty" modifier="public virtual" caption="Rodzaj pracownika oświaty"/>
+    <col name="Wymiar" modifier="public virtual" type="Fraction"/>
+  </subrow>
+  <table name="PracHistoria2" tablename="PracHistorie2" name8="PracHis2" caption="Historia pracownika (pozostałe)">
+		<col name="Host" type="PracHistoria"
+			required="true"
+			keyunique="true"
+      keyprimary="true"
+			relname="Dodatkowe historii"
+			relguided="inner"
+			delete="cascade"
+			relright="true"
+		>
+		</col>
+		<col name="Dokument" name12="Dok" type="DokumentOsoby" category="Ogólne"/>
+		<col name="Kontakt" name12="Knt" type="Kontakt" category="Dane adresowe"/>
+		<col name="Powiadomic" name12="Pow" type="Osoba" category="Dane adresowe"/>
+		<col name="Wojsko" name12="Woj" type="Wojsko" category="Inne" />
+		<col name="Obywatelstwo" name12="Ob" type="Obywatelstwo" category="Dane ewidencyjne" />
+		<col name="StanRodzinny" name12="Stro" type="StanRodzinny" category="Rodzina" />
+		<col name="Wyksztalcenie" name12="Wyk" type="Wyksztalcenie" category="Inne" />
+		<col name="PIT5BO" name12="PIT5" type="BilansOtwarciaPIT5" category="Inne" />
+    <col name="PFRON" type="DanePFRON" category="Inne" />
+    <col name="ZUS" type="DaneZUS" category="Inne" />
+    <col name="InneDane" type="InneDaneHistoryczne" category="Inne" />
+    <col name="PIT40" name12="PIT5" type="DaneDodatkowePIT40" category="Inne" />
+		<col name="PIT5Inne" type="PIT5DochodyInneBazy" category="Właściciel" />
+    <col name="StanowiskoPelne" type="string" length="255" category="Umowa o pracę" />
+    <col name="FunkcjaPelna" type="string" length="255" category="Umowa o pracę" />
+    <col name="DodSwiadczeniaZUS" type="DodatkoweŚwiadczeniaZUS"/>
+    <col name="EmeryturaMundurowa" type="EmeryturaMundurowa"/>
+    <col name="Oswiata" type="PracownikOświaty"/>
+    <col name="ObnizenieEtatu" type="ObniżenieWymiaruEtatu"/>
+  </table>
+  <enum name="RodzajeObnizeniaPodstawZUS"/>
+  <enum name="RodzajeFormyOpodatkowania"/>
+  <subrow name="WlascicielInfo">
+    <col name="ProcentWyp" type="percent" name12="PrcWyp" />
+    <col name="LiczPlatnosciPIT5" type="boolean" name12="PlatP5" />
+    <col name="ObnizonaPodstawaZUS" type="boolean" name12="ObnZUS"/>
+    <col name="RodzajObnizeniaPodstawyZUS" type="RodzajeObnizeniaPodstawZUS" name12="ObnZUS" modifier="public virtual"/>
+    <col name="LiniowyPIT5L" type="boolean"/>
+    <col name="ZUSOdPrzychodu" type="boolean" modifier="public virtual">
+      <verifier name="WlascicielInfo.DzialalnoscPoprzedniRokVerifier"/>
+      <verifier name="WlascicielInfo.PrzychodPoprzedniRokVerifier"/>
+    </col>
+    <col name="PrzychodPoprzedniRok" type="decimal" modifier="public virtual">
+      <verifier name="WlascicielInfo.PrzychodPoprzedniRokVerifier"/>
+    </col>
+    <col name="DochodPoprzedniRok" type="decimal" modifier="public virtual">
+      <verifier name="WlascicielInfo.DzialalnoscPoprzedniRokVerifier"/>
+    </col>
+    <col name="DzialalnoscPoprzedniRok" type="int" modifier="public virtual">
+      <verifier name="WlascicielInfo.DzialalnoscPoprzedniRokVerifier"/>
+      <verifier name="WlascicielInfo.PrzychodPoprzedniRokVerifier"/>
+    </col>
+    <col name="FormaOpodatkowania" type="RodzajeFormyOpodatkowania" name12="FormaOpodat" modifier="public virtual"/>
+    <col name="DeklaracjaOplacaniaSkladek" type="boolean" name12="DekOplSkl" modifier="public virtual"/>
+    <col name="PozostaleFormyDzialalnosci" type="boolean" name12="PozFormDzial" modifier="public virtual"/>
+    <col name="ZwolnienieSkladkaZdrowotna" type="boolean" name12="ZwolSklZdrow" modifier="public virtual"/>
+  </subrow>
+  <enum name="NaliczanieOdpisuOPP"/>
+  <subrow name="OdpisOPP">
+    <col name="Organizacja" type="Kontrahent">
+      <verifier name="OdpisOPP.OdpisOPPVerfier"/>
+    </col>
+    <col name="Kwota" type="currency">
+      <verifier name="OdpisOPP.OdpisOPPVerfier"/>
+    </col>
+    <col name="Koncowka" type="decimal">
+      <verifier name="OdpisOPP.OdpisOPPVerfier"/>
+    </col>
+    <col name="Naliczanie" type="NaliczanieOdpisuOPP"/>
+    <col name="OpisPrzelewu" type="string" length="80"/>
+  </subrow>
+  <enum name="RodzajZgloszeniaPPK"/>
+  <enum name="RodzajWznowieniaPPK"/>
+  <enum name="RodzajeSkładekPPK"/>
+  <subrow name="OdpisPPK">
+    <col name="StdPodstPracownika" type="boolean" modifier="public virtual">
+        <verifier name="OdpisPPK.PodstPracownikaVerifier"/>
+    </col>
+    <col name="PodstPracownika" type="percent" modifier="public virtual">
+        <verifier name="OdpisPPK.PodstPracownikaVerifier"/>
+    </col>
+    <col name="DodPracownika" type="percent" modifier="public virtual">
+        <verifier name="OdpisPPK.DodPracownikaVerifier"/>
+    </col>
+    <col name="StdDodPracodawcy" type="boolean" modifier="public virtual">
+      <verifier name="OdpisPPK.DodPracodawcyVerifier"/>
+    </col>
+    <col name="DodPracodawcy" type="percent" modifier="public virtual">
+        <verifier name="OdpisPPK.DodPracodawcyVerifier"/>
+    </col>
+    <col name="Identyfikator" type="string" length="20" modifier="public virtual"/>
+    <col name="NumerRachunku" type="string" length="50" modifier="public virtual"/>
+    <col name="ZgodaTelefon" type="boolean" modifier="public virtual"/>
+    <col name="ZgodaEMail" type="boolean" modifier="public virtual"/>
+    <col name="TelefonDomyslny" type="boolean" modifier="public virtual"/>
+    <col name="EMailDomyslny" type="boolean" modifier="public virtual"/>
+    <col name="DataZgloszenia" type="date" modifier="public virtual"/>
+    <col name="RodzajZgloszenia" type="RodzajZgloszeniaPPK" modifier="public virtual"/>
+    <col name="DataRezygnacji" type="date" modifier="public virtual"/>
+    <col name="DataWznowienia" type="date" modifier="public virtual"/>
+    <col name="RodzajWznowienia" type="RodzajWznowieniaPPK" modifier="public virtual"/>
+    <col name="ID_KADRY" type="string" length="50" modifier="public virtual"/>
+    <col name="RodzajSkladki" type="RodzajeSkładekPPK" modifier="public virtual" readonly="set"/>
+  </subrow>
+  <subrow name="ZajęcieWynagrodzeniaInfo">
+    <col name="UprawnDoPodwyzszeniaKwotyWolnej" type="int" modifier="public virtual"/>
+  </subrow>
+  <enum name="IdentyfikatorPodatkowyPracownika"/>
+  <enum name="AdresPracownikaNaPrzelewach"/>
+	<table name="PracHistoria" tablename="PracHistorie" name8="PracHist" caption="Historia pracownika">
+		<interface>IAdresHost</interface>
+    <interface>IDaneKontaktoweHost</interface>
+    <key name="WgWydzialUI">
+      <keycol name="Etat.Wydzial"/>
+      <keycol name="Aktualnosc.From"/>
+      <keyinclude name="Pracownik"/>
+      <keyinclude name="Aktualnosc.To"/>
+      <keyinclude name="Etat.Okres.From"/>
+      <keyinclude name="Etat.Okres.To"/>
+    </key>
+        
+		<!-- HISTORIA -->
+		<col name="Pracownik" type="Pracownik" required="true" readonly="true" category="Historia" 
+			relname="Zapis historyczny pracownika" 
+			relguided="inner" 
+			children="Historia" 
+			keyclass="History" 
+			keyclasscol="Aktualnosc" 
+			delete="cascade" 
+			keyprimary="true" 
+			relright="true"
+		/>
+		<col name="Aktualnosc" name12="Akt" type="FromTo" required="true" category="Historia" />
+		<!-- OGÓLNE -->
+    <col name="PowodAktualizacji" type="string" length="80" category="Ogólne" caption="Powód aktualizacji" readonly="set"
+         description="Opis powodu aktualizacji zapisu"/>
+    <col name="NumerAkt" type="string" length="20" />
+		<col name="Nazwisko" type="string" length="81" required="true" category="Ogólne" />
+		<col name="Imie" type="string" length="30" required="true" category="Ogólne">
+			<attribute>Dictionary("Imiona")</attribute> 
+		</col>
+		<col name="Urodzony" type="Urodzony" category="Ogólne" />
+		<col name="PESEL" type="string" length="11" category="Ogólne">
+			<verifier name="PeselVerifier" />
+			<verifier name="PeselDataVerifier" />
+			<verifier name="PeselPlecVerifier" />
+			<verifier name="PracHistoria.PeselUniqueVerifier" />
+		</col>
+		<col name="NIP" type="string" length="13" category="Ogólne" modifier="public virtual"/>
+		<col name="EuVAT" type="string" length="16" category="Ogólne" modifier="public virtual">
+			<verifier name="EuVatVerifier"/>
+		</col>
+    <col name="IdentyfikatorPodatkowy" type="IdentyfikatorPodatkowyPracownika" category="Ogólne" required="true"/>
+    <!--col name="Dokument" name12="Dok" type="DokumentOsoby" category="Ogólne" /-->
+		<!-- name="Zdjecie"-->
+		<!-- DANE EWIDENCYJNE -->
+		<col name="ImieDrugie" type="string" length="30" category="Dane ewidencyjne">
+			<attribute>Dictionary("Imiona")</attribute> 
+		</col>
+		<col name="NazwiskoRodowe" name12="NazwRodowe" type="string" length="81" category="Dane ewidencyjne" />
+		<col name="ImieOjca" type="string" length="30" category="Dane ewidencyjne">
+			<attribute>Dictionary("Imiona")</attribute> 
+		</col>
+		<col name="ImieMatki" type="string" length="30" category="Dane ewidencyjne">
+			<attribute>Dictionary("Imiona")</attribute> 
+		</col>
+		<col name="NazwiskoRodoweMatki" name12="NazRodMatki" type="string" length="81" category="Dane ewidencyjne" />
+		<!--col name="Obywatelstwo" name12="Ob" type="Obywatelstwo" category="Dane ewidencyjne" /-->
+		<col name="Plec" type="string" length="1" modifier="protected" category="Dane ewidencyjne">
+			<verifier name="PeselPlecVerifier" />
+		</col>
+		<!-- STAN RODZINNY -->
+		<!--col name="StanRodzinny" name12="Stro" type="StanRodzinny" category="Rodzina" /-->
+		<!-- DANE ADRESOWE -->
+		<!--col name="AdresZameldowania" name12="Adr" type="Adres" category="Dane adresowe" /-->
+		<!--col name="AdresZamieszkania" name12="Zam" type="Adres" category="Dane adresowe" /-->
+		<!--col name="AdresDoKorespondencji" name12="Kor" type="Adres" category="Dane adresowe" /-->
+		<!--col name="Kontakt" name12="Knt" type="Kontakt" category="Dane adresowe" /-->
+		<!--col name="Powiadomic" name12="Pow" type="Osoba" category="Dane adresowe" /-->
+		<!-- PODATKI -->
+		<col name="Podatki" name12="Pod" type="PodatkiInfo" />
+		<!-- UBEZPIECZENIE - DANE INFORMACYJNE -->
+		<col name="StPokrewienstwa" type="KodStPokrewienstwa" category="Dane inf. dla ubezpieczenia" />
+		<col name="WspolneGospDomowe" type="boolean" category="Dane inf. dla ubezpieczenia" />
+		<col name="StNiezdolnDoPracy" name12="StNiez" type="StNiezdolnDoPracy" category="Dane inf. dla ubezpieczenia" />
+		<col name="PracaGornicza" name12="PrGr" type="PracaGornicza" category="Dane inf. dla ubezpieczenia" />
+		<col name="PracaWSzczWarunkach" name12="PrWS" type="PracaWSzczWarunkach" category="Dane inf. dla ubezpieczenia" />
+    <col name="PracaWSzczWarunkach2009" type="PracaWSzczWarunkach2009" category="Dane inf. dla ubezpieczenia" />
+    <col name="KasaChorych" type="KasaChorych" category="Dane inf. dla ubezpieczenia">
+			<attribute>Browsable(false)</attribute> 
+		</col>
+		<col name="OddzialNFZ" type="OddzialNFZ" category="Dane inf. dla ubezpieczenia" />
+		<col name="PrawoEmRent" name12="PrER" type="PrawoEmRent" category="Dane inf. dla ubezpieczenia" />
+		<col name="StopienNiepelnosp" name12="StNiep" type="StopienNiepelnosp" category="Dane inf. dla ubezpieczenia" />
+		<col name="PrzekrPodstSkladek" name12="PrPdSk" type="PrzekrPodstSkladek" category="Dane inf. dla ubezpieczenia" />
+		<col name="UmowyOskladkowane" name12="UmwOsklad" type="boolean" category="Dane inf. dla ubezpieczenia" />
+		<col name="UmowyTylkoZdrow" name12="UmwZdrow" type="boolean" category="Dane inf. dla ubezpieczenia" />
+    <col name="UmowyDobrowolneChorobowe" type="boolean" category="Dane inf. dla ubezpieczenia" />
+    <col name="WarunkiZagrozenia" name12="WarZagr" type="boolean" category="Dane inf. dla ubezpieczenia" 
+			description="Pracownik zatrudniony w warunkach zagrożenia (dla deklaracji ZUS IWA)"
+		/>
+		<!-- INNE -->
+		<!--col name="Wojsko" name12="Woj" type="Wojsko" category="Inne" /-->
+		<!--col name="Wyksztalcenie" name12="Wyk" type="Wyksztalcenie" category="Inne" /-->
+		<col name="RGA" type="DaneDlaRGA" category="Inne" />
+		<col name="PodstawaFP" name12="FP" type="PodstawaFP" category="Inne" />
+    <col name="PodstawaFGSP" name12="FGSP" type="PodstawaFGSP" category="Inne" />
+    <col name="Etat" name12="Eta" type="Etat" category="Inne" />
+		<col name="Nieobecnosci" name12="Nie" type="RozliczanieNieobecnosci" category="Inne"/>
+		<col name="ChorobowyBO" name12="ChBO" type="ChorobowyBO" category="Inne"/>
+		<col name="OpiekunczyBO" name12="OpBO" type="OpiekunczyBO" category="Inne"/>
+    <col name="WypoczynkowyBO" name12="WpBO" type="WypoczynkowyBO" category="Inne"/>
+    <col name="DodatkowyBO" type="DodatkowyBO" category="Inne"/>
+    <col name="Opiekunczy188BO" type="Opiekunczy188BO" category="Inne"/>
+    <col name="OjcowskiBO" type="OjcowskiBO" category="Inne"/>
+    <col name="RodzicielskiBO" type="RodzicielskiBO" category="Inne"/>
+    <col name="GUS" type="StatystykaGUS" category="Inne" />
+		<col name="Udzialy" type="Fraction" category="Właściciel" />
+		<col name="IloscDzialalnosci" type="int" name12="IlDzial" category="Właściciel"/>
+		<col name="Wlasciciel" type="WlascicielInfo" name12="Wls" category="Właściciel"/>
+    <col name="TabelaKursowa" type="TabelaKursowa" category="Inne"/>
+    <col name="AdresNaPrzelewach" type="AdresPracownikaNaPrzelewach" category="Inne"/>
+    <col name="OdpisOPP" type="OdpisOPP"/>
+    <col name="OdpisPPK" type="OdpisPPK"/>
+    <col name="ZajecieWynagrodzenia" type="ZajęcieWynagrodzeniaInfo"/>
+    <col name="DefinicjaRCP" type="IDefinicjaRCP" />
+  </table>
+	<!-- KARTA RCP -->
+	<table name="KartaRCP" tablename="KartyRCP" name8="KartRCP" 
+		caption="Karta RCP" 
+		tablecaption="Karty RCP"
+    guided="Root"
+	>
+		<key name="WgNumeru" keyprimary="true" 
+			keyclass="FromTo" 
+			keyclasscol="Okres"
+		>
+			<keycol name="Numer" />
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Ogólne" 
+			relname="Karty RCP pracownika" 
+			children="KartyRCP" 
+			delete="cascade" 
+			relright="true"
+		/>
+		<col name="Numer" type="string" length="30" required="true" category="Ogólne" />
+		<col name="Okres" type="FromTo" category="Ogólne" />
+	</table>
+	<!-- UMOWA -->
+	<enum name="TypWartosciUmowy" />
+  <enum name="RodzajeRozliczeniaUmowy"/>
+  <subrow name="ZleceniobiorcaZaGranicą">
+    <col name="OddelegowanyDo" type="KrajDelegacji" cstype="IKrajDelegacji" category="Zleceniobiorca za granicą"/>
+    <col name="PodatekZaGranica" type="boolean" category="Zleceniobiorca za granicą"/>
+  </subrow>
+  <subrow name="UmowaWypowiedzenie">
+    <col name="Miesiace" type="int" caption="Miesiące" description="Okres wypowiedzenia - miesiące"/>
+    <col name="Tygodnie" type="int" caption="Tygodnie" description="Okres wypowiedzenia - tygodnie" />
+    <col name="Dni" type="int" caption="Dni" description="Okres wypowiedzenia - dni" />
+    <col name="DataZlozenia" type="date" caption="Data złożenia" description="Data złożenia wypowiedzenia"/>
+    <col name="Uplywa" type="date" caption="Upływa" description="Data upływu ukresu wypowiedzenia">
+  </col>
+  </subrow>
+  <table name="Umowa" tablename="Umowy" guided="Root">
+		<interface>IBazaZrodlaWyplaty</interface>
+    <interface>IPowiązanieWypłaty</interface>
+    <interface>IZrodloDeklaracji</interface>
+    <interface>IZrodloPodzielnikaKosztow</interface>
+    <interface>IPowiązanieDodatku</interface>
+    <interface>IRozliczenieWynagrodzeniaHost</interface>
+    <interface>IZestawienieDietZagrHost</interface>
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Dokument" 
+			keyprimary="true" 
+			relname="Umowa pracownika" 
+			children="Umowy" 
+			delete="cascade"
+			relright="other"
+		>
+			<keycol name="DataSplaty"/>
+		</col>
+		<!-- OGÓLNE -->
+    <col name="Wydzial" type="Wydzial" required="true" category="Ogólne"
+      caption="Jednostka organizacyjna"
+			relname="Jednostka organizacyjna umowy"
+			relright="true"
+		>
+      <keycol name="Okres.From"/>
+      <keyinclude name="Okres.To"/>
+      <keyinclude name="RodzajRozliczenia"/>
+      <keyinclude name="DataSplaty"/>
+      <verifier name="Umowa.OkresPracyTymczasowejVerifier"/>
+    </col>
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" category="Ogólne" 
+			relname="Definicja umowy" 
+		/>
+		<col name="Seria" type="string" length="12" category="Ogólne">
+			<attribute>Dictionary("Seria listy płac")</attribute> 
+		</col>
+		<!-- DOKUMENT -->
+    <col name="Anulowana" type="boolean" readonly="set"/>
+    <col name="Data" type="date" required="true" category="Dokument"/>
+		<col name="Numer" name12="Nr" type="NumerDokumentu" category="Dokument" />
+		<col name="Tytul" type="string" length="80" required="true" category="Dokument">
+			<attribute>Dictionary("Tytuł umowy", ManualList=true)</attribute> 
+		</col>
+		<col name="Opis" type="text" category="Dokument"/>
+    <col name="Okres" name12="Okr" type="FromTo" required="true" category="Dokument">
+      <verifier name="Umowa.OkresPracyTymczasowejVerifier"/>
+    </col>
+		<!-- UMOWA -->
+		<col name="Element" type="DefinicjaElementu" required="true" category="Umowa"
+			relname="Definicja elementu umowy" 
+		/>
+    <col name="TypWartosci" type="TypWartosciUmowy" category="Umowa"/>
+    <col name="RodzajRozliczenia" type="RodzajeRozliczeniaUmowy" category="Umowa"/>
+    <col name="MinimalnaStawkaGodz" type="boolean" category="Umowa"/>
+    <col name="Splacono" type="currency" specialaccess="true" category="System" />
+    <col name="DataSplaty" type="date" specialaccess="true" category="System"/>
+    <!-- VAT -->
+		<col name="PodlegaVAT" type="boolean" category="VAT" />
+    <col name="DefinicjaStawki" type="DefinicjaStawkiVat" name12="DefSt"
+			description="Definicja stawki VAT"
+			relname="Stawka VAT umowy"/>
+    <!-- Umowa za granicą -->
+    <col name="ZaGranica" type="ZleceniobiorcaZaGranicą"/>
+    <col name="Wypowiedzenie" type="UmowaWypowiedzenie"/>
+    <col name="ZgloszenieRUD" type="boolean" category="Umowa"/>
+  </table>
+
+  <table name="UmowaHistoria" tablename="UmowaHistorie" caption="Historia umowy" tablecaption="Umowy" >
+    <!-- HISTORIA -->
+    <col name="Umowa" type="Umowa" readonly="true" required="true" category="Historia"
+			relname="Zapis historyczny umowy"
+			children="Historia"
+			keyclass="History"
+			keyclasscol="Aktualnosc"
+      keyprimary="true"
+			delete="cascade"
+			relright="true"
+			relguided="inner"
+		/>
+    <col name="Aktualnosc" type="FromTo" required="true" category="Historia" />
+    <!-- OGÓLNE -->
+    <col name="Ubezpieczenia" name12="Ub" type="Ubezpieczenia" category="Umowa" />
+    <col name="Wartosc" type="currency" category="Umowa">
+      <verifier name="UmowaHistoria.NettoBruttoVerifier"/>
+      <verifier name="UmowaHistoria.UmowaRyczałtowaVerifier"/>
+    </col>
+    <col name="PowodAktualizacji" type="string" length="80" category="Ogólne" caption="Powód aktualizacji" readonly="set"
+         description="Opis powodu aktualizacji zapisu"/>
+    <col name="DochodPodstawowy" type="boolean" category="Umowa"/>
+    <col name="PotracenieCalkowite" type="boolean" category="Umowa" modifier="public virtual"/>
+    <col name="KodWykonywanegoZawodu" type="KodWykonywanegoZawodu" category="Umowa" />
+  </table>
+
+  <!-- DODATEK -->
+	<enum name="TypDodatku" />
+  <enum name="PrzyczynaZakonczeniaDodatku" />
+  <interface name="IPowiązanieDodatku"/>
+  <table name="Dodatek" tablename="Dodatki" guided="Root">
+		<interface>IBazaZrodlaWyplaty</interface>
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Ogólne" 
+			keyprimary="true" 
+			relname="Dodatki pracownika" 
+			children="Dodatki" 
+			delete="cascade" 
+			relright="true"
+		/>
+		<col name="Powiazanie" type="IPowiązanieDodatku" setonlynull="true" category="Ogólne" 
+			relname="Dodatki źródła dodatku" 
+			children="Dodatki" 
+		/>
+		<!-- OGÓLNE -->
+		<!--col name="Typ" type="TypDodatku" selector="true" readonly="true" required="true" category="Ogólne" /-->
+		<col name="Nazwa" type="string" length="40" required="true" category="Ogólne" />
+    <col name="DataZakonczeniaWyplaty" type="date" required="true" category="ogólne" caption="Data zakończenia wypłaty"/>
+    <col name="PrzyczynaZakonczenia" type="PrzyczynaZakonczeniaDodatku" category="ogólne" caption="Przyczyna zakończenia"/>
+  </table>
+	<!-- HISTORIA DODATKU -->
+  <subrow name="RozliczenieDodatku">
+    <col name="Odbiorca" type="IPodmiotKasowy" category="Ogólne"
+			relname="Odbiorca dodatku"
+		/>
+    <col name="RachunekOdbiorcy" type="RachunekBankowyPodmiotu" category="Ogólne"
+			relname="Rachunek odbiorcy dodatku"
+		/>
+  </subrow>
+  <table name="DodHistoria" tablename="DodHistorie" name8="DodHist" caption="Historia dodatku" tablecaption="Historie dodatków" warnings="Off">
+		<!-- HISTORIA -->
+		<col name="Dodatek" type="Dodatek" readonly="true" required="true" category="Historia" 
+			relname="Zapis historyczny dodatku" 
+			children="Historia" 
+			keyclass="History" 
+			keyclasscol="Aktualnosc" 
+      keyprimary="true"
+			delete="cascade" 
+			relright="true"
+			relguided="inner" 
+		/>
+		<col name="Aktualnosc" name12="Akt" type="FromTo" required="true" category="Historia" />
+		<!-- OGÓLNE -->
+		<col name="Element" type="DefinicjaElementu" relname="Definicja elementu dodatku" required="true" category="Ogólne" />
+		<col name="Okres" name12="Okr" type="FromTo" required="true" category="Ogólne" />
+		<col name="Podstawa" type="currency" category="Parametry algorytmu"/>
+		<col name="Ulamek" type="Fraction" category="Parametry algorytmu"/>
+		<col name="Czas" type="time" category="Parametry algorytmu"/>
+		<col name="Dni" type="int" category="Parametry algorytmu"/>
+    <col name="Rozliczenie" type="RozliczenieDodatku"/>
+  </table>
+  <!-- ZESTAWY DODATKÓW-->
+  <table name="ZestawDodatków" tablename="ZestawyDodatkow" guided="Root" config="true" caption="Zestaw dodatków" tablecaption="Zestawy dodatków" >
+    <key name="WgNazwa" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="40" required="true" category="OgólnPrzyczynaRozwUmowye" localization="dictionary" />
+    <col name="Blokada" type="boolean" category="Ogólne" />
+  </table>
+  <table name="ElementZestawuDodatków" tablename="ElementyZestDod" config="true"
+		caption="Element zestawu"
+		tablecaption="Elementy zestawów"
+	>
+    <col name="Zestaw" type="ZestawDodatków" readonly="true" required="true" category="Ogólne"
+			relname="Zestaw elementu zestawu dodatków"
+      children="ElementyZestawu"
+			keyprimary="true"
+      keyunique="true"
+      delete="cascade"
+      relguided="inner"
+		>
+      <keycol name="Definicja"/>
+    </col>
+    <col name="Definicja" type="DefinicjaElementu" required="true"
+			relname="Definicja elementu zestawu dodatków"
+      children="ElementyZestawów"
+		/>
+  </table>
+  <!-- PRÓG AKORDU -->
+	<table name="ProgAkordu" tablename="ProgiAkordow" name8="PrgAkord"
+		caption="Próg akordu"
+		tablecaption="Progi akordów"
+    warnings="Off"
+	>
+		<!-- RELACJE -->
+		<col name="Akord" type="IAkord" required="true" readonly="true" category="Ogólne" 
+			relname="Prog akordu" 
+			children="Progi" 
+			keyprimary="true" 
+			delete="cascade"
+			relright="true"
+			relguided="inner"			
+		>
+			<keycol name="Prog" />
+		</col>
+		<!-- OGÓLNE -->
+		<col name="Zerowy" type="boolean" readonly="true" category="Próg" />
+		<col name="Prog" type="double" category="Próg">
+			<verifier name="ProgAkordu.DuplicateVerifier" onadded="true"/>
+		</col>
+		<col name="Wartosc" type="doublecy" category="Próg" />
+	</table>
+	<!-- DEFINICJA AKORDU -->
+	<enum name="OkresRozliczeniaAkordu" />
+	<subrow name="AlgorytmAkordu">
+		<col name="Element" type="DefinicjaElementu" required="true" category="Algorytm" 
+			relname="Element algorytmu akordu" 
+		/>
+		<col name="PomniejszaCzas" type="boolean" category="Algorytm" />
+    <col name="DefinicjaStrefy" type="DefinicjaStrefy" category="Algorytm" />
+    <col name="WgCzasu" type="boolean" category="Algorytm" />
+		<col name="Progresywny" type="boolean" category="Progresywny" />
+		<col name="WgProgu" type="boolean" category="Progresywny" />
+		<col name="Rozliczenie" type="OkresRozliczeniaAkordu" category="Progresywny" />
+		<col name="PropDoStawki" type="boolean" category="Grupowy" />
+		<col name="Wspolczynnik" type="double" category="Grupowy" />
+	</subrow>
+	<interface name="IAkord" />
+	<enum name="TypAkordu" />
+	<table name="DefinicjaAkordu" tablename="DefinicjeAkordow" name8="DefAkord" guided="Root" cached="true" config="true"
+		caption="Definicja akordu"
+		tablecaption="Definicje akordów"
+	>
+		<interface>IAkord</interface>
+		<key name="WgNazwa" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa"/>
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Typ" type="TypAkordu" selector="true" readonly="true" required="true" category="Ogólne" />
+		<col name="Nazwa" type="string" length="40" required="true" localization="dictionary" category="Ogólne" />
+		<col name="Jednostka" type="string" localization="dictionary" length="5" modifier="public virtual" category="Algorytm">
+			<attribute>Dictionary("Jednostka akordu")</attribute> 
+		</col>
+		<col name="Blokada" type="boolean" category="Ogólne" />
+		<!-- ALGORYTM -->
+		<col name="Algorytm" type="AlgorytmAkordu" category="Definicja" />
+	</table>
+	<!-- AKORD -->
+	<table name="Akord" tablename="Akordy" guided="Root">
+		<interface>IBazaZrodlaWyplaty</interface>
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Ogólne" 
+      keyprimary="true"
+			relname="Akordy pracownika" 
+			children="Akordy" 
+			delete="cascade" 
+			relright="other"
+		/>
+		<col name="Typ" type="TypAkordu" selector="true" readonly="true" required="true" category="Ogólne" />
+		<col name="Wydzial" type="Wydzial" required="true" category="Ogólne" 
+      caption="Jednostka organizacyjna"
+			relname="Jednostka organizacyjna do którego przypisano akord" 
+			relright="true"
+		>
+			<keycol name="Definicja"/>
+		</col>
+		<col name="Definicja" type="DefinicjaAkordu" required="true" category="Ogólne" 
+			relname="Definicje historii akordu" 
+			children="Akordy"
+		/>
+		<col name="Okres" type="FromTo" specialaccess="true"/>
+		<col name="PelnyOkres" type="boolean" specialaccess="true"/>
+	</table>
+	<!-- AKORD HISTORIA -->
+	<table name="AkordHistoria" tablename="AkordHistorie" name8="AkrHist" caption="Historia akordu">
+		<interface>IAkord</interface>
+		<!-- HISTORIA -->
+		<col name="Akord" type="Akord" readonly="true" required="true" category="Historia" 
+			relname="Zapis historyczny akordu" 
+			children="Historia" 
+			keyclass="History" 
+			keyclasscol="Aktualnosc" 
+      keyprimary="true"
+			delete="cascade" 
+			relright="true"
+			relguided="inner"			
+		/>
+		<col name="Aktualnosc" name12="Akt" type="FromTo" required="true" category="Historia" />
+		<!-- OGÓLNE -->
+		<col name="Typ" type="TypAkordu" selector="true" readonly="true" required="true" category="Ogólne" />
+		<col name="Okres" name12="Okr" type="FromTo" required="true" category="Ogólne" />
+		<col name="Jednostka" type="string" length="5" category="Ogólne">
+			<attribute>Dictionary("Jednostka akordu")</attribute> 
+		</col>
+		<!-- ALGORYTM -->
+		<col name="Algorytm" type="AlgorytmAkordu" category="Algorytm" />
+	</table>
+  <!-- DEFINICJA ŚWIADCZENIA -->
+  <table name="DefinicjaŚwiadczeniaSocjalnego" tablename="DefSwiadczSocjal"
+    caption="Definicja świadczenia socjalnego"
+    tablecaption="Definicje świadczeń socjalnych"
+    config="true"
+    guided="Root"
+	>
+    <!-- OGÓLNE -->
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="80" required="true" localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+    <!-- ROZLICZENIE -->
+    <col name="Element" type="DefinicjaElementu" category="Rozliczenie" relname="Definicja elementu rozliczającego świadczenie na definicji świadczenia" />
+    <col name="Kwota" type="currency" category="Rozliczenie" />
+  </table>
+  <!-- ROZLICZENIE ŚWIADCZENIA -->
+	<subrow name="RozliczenieSwiadczenia">
+		<col name="Element" type="DefinicjaElementu" category="Rozliczenie" relname="Definicja elementu rozliczającego świadczenie" />
+		<col name="Data" type="date" category="Rozliczenie" />
+		<col name="Kwota" type="currency" category="Rozliczenie" />
+    <col name="Okres" type="FromTo" category="Rozliczenie">
+      <verifier name="RozliczenieSwiadczenia.OkresVerifier"/>
+    </col>
+	</subrow>
+	<!-- ŚWIADCZENIE SOCJALNE -->
+	<table name="SwiadczSocjalne" tablename="SwiadczeniaSoc" name8="SwiadSoc" 
+		caption="Świadczenie socjalne" 
+		tablecaption="Świadczenia socjalne"
+    guided="Root"
+	>
+		<interface>IBazaZrodlaWyplaty</interface>
+    <interface>IPowiązanieWypłaty</interface>
+    <key name="WgData">
+      <keycol name="Data"/>
+    </key>
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Pracownik"
+			keyprimary="true"
+			relname="Świadczenia socjalne pracownika"
+			children="Swiadczenia"
+			delete="cascade"
+			relright="true"
+		>
+      <keycol name="Data"/>
+    </col>
+		<!-- OGÓLNE -->
+    <col name="Definicja" type="DefinicjaŚwiadczeniaSocjalnego" required="true" category="Ogólne">
+      <keycol name="Data"/>
+    </col>
+		<col name="Data" type="date" required="true" category="Ogólne" />
+		<!-- ROZLICZENIE -->
+		<col name="Rozliczenie" name12="Rozl" type="RozliczenieSwiadczenia" category="Rozliczenie" />
+		<col name="Opis" type="text" category="Ogólne" />
+  </table>
+  <!-- ZAJĘCIE KOMORNICZE -->
+  <enum name="RodzajeZajęciaWynagrodzenia"/>
+  <table name="ZajęcieKomornicze" tablename="ZajKomornicze"
+		caption="Zajęcie wynagrodzenia"
+		tablecaption="Zajęcia wynagrodzeń"
+    guided="Root"
+	>
+    <interface>IBazaZrodlaWyplaty</interface>
+    <!-- PRACOWNIK -->
+    <key name="WgData">
+      <keycol name="Data"/>
+    </key>
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Pracownik"
+			keyprimary="true"
+			relname="Zajęcia wynagrodzeń pracownika"
+			children="ZajęciaKomornicze"
+			delete="cascade"
+			relright="true"
+		>
+      <keycol name="Data"/>
+    </col>
+    <!-- OGÓLNE -->
+    <col name="Data" type="date" required="true" category="Ogólne" />
+    <col name="NumerSprawy" type="string" length="40" category="Ogólne">
+      <verifier name="ZajęcieKomornicze.NumerSprawyRequiredVerifier" onadded="true" />
+    </col>
+    <col name="Opis" type="text" category="Ogólne" />
+    <!-- ROZLICZENIE -->
+    <col name="Element" type="DefinicjaElementu" category="Rozliczenie" required="true"
+         relname="Definicja elementu rozliczającego świadczenie komornicze" />
+    <col name="Rodzaj" type="RodzajeZajęciaWynagrodzenia" category="Rozliczenie"/>
+    <col name="Splacono" type="currency" readonly="set" specialaccess="true" category="System" caption="Spłacono"/>
+    <col name="DataSplaty" type="date" readonly="set" specialaccess="true" category="System" caption="Data spłaty" required="true"/>
+    <col name="Rozliczenie" type="RozliczenieDodatku"/>
+    <col name="SplataZakonczona" type="boolean" caption="Spłata zakończona"/>
+    <col name="Anulowane" type="boolean" readonly="set"/>
+    <col name="Priorytet" type="int" caption="Priorytet" modifier="private"/>
+    <col name="OpisPrzelewu" type="string" length="80" modifier="private"/>
+  </table>
+
+  <table name="ZajęcieKomorniczeHistoria" tablename="ZajKomorniczeHis"
+		caption="Zajęcie wynagrodzenia"
+		tablecaption="Zajęcia wynagrodzeń"
+>
+    <!-- HISTORIA -->
+    <col name="Zajecie" type="ZajęcieKomornicze" readonly="true" required="true" category="Historia"
+			relname="Zapis historyczny zajęcia komorniczego"
+			children="Historia"
+			keyclass="History"
+			keyclasscol="Aktualnosc"
+      keyprimary="true"
+			delete="cascade"
+			relright="true"
+			relguided="inner"
+		/>
+    <col name="Aktualnosc" type="FromTo" required="true" category="Historia" />
+    <col name="PowodAktualizacji" type="string" length="80" category="Historia" caption="Powód aktualizacji" readonly="set"
+         description="Opis powodu aktualizacji zapisu"/>
+    <!-- OGÓLNE -->
+    <col name="ZawieszenieSplaty" type="boolean" caption="Zawieszenie spłaty" category="Rozliczenie" />
+    <col name="Kwota" type="currency" category="Rozliczenie" />
+    <col name="IndywidualnyLimitKwota" type="boolean" category="Rozliczenie" />
+    <col name="LimitKwota" type="currency" category="Rozliczenie" />
+    <col name="IndywidualnyLimitProcent" type="boolean" category="Rozliczenie" />
+    <col name="LimitProcent" type="percent" category="Rozliczenie" />
+    <col name="UwzgledniajKwoteWolna" type="boolean" category="Rozliczenie" />
+    <col name="DepozytKomorniczy" type="boolean" category="Rozliczenie" />
+    <col name="Priorytet" type="int" caption="Priorytet"/>
+    <col name="OpisPrzelewu" type="string" length="80"/>
+    <col name="PotracajZasilki" type="boolean" category="Rozliczenie" />
+    <col name="PotracajSwiadczenia" type="boolean" category="Rozliczenie" />
+  </table>
+
+  <enum name="RodzajeKorektZajęćKomorniczych"/>
+  <table name="KorektaZajęciaKomorniczego" tablename="KorektyZajKomor" guided="Root"
+		caption="Korekta zajęcia komorniczego"
+		tablecaption="Korekty zajęć komorniczych"
+	>
+    <interface>IBazaZrodlaWyplaty</interface>
+    <col name="Rodzaj" type="RodzajeKorektZajęćKomorniczych" selector="true" readonly="true" required="true" category="Ogólne" />
+    <col name="Zajecie" type="ZajęcieKomornicze" readonly="true" required="true" category="Ogólne"
+      keyprimary="true"
+			relname="Korekty zajęć komorniczych"
+			children="Korekty"
+			delete="cascade"
+			relright="true"
+		>
+      <keycol name="Data" />
+    </col>
+    <col name="Rozliczenie" type="RozliczenieDodatku"/>
+    <col name="NumerDokumentu" type="string" length="40" category="Ogólne"/>
+    <col name="Data" type="date" required="true" category="Ogólne" modifier="public virtual" description="Data korekty" />
+    <col name="Element" type="DefinicjaElementu" category="Ogólne" modifier="public virtual"
+			relname="Definicja elementu rozliczenia korekty"
+		/>
+    <col name="Wartosc" type="currency" category="Ogólne" required="noverified" modifier="public virtual" description="Kwota do rozliczenia" />
+    <col name="OpisPrzelewu" type="string" length="80"/>
+    <col name="Opis" type="text" category="Ogólne"
+         description="Informacja o korekcie zajęcia komorniczego"
+    />
+  </table>
+
+  <!-- WNIOSEK URLOPOWY -->
+  <enum name="StanWnioskuUrlopowego"/>
+
+	<!-- WNIOSEK O DELEGACJE - POLA CHARaKTERYSTYCZNE -->
+	<subrow name="WniosekODelegację">
+		<!-- INFORMACJE PRZEPISYWANE Z WNIOSKU O DELEGACJE PWS -->
+		<col name="Definicja" type="DefinicjaDokumentu" category="Delegacje" description="Definicja dokumentu PWS" >
+			<verifier name="WniosekODelegację.DefinicjaDokumentuVerifier" onadded="true" />
+		</col>
+		<col name="KrajDocelowy" type="IKrajDelegacji" category="Delegacje" relname="Kraj docelowy delegacji" description="Kraj docelowy delegacji." >
+			<verifier name="WniosekODelegację.KrajDelegacjiVerifier" onadded="true" />
+		</col>
+		<col name="DataRozpoczeciaPlanowana" type="datetime" cstype="DateShortTime" category="Delegacje" description="Planowany czas rozpoczęcia delegacji." >
+			<verifier name="WniosekODelegację.DataRozpoczeciaPlanowanaVerifier" onadded="true" />
+			<verifier name="WniosekODelegację.DataZakonczeniaPlanowanaVerifier"  />
+		</col>
+		<col name="DataZakonczeniaPlanowana" type="datetime" cstype="DateShortTime" category="Delegacje" description="Planowany czas zakończenia delegacji." >
+			<verifier name="WniosekODelegację.DataZakonczeniaPlanowanaVerifier" onadded="true" />
+		</col>
+		<col name="SrodekTransportu" type="string" length="32" category="Ogólne" description="Domyślny środek transportu." >
+			<attribute>Dictionary("PWS.DefTransport", ManualList=true)</attribute>
+		</col>
+		<col name="Cel" type="text" category="Delegacje" description="Cel delegacji." />
+		<!-- INFORMACJE POZOSTAJACE TYLKO NA WNIOSKU -->
+		<col name="WnioskowanaZaliczka" type="currency" category="Delegacje" description="Wnioskowana wysokość zaliczki" />
+	</subrow>
+
+
+	<subrow name="WniosekOUrlopWypoczynkowy">
+    <col name="PrzyczynaUrlopu" type="PrzyczynaUrlopu"/>
+  </subrow>
+
+  <subrow name="WniosekOUrlopOkolicznościowy">
+    <col name="PrzyczynaUrlopu" type="PrzyczynaUrlopuOkolicznościowego">
+      <verifier name="WniosekOUrlopOkolicznościowy.LimitVerifier"/>
+    </col>
+  </subrow>
+
+  <table name="WniosekUrlopowy" tablename="WnioskiUrlopowe" guided="Root" caption="Wniosek o urlop, delegację" tablecaption="Wnioski o urlopy, delegacje">
+    <!-- PRACOWNIK -->
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Pracownik"
+			keyprimary="true"
+			relname="Wnioski urlopowe pracownika"
+			children="WnioskiUrlopowe"
+			delete="cascade"
+			relright="true"
+		>
+      <keycol name="Okres.To"/>
+    </col>
+    <key name="WgOkres">
+      <keycol name="Okres.To" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Data" type="date" required="true" category="Ogólne" />
+    <col name="DataDecyzji" type="date" category="Ogólne" />
+    <col name="Okres" type="FromTo" required="true" category="Ogólne">
+      <verifier name="WniosekUrlopowy.PlanVerifier"/>
+      <verifier name="WniosekUrlopowy.PrzerwaVerifier"/>
+      <verifier name="WniosekUrlopowy.DniPracyVerifier"/>
+      <verifier name="WniosekUrlopowy.OkresStanVerifier"/>
+      <verifier name="WniosekUrlopowy.OkresNieobecnośćVerifier"/>
+      <verifier name="WniosekUrlopowy.OkresDzienPracyVerifier"/>
+      <verifier name="WniosekUrlopowy.LimitNieobecnościVerifier"/>
+      <verifier name="WniosekUrlopowy.LimitNaGodzinyVerifier"/>
+      <verifier name="WniosekOUrlopOkolicznościowy.LimitVerifier"/>
+    </col>
+    <col name="Norma" type="time" category="Ogólne">
+      <verifier name="WniosekUrlopowy.PlanVerifier"/>
+      <verifier name="WniosekUrlopowy.PrzerwaVerifier"/>
+      <verifier name="WniosekUrlopowy.LimitNieobecnościVerifier"/>
+      <verifier name="WniosekUrlopowy.LimitNaGodzinyVerifier"/>
+    </col>
+    <col name="OdGodziny" type="time" category="Ogólne">
+      <verifier name="WniosekUrlopowy.PlanVerifier"/>
+      <verifier name="WniosekUrlopowy.PrzerwaVerifier"/>
+      <verifier name="WniosekUrlopowy.OkresStanVerifier"/>
+      <verifier name="WniosekUrlopowy.OkresDzienPracyVerifier"/>
+      <verifier name="WniosekUrlopowy.NormaRequiredVerifier"/>
+    </col>
+    <col name="Stan" type="StanWnioskuUrlopowego" required="true" category="Ogólne">
+      <verifier name="WniosekUrlopowy.OkresStanVerifier"/>
+      <verifier name="WniosekUrlopowy.OkresNieobecnośćVerifier"/>
+      <verifier name="WniosekUrlopowy.OkresDzienPracyVerifier"/>      
+      <verifier name="WniosekUrlopowy.KopiujDzieńVerifier"/>
+    </col>
+    <col name="Definicja" type="DefinicjaNieobecnosci" required="true" readonly="true" category="Ogólne"/>
+    <col name="Kierownik" type="Pracownik" children="WnioskiKierownika" category="Ogólne">
+		  <verifier name="WniosekUrlopowy.KierownikVerifier"/>
+	  </col>
+    <col name="Zastepca" type="Pracownik" children="WnioskiZastępcy" category="Ogólne" />
+    <col name="Opis" type="text" category="Ogólne" />
+    <!-- 10.5 -->
+    <col name="UrlopWypoczynkowy" type="WniosekOUrlopWypoczynkowy"/>
+    <col name="UrlopOkolicznosciowy" type="WniosekOUrlopOkolicznościowy"/>
+    <col name="Delegacja" type="WniosekODelegację"/>
+  </table>
+  <!-- DEFINICJA OŚWIADCZENIA -->
+  <enum name="OkresyWażnościOświadczeń"/>
+  <table name="DefinicjaOświadczenia" tablename="DefOswiadczen" guided="Root" config="true" caption="Definicja oświadczenia" tablecaption="Definicje oświadczeń">
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="30" required="true" localization="dictionary" category="Ogólne" />
+    <col name="Blokada" type="boolean" category="Ogólne" />
+    <col name="OkresWaznosci" type="OkresyWażnościOświadczeń" category="Ogólne" caption="Okres ważności"/>
+    <col name="OkresIlosc" type="int" category="Ogólne" caption="Ilość miesięcy/lat"/>
+    <col name="WidoczneCechy" type="text" category="Definicja" />
+    <col name="PulpitPracownika" type="boolean"/>
+  </table>
+  <!-- TREŚĆ OŚWIADCZENIA -->
+  <table name="TreśćOświadczenia" tablename="TresciOswiadczen" config="true" caption="Treść oświadczenia" tablecaption="Treści oświadczeń">
+    <col name="Definicja" type="DefinicjaOświadczenia" readonly="true" required="true" category="Ogólne"
+			keyprimary="true"
+      keyunique="true"
+			relname="Treść definicji oświadczenia"
+			children="Treści"
+			delete="cascade"
+      relguided="inner"
+		>
+      <keycol name="Nazwa"/>
+    </col>
+    <col name="Nazwa" type="string" length="50" required="true" localization="dictionary" category="Ogólne" />
+    <col name="Blokada" type="boolean" category="Ogólne" />
+    <col name="Domyslna" type="boolean" category="Ogólne" />
+    <col name="Tresc" type="text" category="Ogólne" caption="Treść"/>
+  </table>
+  <!-- OŚWIADCZENIE PRACOWNIKA -->
+  <table name="OświadczeniePracownika" tablename="OswiadczeniaPrac" guided="Root" caption="Oświadczenie pracownika" tablecaption="Oświadczenia pracowników">
+    <!-- PRACOWNIK -->
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Pracownik"
+			keyprimary="true"
+			relname="Oświadczenia pracownika"
+			children="Oświadczenia"
+			delete="cascade"
+			relright="true"
+		>
+      <keycol name="DataZlozenia"/>
+      <keyinclude name="Definicja"/>
+      <keyinclude name="TrescOswiadczenia"/>
+    </col>
+    <col name="Definicja" type="DefinicjaOświadczenia" readonly="true" required="true" category="Pracownik"
+      caption="Oświadczenie"
+			relname="Oświadczenia definicji"
+      keyunique="true"
+		>
+      <keycol name="Pracownik"/>
+      <keycol name="DataZlozenia"/>
+    </col>
+    <col name="TrescOswiadczenia" type="TreśćOświadczenia" required="true" category="Pracownik"
+      caption="Treść"
+			relname="Oświadczenia treści"
+		/>
+    <!-- OGÓLNE -->
+    <col name="DataZlozenia" type="date" category="Ogólne" caption="Data złożenia"/>
+    <col name="Okres" type="FromTo" required="true" category="Ogólne" caption="Okres obowiązywania"/>
+    <col name="DataWycofania" type="date" readonly="set" category="Ogólne" caption="Data wycofania"/>
+    <col name="Tresc" type="text" category="Ogólne" caption="Treść"/>
+  </table>
+  <!-- DEFINICJA NAGRODY KARY-->
+  <enum name="TypNagrodyKary" />
+  <table name="DefinicjaNagrodyKary" tablename="DefNagrodKar"
+    caption="Definicja nagrody lub kary"
+    tablecaption="Definicje nagród lub kar"
+    config="true"
+    guided="Root"
+	>
+    <!-- OGÓLNE -->
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Typ" type="TypNagrodyKary" selector="true" readonly="true" required="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="80" required="true" localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+    <!-- ROZLICZENIE -->
+    <col name="Element" type="DefinicjaElementu" category="Rozliczenie" relname="Definicja elementu rozliczającego świadczenie na definicji świadczenia" />
+    <col name="Kwota" type="currency" category="Rozliczenie" />
+  </table>
+  <!-- NAGRODA KARA -->
+	<table name="NagrodaKara" tablename="NagrodyKary" guided="Root">
+		<interface>IBazaZrodlaWyplaty</interface>
+    <interface>IPowiązanieWypłaty</interface>
+    <key name="WgData">
+      <keycol name="Data"/>
+    </key>
+    <!-- PRACOWNIK -->
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Pracownik" 
+      keyprimary="true"
+			relname="Nagrody i kary pracownika" 
+			children="NagrodyKary" 
+			delete="cascade" 
+			relright="true"
+		>
+      <keycol name="Data"/>
+    </col>
+		<!-- OGÓLNE -->
+		<col name="Typ" type="TypNagrodyKary" selector="true" readonly="true" required="true" category="Ogólne" />
+    <col name="Definicja" type="DefinicjaNagrodyKary" required="true" category="Ogólne">
+      <keycol name="Data"/>
+    </col>
+    <col name="Data" type="date" required="true" category="Ogólne" />
+		<!-- KARA -->
+		<col name="DataAnulowania" type="date" modifier="protected" category="Kara" />
+		<!-- ROZLICZENIE -->
+		<col name="Rozliczenie" name12="Rozl" type="RozliczenieSwiadczenia" category="Rozliczenie" />
+    <col name="Opis" type="text" category="Ogólne" />
+  </table>
+	<!-- BADANIA LEKARSKIE -->
+  <enum name="SposóbWyliczaniaTerminu"/>
+  <table name="DefinicjaBadaniaLekarskiego" tablename="DefBadanLek" guided="Root" config="true"
+		caption="Definicja badania lekarskiego"
+		tablecaption="Definicje badań lekarskich"
+	>
+    <interface>IManagedRowDefinion</interface>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="80" localization="dictionary" required="true"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Cykliczne" type="boolean" modifier="protected"/>
+    <col name="NastepneDefinicja" type="DefinicjaBadaniaLekarskiego"/>
+    <col name="NastepneTermin" type="int"/>
+    <col name="NastepneTerminOd" type="SposóbWyliczaniaTerminu"/>
+    <col name="TylkoPosrednio" type="boolean" caption="Utwórz tylko pośrednio"/>
+  </table>
+  <table name="BadanieLekarskie" tablename="BadaniaLekarskie" name8="BadLek" 
+		caption="Badanie lekarskie" 
+		tablecaption="Badania lekarskie"
+    guided="Root"
+	>
+    <interface>IManagedRowInfoHost</interface>
+		<key name="WgTerminu">
+			<keycol name="Termin"/>
+		</key>
+		<key name="WgDaty">
+			<keycol name="Data"/>
+		</key>
+		<!-- PRACOWNIK -->
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Pracownik" 
+      keyprimary="true"
+			relname="Badania lekarskie pracownika" 
+			children="BadaniaLekarskie" 
+			delete="cascade" 
+			relright="true"
+		/>
+		<!-- OGÓLNE -->
+		<col name="Definicja" type="DefinicjaBadaniaLekarskiego" required="true" category="Ogólne"/>
+		<col name="Termin" type="date" category="Ogólne">
+			<verifier name="BadanieLekarskie.DataTerminVerifier" onadded="true"/>
+		</col>
+		<col name="Anulowany" type="boolean"/>
+		<!-- BADANIE -->
+    <col name="Data" type="date" category="Badanie" caption="Data wykonania">
+      <verifier name="BadanieLekarskie.DataTerminVerifier"/>
+      <verifier name="BadanieLekarskie.DataWażneDoVerifier"/>
+    </col>
+    <col name="WazneDo" type="date" category="Badanie" modifier="public virtual" caption="Ważne do">
+      <verifier name="BadanieLekarskie.DataWażneDoVerifier"/>
+    </col>
+    <col name="Opis" type="text" category="Ogólne" />
+	</table>
+	<!-- SCHORZENIA -->
+	<enum name="TypSchorzenia" />
+	<enum name="PrzyczynaNiepelnosprawnosci" />
+	<enum name="RodzajNiesprawnosci" />
+	<table name="Schorzenie" 
+         tablename="Schorzenia" 
+         name8="Schorz" 
+         guided="Root"
+         >
+		<!-- PRACOWNIK -->
+		<col name="Pracownik" type="Pracownik" required="true" readonly="true" category="Pracownik" 
+      keyprimary="true"
+			relname="Schorzenia pracownika" 
+			children="Schorzenia" 
+			delete="cascade" 
+			relright="true"
+		/>
+		<col name="Okres" type="FromTo" required="true" category="Ogólne" />
+		<col name="Typ" type="TypSchorzenia" required="true" category="Ogólne" />
+		<col name="Przyczyna" type="PrzyczynaNiepelnosprawnosci" required="true" category="Ogólne" />
+		<col name="Rodzaj" type="RodzajNiesprawnosci" required="true" category="Ogólne" />
+		<col name="Opis" type="text" category="Ogólne" />
+	</table>
+	<!-- BHP -->
+  <table name="DefinicjaSzkoleniaBHP" tablename="DefSzkolenBHP" guided="Root" config="true"
+		caption="Definicja szkolenia BHP"
+		tablecaption="Definicje szkoleń BHP"
+	>
+    <interface>IManagedRowDefinion</interface>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="80" localization="dictionary" required="true"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Cykliczne" type="boolean" modifier="protected"/>
+    <col name="NastepneDefinicja" type="DefinicjaSzkoleniaBHP"/>
+    <col name="NastepneTermin" type="int"/>
+    <col name="NastepneTerminOd" type="SposóbWyliczaniaTerminu"/>
+    <col name="TylkoPosrednio" type="boolean" caption="Utwórz tylko pośrednio"/>
+  </table>
+  <table name="SzkolenieBHP" tablename="SzkoleniaBHP" name8="SzkBHP" 
+    caption="Szkolenie BHP" 
+    tablecaption="Szkolenia BHP"
+    guided="Root"
+  >
+		<key name="WgTerminu">
+			<keycol name="Termin"/>
+		</key>
+		<key name="WgDaty">
+			<keycol name="Data"/>
+		</key>
+		<!-- PRACOWNIK -->
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Pracownik" 
+			relname="Szkolenia BHP pracownika" 
+			children="SzkoleniaBHP" 
+			delete="cascade" 
+			relright="true"
+      keyprimary="true"
+		/>
+		<!-- OGÓLNE -->
+    <col name="Definicja" type="DefinicjaSzkoleniaBHP" required="true" category="Ogólne"/>
+    <col name="Termin" type="date" category="Ogólne">
+			<verifier name="SzkolenieBHP.DataTerminVerifier" onadded="true"/>
+		</col>
+		<col name="Anulowany" type="boolean"/>
+		<col name="Zakres" type="string" length="60" category="Ogólne">
+			<attribute>Dictionary("BHP.Zakres")</attribute> 
+		</col>
+		<!-- SZKOLENIE -->
+		<col name="Data" type="date" category="Szkolenie">
+			<verifier name="SzkolenieBHP.DataTerminVerifier"/>
+		</col>
+		<col name="Osoba" type="string" length="60" category="Szkolenie">
+			<attribute>Dictionary("BHP.Osoba")</attribute> 
+		</col>
+		<col name="Opis" type="text" category="Ogólne" />
+	</table>
+	<!-- WYPADEK -->
+  <enum name="StanyKartyRejestracjiWypadku"/>
+	<enum name="RodzajWypadku" />
+	<table name="Wypadek" tablename="Wypadki"
+		caption="Karta rejestracji wypadku" 
+		tablecaption="Karty wypadków"
+    guided="Root"
+	>
+    <key name="WgData" keyprimary="true">
+      <keycol name="Data"/>
+    </key>
+    <key name="WgDataZgloszenia">
+      <keycol name="DataZgloszenia"/>
+    </key>
+    <key name="WgProtokolData">
+      <keycol name="ProtokolData"/>
+    </key>
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true" category="Ogólne" 
+			relname="Wypadki pracownika" 
+			children="Wypadki" 
+			delete="cascade" 
+			relright="true"
+		>
+			<keycol name="DataZgloszenia"/>
+		</col>
+		<col name="Miejsce" type="string" length="80" category="Ogólne">
+			<attribute>Dictionary("Wypadek.Miejsce")</attribute> 
+		</col>
+    <col name="Definicja" type="DefinicjaDokumentu" category="Dokument" required="false"
+			relname="Definicja wypadku"
+		>
+      <verifier name="Wypadek.DefinicjaVerifier" onadded="true"/>
+    </col>
+    <col name="Numer" type="NumerDokumentu" category="Dokument" />
+    <col name="Stan" type="StanyKartyRejestracjiWypadku" readonly="set" category="Ogólne" />
+    <col name="ProtokolNumer" type="string" length="30" category="Protokół" caption="Dodatkjowy numer protokołu"/>
+    <col name="ProtokolData" type="date"  required="false" category="Protokół" caption="Data">
+      <verifier name="Wypadek.ProtokolDataVerifier" onadded="true"/>
+    </col>
+    <col name="SKW" type="string" length="30" category="Protokół"/>
+    <col name="Data" type="date" required="true" category="Ogólne" caption="Data wypadku"/>
+		<col name="Godzina" type="time" category="Ogólne"/>
+    <col name="Rodzaj" type="RodzajWypadku" category="Ogólne"/>
+		<col name="Smiertelny" type="boolean" category="Ogólne" caption="Śmiertelny"/>
+		<col name="Ciezki" type="boolean" category="Ogólne" caption="Ciężki"/>
+		<col name="Niezdolnosc" type="boolean" category="Ogólne" caption="Niezdolność do pracy"/>
+    <col name="DataZgloszenia" type="date" category="Zgłoszenie">
+      <verifier name="Wypadek.DataZgloszeniaVerifier" onadded="true"/>
+    </col>
+		<col name="Okolicznosci" type="text" category="Protokół" caption="Okoliczności"/>
+		<col name="PrzyPracy" type="boolean" category="Protokół" caption="Przy pracy"/>
+		<col name="Skutki" type="text" category="Protokół"/>
+    <col name="PismoNumer" type="string" length="30" category="ZUS"/>
+		<col name="PismoData" type="date" category="ZUS"/>
+		<col name="DecyzjaNumer" type="string" length="30" category="ZUS"/>
+		<col name="DecyzjaData" type="date" category="ZUS"/>
+		<col name="Uszczerbek" type="percent" category="ZUS"/>
+		<col name="Kwota" type="decimal" category="ZUS"/>
+		<col name="Odmowa" type="text" category="ZUS"/>
+	</table>
+  <!-- JĘZYKI OBCE-->
+  <table name="DefinicjaJęzykaObcego" tablename="DefJezykowObcych" guided="Root" config="true"
+      caption="Definicja języka obcego"
+      tablecaption="Definicje języków obcych"
+  >
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Nazwa" type="string" length="20" required="true" localization="dictionary" important="true"/>
+    <col name="Blokada" type="boolean"/>
+  </table>
+
+  <table name="DefinicjaStopiaZnajomościJęzykaObcego" tablename="DefStZnJObcych" guided="Root" config="true"
+      caption="Definicja stopinia znajomości języka obcego"
+      tablecaption="Definicje stopni znajomości języków obcych"
+  >
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Nazwa" type="string" length="20" required="true" localization="dictionary" important="true"/>
+    <col name="Blokada" type="boolean"/>
+  </table>
+
+  <table name="ZnajomośćJęzykaObcego" tablename="ZnJezykowObcych"
+      caption="Znajomość języka obcego"
+      tablecaption="Znajomość języków obcych"
+  >
+    <col name="Pracownik" type="Pracownik"
+      keyprimary="true"
+      readonly="true"
+      required="true"
+      keyunique="true"
+      relname="Języki obce pracownika"
+      relguided="inner"
+      delete="cascade"
+      relright="true"
+         children="JęzykiObce"
+		>
+      <keycol name="Jezyk"/>
+    </col>
+    <col name="Jezyk" type="DefinicjaJęzykaObcego" required="true"/>
+    <col name="Mowa" type="DefinicjaStopiaZnajomościJęzykaObcego" required="true" />
+    <col name="Pismo" type="DefinicjaStopiaZnajomościJęzykaObcego" required="true"/>
+    <col name="Zaswiadczenie" type="string" length="40" caption="Zaświadczenie">
+      <attribute>Dictionary("Kadry.JęzykZaśw")</attribute>
+    </col>
+    <col name="DataWydaniaZaswiadczenia" type="date" caption="Data wydania zaświadczenia"/>
+    <col name="Uwagi" type="text" category="Ocena"/>
+  </table>
+  <!-- DEFINICJA FUNDUSZO POŻYCZKOWEGO -->
+	<enum name="TypOprocentowania" />
+	<enum name="SposóbSpłatyOdsetek" />
+	<subrow name="OprocentowaniePozyczki">
+		<col name="Typ" type="TypOprocentowania" />
+		<col name="Sposob" type="SposóbSpłatyOdsetek" />
+		<col name="Procent" type="percent" />
+		<col name="Ilosc" type="int"/>
+		<col name="OdsetkiZaOdroczenie" name12="OdsOdr" type="boolean"/>
+	</subrow>
+  <subrow name="RozliczenieWplatWyplat">
+    <col name="Konto" type="EwidencjaSP" category="Ogólne" 
+      relname="Konta funduszy pożyczkowych" 
+			description="Kasa, w oparciu o którą realizowane są rozliczenia gotówkowe z funduszu"/>
+    <col name="Kasa" type="EwidencjaSP" category="Ogólne" 
+      relname="Kasy funduszy pożyczkowych" 
+			description="Kasa, w oparciu o którą realizowane są rozliczenia gotówkowe z funduszu"/>
+    <col name="DefinicjaWplaty" type="DefinicjaDokumentu"
+      relname="Definicje wpłat do funduszu" 
+      description="Definicja dokumentu wpłaty gotówkowej do funduszu"/>
+    <col name="DefinicjaWylaty" type="DefinicjaDokumentu"
+      relname="Definicje wypłat z funduszu" 
+      description="Definicja dokumentu wypłaty gotówkowej z funduszu"/>
+  </subrow>
+
+  <enum name="RodzajeŻyrantów"/>
+  <table name="DefinicjaFunduszuPozyczkowego" tablename="DefFundPozycz" name8="DefFpz" guided="Root" config="true"
+		caption="Definicja funduszu pożyczkowego" 
+		tablecaption="Definicje funduszy pożyczkowych"
+	>
+		<interface>IRightsSource</interface>
+    <interface>IZakresDefinicji</interface>
+		<key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Nazwa" type="string" length="30" localization="dictionary" required="true" category="Ogólne" />
+		<col name="CentrumKosztow" type="CentrumKosztow" category="Ogólne" 
+			relname="Centrum kosztów definicji FPz" />
+		<col name="Blokada" type="boolean" category="Ogólne" />
+		<col name="Oprocentowanie" name12="Oproc" type="OprocentowaniePozyczki" category="Ogólne" />
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" />
+    <col name="Rozliczenie" type="RozliczenieWplatWyplat" category="Ogólne" />
+    <!-- Warunki spłaty -->
+    <col name="SplataRoznicy" type="SplataRoznicyZ" category="Warunki spłaty" />
+    <col name="Zyranci" type="RodzajeŻyrantów" category="Warunki spłaty" />
+    <!-- ELEMENTY -->
+		<col name="Wpisowe" type="DefinicjaElementu" category="Elementy" 
+			relname="Wpisowe FPz" 
+		/>
+		<col name="Skladka" type="DefinicjaElementu" category="Elementy"
+			relname="Składki FPz" 
+		/>
+		<col name="WycofanieWkladu" type="DefinicjaElementu" category="Elementy" 
+			relname="Pożyczki FPz" 
+		/>
+	</table>
+  <!-- DEFINICJA -->
+  <table name="AlgorytmRatyPożyczki" tablename="AlgRatPozyczek" guided="Root" 
+         caption="Algorytm raty pożyczki" 
+         tablecaption="Algorytmy rat pożyczek" 
+         config="true">
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="30" category="Ogólne" localization="dictionary" />
+    <!-- DEFINICJA -->
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="StopaWgPozyczki" type="boolean" category="Ogólne" caption="Stopa procentowa wg pożyczki"/>
+    <col name="Algorytm" type="text">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+  </table>
+  <!-- FUNDUSZ POŻYCZKOWY -->
+	<table name="FundPozyczkowy" tablename="FundPozyczkowe" name8="FundPoz" guided="Root"
+		caption="Fundusz pożyczkowy" 
+		tablecaption="Fundusze pożyczkowe"
+	>
+		<interface>IBazaZrodlaWyplaty</interface>
+    <interface>IPowiązanieWypłaty</interface>
+    <!-- OGÓLNE -->
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Ogólne" 
+			keyprimary="true" 
+			relname="Fundusze pożyczkowe pracownika" 
+			children="FunduszePozyczkowe" 
+			delete="cascade"
+			relright="other"
+		/>
+		<col name="Definicja" type="DefinicjaFunduszuPozyczkowego" readonly="true" required="true" category="Pracownik"
+			relname="Fundusze ZP definicji" 
+			relright="config"
+		>
+			<keycol name="Pracownik"/>
+		</col>
+		<!-- OGÓLNE -->
+		<col name="Okres" type="FromTo" required="true" category="Ogólne" >
+      <verifier name="FundPozyczkowy.DataUdzieleniaPożyczkiVerifier"/>
+      <verifier name="FundPozyczkowy.DataZmianaWkładuVerifier"/>
+    </col>
+		<col name="SaldoBO" type="currency" category="Ogólne" />
+	</table>
+  <!-- ZMIANA WKŁADU FUNDUSZU POŻYCZKOWEGO-->
+  <enum name="KierunekZmianyWkładuFunduszuPożyczkowego"/>
+  <table name="ZmianaWkładuFunduszuPozyczkowego" tablename="ZmianaWklFundPoz" guided="Root"
+		caption="Zmiana wkładu do funduszu pożyczkowego" 
+		tablecaption="Zmiany wkładów do funduszy pożyczkowych"
+	>
+    <interface>IBazaZrodlaWyplaty</interface>
+    <col name="Kierunek" type="KierunekZmianyWkładuFunduszuPożyczkowego" selector="true" readonly="true" required="true" category="Ogólne" />
+    <col name="Fundusz" type="FundPozyczkowy" readonly="true" required="true" category="Ogólne" 
+      keyprimary="true"
+			relname="Zmiany wkłądu funduszu pożyczkowego" 
+			children="ZmianyWkładu" 
+			delete="cascade" 
+			relright="true"
+		>
+      <keycol name="Data" />
+    </col>
+    <col name="Data" type="date" required="true" category="Ogólne" description="Data wykonania operacji" >
+      <verifier name="ZmianaWkładuFunduszuPozyczkowego.DataZmianaWkładuVerifier"/>
+    </col>
+    <col name="Kwota" type="currency" required="true" category="Ogólne" description="Kwota dopłaty/wypłaty" />
+    <col name="Element" type="DefinicjaElementu" required="true" category="Ogólne" modifier="public virtual" 
+			relname="Definicja operacj FP" 
+		/>
+    <col name="Opis" type="text" category="Ogólne" 
+         description="Opis informacji o zmianie wkładu funduszu pożyczkowego"
+    />
+  </table>
+
+  <!-- ŻYRANCI POŻYCZKI -->
+  <table name="ŻyrantPożyczki" tablename="ZyranciPozyczek" caption="Żyrant" tablecaption="Żyranci" >
+    <col name="Pozyczka" type="Pozyczka" readonly="true" required="true" category="Ogólne" caption="Pożyczka" 
+        relname="Pozyczka żyranta pożyczki" 
+        children="Żyranci" 
+        keyprimary="true" 
+			  relright="true"
+			  relguided="inner"
+			  keyclass="Lp" 
+        keyclasscol="Priorytet"/>
+    <col name="Pracownik" type="Pracownik" required="true" 
+        relname="Pracownik żyranta pożyczki"
+        children="ŻyrowanePożyczki"
+        keyunique="true"
+    >
+      <keycol name="Pozyczka"/>
+    </col>
+    <col name="Priorytet" type="int" required="true"/>
+    <col name="SplatyOd" type="YearMonth" category="Warunki spłaty" />
+    <col name="ElementRaty" type="DefinicjaElementu" category="Warunki spłaty" relname="Definicja spłaty pożyczki"/>
+    <col name="Kwota" type="currency" category="Warunki spłaty" />
+    <col name="Procent" type="percent" category="Warunki spłaty" />
+  </table>
+  <!-- POŻYCZKA -->
+	<enum name="SplataRoznicyZ"/>
+  <enum name="StanSpłat"/>
+	<table name="Pozyczka" tablename="Pozyczki" guided="Root"
+		caption="Pożyczka" 
+		tablecaption="Pożyczki"
+	>
+		<interface>IBazaZrodlaWyplaty</interface>
+    <interface>IPowiązanieWypłaty</interface>
+    <interface>IRozliczenieWynagrodzeniaHost</interface>
+    <key name="WgDaty">
+			<keycol name="Data" />
+		</key>
+		<col name="Fundusz" type="FundPozyczkowy" readonly="true" required="true" category="Ogólne" 
+			relname="Pozyczki z funduszu pożyczkowego" 
+			children="Pozyczki" 
+      keyprimary="true"
+			delete="cascade" 
+			relright="true"
+		/>
+		<!-- POŻYCZKA -->
+    <col name="Data" type="date" required="true" category="Pożyczka" description="Data udzielenia pożyczki">
+      <verifier name="Pozyczka.DataUdzieleniaPożyczkiVerifier"/>
+    </col>
+    <col name="Stan" type="StanSpłat" readonly="set" category="Ogólne"/>
+    <col name="Kwota" type="currency" required="true" category="Pożyczka" description="Kwota udzielonej pożyczki" />
+    <col name="Element" type="DefinicjaElementu" required="true" category="Ogólne" 
+			relname="Definicja wypłaty pożyczki" 
+		/>
+		<col name="Splacona" type="boolean" readonly="set" specialaccess="true" category="Pożyczka" />
+		<col name="Zyrant1" name12="Zy1" type="Osoba" category="Pożyczka" />
+		<col name="Zyrant2" name12="Zy2" type="Osoba" category="Pożyczka" />
+		<!-- WARUNKI SPŁATY -->
+		<col name="SplatyOd" type="YearMonth" category="Warunki spłaty" />
+		<col name="IloscRat" type="int" category="Warunki spłaty" />
+		<col name="KwotaRaty" type="currency" category="Warunki spłaty" />
+		<col name="SplataRoznicy" type="SplataRoznicyZ" category="Warunki spłaty" />
+		<col name="ElementRaty" type="DefinicjaElementu" category="Warunki spłaty" 
+			relname="Definicja spłaty pożyczki" 
+		>
+			<!-- Nie da się ustawić pola na required w trakcie konwersji -->
+			<verifier name="Pozyczka.ElementRatyVerifier" onadded="true"/>
+		</col>
+    <col name="Typ" type="TypOprocentowania" category="Warunki spłaty">
+      <verifier name="Pozyczka.AlgorytmRatyVerifier" onadded="true"/>
+    </col>
+		<col name="Sposob" type="SposóbSpłatyOdsetek" category="Warunki spłaty" />
+		<col name="Procent" type="percent" category="Warunki spłaty" />
+    <col name="OdsetkiZaOdroczenie" type="boolean" category="Warunki spłaty" />
+    <col name="AlgorytmRaty" type="AlgorytmRatyPożyczki" category="Warunki spłaty">
+      <verifier name="Pozyczka.AlgorytmRatyVerifier" onadded="true"/>
+    </col>
+    <col name="BilansOtwarcia" type="boolean" modifier="public virtual"/>
+  </table>
+  <table name="RataPozyczki" tablename="RatyPozyczek" name8="RatPoz" guided="Root"
+		caption="Rata pożyczki"
+		tablecaption="Raty pożyczek"
+	>
+    <interface>IBazaZrodlaWyplaty</interface>
+    <!-- HISTORIA -->
+		<col name="Pozyczka" type="Pozyczka" readonly="true" required="true"
+			relname="Informacje o racie pożyczki" 
+			children="Raty" 
+			delete="cascade" 
+			keyprimary="true"
+			relright="true"
+			relguided="inner"
+		>
+			<keycol name="Data"/>
+    </col>
+    <col name="Zyrant" type="Pracownik" category="Ogólne"
+			relname="Żyrowane raty pracownika"
+			children="ZyrowaneRaty"
+         caption="Żyrant"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Stan" type="StanSpłat" readonly="set" category="Ogólne"/>
+    <col name="Splacajacy" type="Pracownik" category="Ogólne"
+			relname="Splacajacy raty pożyczki"
+			children="SplacaneRaty"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Data" type="date" required="true" readonly="set"/>
+		<col name="Element" type="DefinicjaElementu" required="true"
+			relname="Spłata pożyczki" 
+		/>
+		<col name="Kapital" type="currency"/>
+		<col name="Odsetki" type="currency"/>
+    <col name="BilansOtwarcia" type="boolean" modifier="public virtual"/>
+  </table>
+
+  <!-- PracDbTupleDefinitionExt -->
+  <enum name="RodzajZapisuDoDokumentów"/>
+  <enum name="SposobyUstawieniaKatalogu"/>
+  
+  <table name="PracDbTupleDefinitionExt" tablename="PracTupleDefExts" config="true"
+    caption="Rozszerzenie definicji krotki dla tabeli Pracownicy" 
+    tablecaption="Rozszerzenia definicji krotek dla tabeli Pracownicy"
+  >
+    <col name="DbTupleDefinition" type="DbTupleDefinition" required="true" readonly="true" keyunique="true" keyprimary="true"
+         children="PracownicyExt"
+        relguided="inner" delete="cascade" relname="Definicje pól dynamicznych"/>
+    <col name="ZapisDoDokumentow" type="RodzajZapisuDoDokumentów"/>
+    <col name="Katalog" type="ElementStrukturyOrganizacyjnej"/>
+    <col name="ZmianaKatalogu" type="boolean"/>
+    <col name="UstawKatalog" type="boolean"/>
+    <col name="DodawanyNaDokumentach" type="boolean"/>
+    <col name="DefinicjaProcesu" type="guid" modifier="protected"/>
+    <col name="DodawanyNaWnioskach" type="boolean"/>
+    <col name="PoswiadczenieOdbioru" type="DefinicjaPoświadczeniaOdbioru"/>
+  </table>
+
+  <!-- ====================================================================================== -->
+  <!-- BoRIAWynagrodzenia -->
+
+  <table name="BoRIAWynagrodzenia" tablename="BosRIAWynagrodz"
+    caption="Bilans otwarcia RIA - wynagrodzenia"
+    tablecaption="Bilansy otwarcia RIA - wynagrodzenia"
+    guided="Root"
+  >
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Bilansy otwarcia RIA - wynagrodzenia"
+			children="BoRIAWynagrodzenia"
+			relright="true"
+      keyunique="true"
+			delete="cascade"
+			keyprimary="true"         
+		>
+      <keycol name="Rok"/>
+      <keycol name="ZaRok"/>
+    </col>
+    <col name="Rok" type="int" required="true" modifier="public virtual"/>
+    <col name="ZaRok" type="int" required="true" modifier="public virtual"/>
+    <col name="Bufor" type="boolean" modifier="public virtual"/>
+    <col name="EmerytalnoRentowe" type="decimal" modifier="public virtual"/>
+    <col name="Wypadkowe" type="decimal" modifier="public virtual"/>
+    <col name="ZaOkrZasilkow" type="decimal"/>
+  </table>
+
+  <!-- ====================================================================================== -->
+  <!-- BoRIAOświata -->
+
+  <enum name="WersjaBoRIAOświata"/>
+  
+  <table name="BoRIAOświata" tablename="BosRIAOswiata"
+    caption="Okres wykonywania pracy nauczycieskiej"
+    tablecaption="Okresy wykonywania pracy nauczycieskiej"
+    guided="Root"
+  >
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Bilansy otwarcia RIA - oświata"
+			children="BoRIAOświata"
+			relright="true"
+			delete="cascade"
+			keyprimary="true"
+    >
+      <keycol name="Okres.To"/>
+    </col>
+    <col name="Okres" type="FromTo" required="true" modifier="public virtual"/>
+    <col name="Bufor" type="boolean" modifier="public virtual"/>
+    <col name="Wersja" type="WersjaBoRIAOświata" required="true" modifier="public virtual"/>
+    <col name="Wymiar" type="Fraction" required="true" modifier="public virtual"/>
+    <col name="SzkSpecjalne" type="boolean" modifier="public virtual"/>
+  </table>
+
+  <!-- ====================================================================================== -->
+  <!-- BoRIAWarunkiSzczególne -->
+
+  <enum name="WersjaBoRIAWarunkiSzczególne"/>
+  
+  <subrow name="BoRIAWarunkiSzczególne1998">
+    <col name="PelnyWymiar" type="boolean" modifier="public virtual"/>
+    <col name="Wymiar" type="Fraction" modifier="public virtual"/>
+    <col name="KodWarunki" type="string" length="9" modifier="public virtual"/>
+    <col name="KodCharakter" type="string" length="9" modifier="public virtual"/>
+    <col name="Nazwa" type="string" length="36" modifier="public virtual"/>
+    <col name="ZmienionaNazwa" type="string" length="36" modifier="public virtual"/>
+    <col name="KodWarunki2" type="string" length="9" modifier="public virtual"/>
+    <col name="Nazwa2" type="string" length="36" modifier="public virtual"/>
+    <col name="ZmienionaNazwa2" type="string" length="36" modifier="public virtual"/>
+    <col name="KolejDeputat" type="boolean"/>
+    <col name="KolejInneStanowisko" type="boolean"/>
+  </subrow>
+
+  <subrow name="BoRIAWarunkiSzczególne2008">
+    <col name="Wymiar" type="Fraction" modifier="public virtual"/>
+    <col name="Kod" type="KodPracyWSzególnychWarunkachCharakterze" modifier="public virtual"/>
+  </subrow>
+
+  <table name="BoRIAWarunkiSzczególne" tablename="BosRIAWarSzczeg"
+    caption="Okres pracy w szczególnych warunkach lub w szczególnym charakterze"
+    tablecaption="Okresy pracy w szczególnych warunkach lub w szczególnym charakterze"
+    guided="Root"
+  >
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Bilansy otwarcia RIA - praca w szególnych warunkach"
+			children="BoRIAWarunkiSzczególne"
+			relright="true"
+			delete="cascade"
+			keyprimary="true"
+    >
+      <keycol name="Okres.To"/>
+    </col>
+    <col name="Okres" type="FromTo" required="true" modifier="public virtual"/>
+    <col name="Bufor" type="boolean" modifier="public virtual"/>
+    <col name="Wersja" type="WersjaBoRIAWarunkiSzczególne" required="true" modifier="public virtual"/>
+    <col name="Ustawa1998" type="BoRIAWarunkiSzczególne1998"/>
+    <col name="Ustawa2008" type="BoRIAWarunkiSzczególne2008"/>
+  </table>
+
+  <!-- ====================================================================================== -->
+  <!-- PrzychodDoOpodatkowaniaKwoty -->
+  <subrow name="PrzychodDoOpodatkowaniaKwoty">
+    <col name="Przychod" type="decimal" caption="Przychód" modifier="public virtual">
+            <verifier name="PrzychodDoOpodatkowaniaKwoty.PrzychodPoprzedniRokVerifier" onadded="true"/>
+    </col>
+    <col name="Dochod" type="decimal" caption="Dochód" modifier="public virtual">
+            <verifier name="PrzychodDoOpodatkowaniaKwoty.PrzychodPoprzedniRokVerifier" onadded="true"/>
+    </col>
+  </subrow>
+
+    <subrow name="PrzychodDoOpodatkowaniaRazem">
+  </subrow>
+
+  <table name="PrzychodZDzialnosci" tablename="PrzychodyZDzial" tablecaption="Przychody oraz dochody dla form opodatkowania">
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Forma opodatkowania właściciela"
+      relright="true"
+      children="PrzychodyZDzialnosci"
+			delete="cascade"
+      keyprimary="true"
+      relguided="inner"
+      keyunique="true">
+      <keycol name="Rok" />
+    </col>
+    <col name="Rok" type="int" modifier="public virtual" />
+    <col name="Razem" type="PrzychodDoOpodatkowaniaRazem"/>
+    <col name="KartaPodatkowa" type="PrzychodDoOpodatkowaniaKwoty"/>
+    <col name="Ryczalt" type="PrzychodDoOpodatkowaniaKwoty"/>
+    <col name="WgOgolnychZasad" type="PrzychodDoOpodatkowaniaKwoty"/>
+  </table>
+  
+  <table name="PrzychodRyczalt" tablename="PrzychodyRyczalt" tablecaption="Przychody dla zryczałtowanych form opodatkowania">
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Zryczałtowana forma opodatkowania właściciela"
+      relright="true"
+      children="PrzychodyRyczalty"
+			delete="cascade"
+      keyprimary="true"
+      relguided="inner"
+      keyunique="true">
+      <keycol name="Rok" />
+    </col>
+    <col name="Rok" type="int" modifier="public virtual" />
+    <col name="Styczen" type="decimal"/>
+    <col name="Luty" type="decimal"/>
+    <col name="Marzec" type="decimal"/>
+    <col name="Kwiecien" type="decimal"/>
+    <col name="Maj" type="decimal"/>
+    <col name="Czerwiec" type="decimal"/>
+    <col name="Lipiec" type="decimal"/>
+    <col name="Sierpien" type="decimal"/>
+    <col name="Wrzesien" type="decimal"/>
+    <col name="Pazdziernik" type="decimal"/>
+    <col name="Listopad" type="decimal"/>
+    <col name="Grudzien" type="decimal"/>
+  </table>
+
+  <!-- UMOWY ZEWNETRZNE -->
+  <!-- Umowa zewnetrzna -->
+  <enum name="TypUmowyZewnetrznej" />
+  <table name="UmowaZewnetrzna" tablename="UmowyZewnetrzne" guided="Root">
+    <interface>IZrodloPodzielnikaKosztow</interface>
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Dokument"
+			keyprimary="true"
+			relname="Umowa pracownika"
+			children="UmowyZewnetrzne"
+			delete="cascade"
+			relright="other"
+		>
+      <keycol name="Okres.To" />
+    </col>
+    <col name="Numer" name12="Nr" type="NumerDokumentu" category="Dokument" />
+    <col name="Typ" type="TypUmowyZewnetrznej" selector="true" readonly="true" required="false" category="Ogólne" />
+    <!-- OGÓLNE -->
+    <col name="Wydzial" type="Wydzial" required="true" category="Ogólne"
+      caption="Jednostka organizacyjna"
+			relname="Jednostka organizacyjna umowy"
+			relright="true"
+		>
+    </col>
+    <col name="Definicja" type="DefinicjaDokumentu" required="true" category="Ogólne"
+			relname="Definicja umowy" 
+		/>
+    <col name="Seria" type="string" length="12" category="Ogólne" modifier="public virtual">
+      <attribute>Dictionary("Seria rozlicz UZ")</attribute>
+    </col>
+    <col name="Data" type="date" required="true" category="Ogólne" readonly="set"/>
+    <col name="Okres" type="FromTo" required="true" category="Ogólne" readonly="set"/>
+    <col name="PowiazanyKontrahent" type="Kontrahent" category="Ogólne" modifier="public virtual"/>
+    <col name="KontynuacjaUmowy" type="UmowaZewnetrzna" category="Ogólne" modifier="public virtual"/>
+  </table>
+  <!-- Umowa zewnetrzna historia -->
+  <table name="UmowaZewnetrznaHistoria" tablename="UmowyZewnHist" caption="Historia umowy zewnetrznej" tablecaption="UmowyZewnetrzne" >
+    <col name="Umowa" type="UmowaZewnetrzna" readonly="true" required="true" category="Historia"
+			relname="Zapis historyczny umowy"
+			children="Historia"
+			keyclass="History"
+			keyclasscol="Aktualnosc"
+      keyprimary="true"
+			delete="cascade"
+			relright="true"
+			relguided="inner"
+		/>
+    <col name="Typ" type="TypUmowyZewnetrznej" selector="true" readonly="true" required="true" category="Ogólne" />
+    <col name="Aktualnosc" type="FromTo" required="true" category="Historia" />
+    <col name="PowodAktualizacji" type="string" length="80" category="Ogólne" caption="Powód aktualizacji" readonly="set"
+         description="Opis powodu aktualizacji zapisu"/>
+    <col name="ZakresUmowy" type="string" length="1000" category="Ogólne" modifier="public virtual"/>
+    <col name="Stanowisko" type="string" length="50" category="Ogólne" modifier="public virtual"/>
+    <col name="DefinicjaStanowiska" type="DefinicjaStanowiska" relname="Etaty stanowiska" modifier="public virtual"/>
+    <col name="Data" type="date" required="true" category="Ogólne" modifier="public virtual"/>
+    <col name="Okres" type="FromTo" required="true" category="Ogólne" modifier="public virtual"/>
+  </table>
+  <!-- Informacja do rozliczenia -->
+  <table name="InformacjaDoRozliczenia" tablename="InformacjeDoRozl" guided="Root">
+		<col name="Umowa" type="UmowaZewnetrzna" category="Ogólne" children="InformacjeDoRozl" delete="cascade"  relright="other"
+         relguided="inner" readonly="true" keyprimary="true"/>
+		<col name="Definicja" type="DefinicjaElementuRozliczenia" relname="Definicja elementu rozliczenia" category="Ogólne" required="true"/>
+  <col name="Okres" type="FromTo" category="Ogólne" />
+  </table>
+  <!-- Umowa zewnetrzna historia -->
+  <table name="InformacjeDoRozliczeniaHistoria" tablename="InfoDoRozliHist" caption="Historia elementów rozliczenia" tablecaption="Historie elementów rozliczenia" warnings="Off">
+		<!-- HISTORIA -->
+		<col name="InformacjaDoRozliczenia" type="InformacjaDoRozliczenia" readonly="true" required="true" category="Historia" 
+			relname="Zapis historyczny elementu rozliczenia" 
+			children="Historia" 
+			keyclass="History" 
+			keyclasscol="Aktualnosc" 
+      keyprimary="true"
+			delete="cascade" 
+			relright="true"
+			relguided="inner" 
+		/>
+		<col name="Aktualnosc" name12="Akt" type="FromTo" required="true" category="Historia" />
+		<!-- OGÓLNE -->
+    <col name="Podstawa" type="doublecy" modifier="public virtual"/>
+    <col name="Czas" type="time" modifier="public virtual"/>
+    <col name="Dni" type="int" modifier="public virtual"/>
+    <col name="Ulamek" type="Fraction" modifier="public virtual"/>
+    <col name="Procent" type="percent" modifier="public virtual"/>
+    <col name="Wspolczynnik" type="double" modifier="public virtual"/>
+    <col name="Ilosc" type="double" modifier="public virtual"/>
+  </table>
+
+  <table name="WydziałDefFundPozy" tablename="WydDefFundPozy" config="true"
+       caption="Jednostka organizacyjna definicji funduszu pożyczkowego"
+       tablecaption="Jednostki organizacyjne definicji funduszu pożyczkowego" >
+    <col name="DefinicjaFunduszuPozyczkowego" type="DefinicjaFunduszuPozyczkowego"
+         readonly="true"
+         required="true"
+         keyunique="true"
+         caption="Definicja funduszu pozyczkowego"
+         relname="Jednostka organizacyjna def funduszu pozyczkowego"
+         children="Wydziały"
+         keyprimary="true"
+         delete="cascade"
+         relguided="inner"
+    >
+      <keycol name="Wydzial"/>
+    </col>
+    <col name="Wydzial" type="Wydzial"
+         required="true"
+         caption="Jednostka organizacyjna">
+    </col>
+    <col name="Ilosc" type="Fraction" caption="Ilość"/>
+  </table>
+</module>

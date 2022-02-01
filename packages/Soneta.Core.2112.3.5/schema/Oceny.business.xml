@@ -1,0 +1,437 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Oceny" namespace="Soneta.Oceny" versionName="soneta">
+  <import>../..</import>
+  <using>Soneta.Core</using>
+  <using>Soneta.Config</using>
+
+  <table name="DefinicjaSekcjiDokumentu" tablename="DefSekcjiDok" guided="Root" config="true"
+    caption="Definicja sekcja dokumentu"
+    tablecaption="Definicja sekcji dokumentów"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="50" required="true" localization="dictionary"/>
+    <col name="NazwaWyswietlana" type="string" length="50" readonly="set" caption="Nazwa wyświetlana" localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Priorytet" type="int"/>
+  </table>
+
+  <subrow name="PozycjaDokumentuInfo">
+    <col name="Sekcja" type="DefinicjaSekcjiDokumentu"/>
+  </subrow>
+
+
+  <!-- ZakresWartości -->
+
+  <table name="ZakresWartości" tablename="ZakresyWartosci" guided="Root" config="true"
+		caption="Zakres wartości"
+		tablecaption="Zakresy wartości"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="50" required="true" localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Calkowite" type="boolean">
+      <verifier name="ZakresWartości.WartoscOdVerifier" onadded="true"/>
+      <verifier name="ZakresWartości.WartoscOdIntVerifier" onadded="true"/>
+    </col>
+    <col name="WartoscOd" type="decimal" caption="Wartość od"/>
+    <col name="WartoscDo" type="decimal" caption="Wartość do"/>
+    <col name="Opis" type="text" localization="dictionary"/>
+  </table>
+
+  <!-- Skala Ocen -->
+  <!-- Definicja skali ocen z listą dostępnych ocen (wartości). -->
+
+  <enum name="RodzajeSkalOcen"/>
+
+  <table name="SkalaOcen" tablename="SkaleOcen" guided="Root" config="true"
+		caption="Skala ocen"
+		tablecaption="Skale ocen"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Rodzaj" type="RodzajeSkalOcen" selector="true" readonly="true" required="true" category="Ogólne"/>
+    <col name="Nazwa" type="string" localization="dictionary" length="50" required="true"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Calkowite" type="boolean"/>
+    <col name="DlugoscPola" type="int"/>
+    <col name="Opis" type="text" localization="dictionary"/>
+  </table>
+
+  <table name="ElementSkaliOcen" tablename="ElementySkalOcen" config="true"
+    caption="Element skali ocen"
+    tablecaption="Elementy skal ocen"
+  >
+    <key name="WgNazwa"
+			keyunique="true"
+    >
+      <keycol name="Skala" />
+      <keycol name="Nazwa" />
+    </key>
+
+    <key name="WgSkrot"
+			keyunique="true"
+    >
+      <keycol name="Skala" />
+      <keycol name="Skrot" />
+    </key>
+
+    <col name="Skala" type="SkalaOcen"
+      keyprimary="true"
+			readonly="true"
+			required="true"
+			relname="Definicje oceny wg skali"
+			children="Elementy"
+			relguided="inner"
+			delete="cascade"
+		>
+      <keycol name="Wartosc"/>
+    </col>
+    <col name="Nazwa" type="string" length="50" required="true" localization="dictionary"/>
+    <col name="Skrot" type="string" length="12" required="true"/>
+    <col name="Uzasadnienie" type="boolean"/>
+    <col name="Wartosc" type="decimal" caption="Wartość">
+      <verifier name="ElementSkaliOcen.WartośćUniqueVerifier" onadded="true"/>
+    </col>
+    <col name="WykonanieOd" type="decimal" caption="Wykonanie od"/>
+    <col name="WykonanieDo" type="decimal" caption="Wykonanie do"/>
+    <col name="Opis" type="text" localization="dictionary"/>
+  </table>
+
+  <!-- Definicja elementu oceny -->
+  <!-- Definicja, wraz z kategorią, ocenianego atrybutu. Mogą być różne rodzaje elementów.
+  * dla pracowników: kompetencje, zachowania, zadania 
+  * dla pozostałych: elementy oceny-->
+
+  <enum name="RodzajeElementuOceny"/>
+
+  <subrow name="MiaraElementuOceny">
+    <col name="Skala" type="SkalaOcen">
+      <verifier name="MiaraElementuOceny.SkalaRequiredVerifier"/>
+    </col>
+    <col name="Zakres" type="ZakresWartości"/>
+    <col name="SposobAgregacji" type="SposobyAgregacji" caption="Sposób agregacji"/>
+  </subrow>
+  
+  <table name="KategoriaElementuOceny" tablename="KatElementowOcen" guided="Root" config="true"
+  caption="Kategoria elementu oceny"
+  tablecaption="Kategorie elementów ocen"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="50" required="true" localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Priorytet" type="int"/>
+    <col name="Miara" type="MiaraElementuOceny"/>
+  </table>
+
+  <!-- NiePodlega, Min, Max, Średnia, ŚredniaWGórę, ŚredniaWDół-->
+  <enum name="SposobyAgregacji"/>
+
+  <table name="DefinicjaElementuOceny" tablename="DefElementowOcen" guided="Root" config="true"
+		caption="Definicja elemetu oceny"
+		tablecaption="Definicje elementów ocen"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Rodzaj" type="RodzajeElementuOceny" selector="true" readonly="true" required="true" category="Ogólne"/>
+    <col name="Kategoria" type="KategoriaElementuOceny" required="true"
+         children="Definicje"
+    />
+    <col name="PozycjaDokumentu" type="PozycjaDokumentuInfo"/>
+    <col name="Nazwa" type="string" length="50" required="true" localization="dictionary"/>
+    <col name="NazwaWyswietlana" type="string" length="50" readonly="set" caption="Nazwa wyświetlana" localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Priorytet" type="int"/>
+    <col name="Opis" type="text" localization="dictionary"/>
+    <col name="Miara" type="MiaraElementuOceny"/>
+    <col name="RodzajZrodla" type="string" length="16"/>
+  </table>
+
+  <!-- Definicja arkusza oceny -->
+  <!-- Wzorzec oceny do wykonania przed jednego oceniającego w ramach jednej oceny, projekt oceny 
+ i ocena, mogą się składać z wielu takich arkuszy -->
+  <!-- Samoocena, Przez przełożonego, Przez współpracowników, Klienci zewnętrzni -->
+  <enum name="KierunkiOceny"/>
+
+  <table name="DefinicjaArkuszaOceny" tablename="DefArkuszyOcen" guided="Root" config="true"
+		caption="Definicja arkusza oceny"
+		tablecaption="Definicje arkuszy ocen"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="50" localization="dictionary" required="true"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Opis" type="text" localization="dictionary"/>
+    <col name="KierunekOceny" type="KierunkiOceny" required="true"/>
+    <col name="Konsolidacyjny" type="boolean"/>
+    <col name="Wielokrotny" type="boolean"/>
+    <col name="RodzajZrodla" type="string" length="16" required="true"/>
+    <col name="AkceptowanyPrzezOcenianego" type="boolean"/>
+    <col name="UdostepnijOceniajacemu" type="boolean"/>
+    <col name="UdostepnijOcenianemu" type="boolean"/>
+    <col name="UdostepnijOcenianemuOdEtapu" type="EtapyArkuszaOceny"/>
+    <!-- 12.3 -->
+    <col name="DefinicjaProcesu" type="guid" modifier="protected"/>
+    <col name="WartoscWgKategorii" type="boolean"/>
+  </table>
+
+  <table name="PozycjaDefinicjiArkuszaOceny" tablename="PozDefArkuszOcen" config="true"
+    caption="Pozycja definicji arkusza oceny"
+    tablecaption="Pozycje definicji arkusza oceny"
+  >
+    <col name="DefinicjaArkusza" type="DefinicjaArkuszaOceny"
+			keyunique="true"
+      keyprimary="true"
+			readonly="true"
+			required="true"
+			relname="Pozycje definicji arkuszy ocen"
+			children="Pozycje"
+			relguided="inner"
+			delete="cascade"
+		>
+      <keycol name="Definicja"/>
+    </col>
+    <col name="Definicja" type="DefinicjaElementuOceny" required="true"/>
+    <col name="Waga" type="decimal" required="true"/>
+    <col name="Wyliczana" type="boolean"/>
+    <col name="Wymagana" type="boolean"/>
+  </table>
+
+  <!-- DefinicjaOceny -->
+
+  <enum name="RodzajeOkresówOceny"/>
+  
+  <table name="DefinicjaOceny" tablename="DefinicjeOcen" guided="Root" config="true"
+		caption="Definicja oceny"
+		tablecaption="Definicje ocen"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="50" localization="dictionary" required="true"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Okres" type="RodzajeOkresówOceny"/>
+    <col name="RodzajStruktury" type="string" length="16">
+      <verifier name="DefinicjaOceny.StrukturaOrganizacyjnaRequiredVerifier"/>
+    </col>
+    <col name="StrukturaOrganizacyjna" type="StrukturaOrganizacyjna"/>
+    <col name="RodzajZrodla" type="string" length="16"/>
+    <col name="Opis" type="text" localization="dictionary"/>
+    <col name="Code" type="text" modifier="protected"/>
+    <!-- 12.3 -->
+    <col name="DefinicjaProcesu" type="guid" modifier="protected"/>
+  </table>
+
+  <table name="ArkuszDefinicjiOceny" tablename="ArkuszeDefOcen" config="true"
+    caption="Arkusz definicji oceny"
+    tablecaption="Arkusze definicji oceny"
+  >
+    <col name="DefinicjaOceny" type="DefinicjaOceny"
+			keyunique="true"
+      keyprimary="true"
+			readonly="true"
+			required="true"
+			relname="Arkusze definicji ocen"
+			children="Arkusze"
+			relguided="inner"
+			delete="cascade"
+		>
+      <keycol name="DefinicjaArkusza"/>
+    </col>
+    <col name="DefinicjaArkusza" type="DefinicjaArkuszaOceny" required="true"/>
+    <col name="WymaganaLiczba" type="int" caption="Wymagana liczba"/>
+  </table>
+
+  <!-- RealizacjaOceny -->
+
+  <enum name="EtapyRealizacjiOceny"/>
+
+  <interface name="IOceniany"/>
+  <interface name="IOceniający"/>
+  <interface name="IOdpowiedzialnyZaOcenę"/>
+  <interface name="IŹródłoOceny"/>
+
+  <table name="OcenaRealizacja" tablename="OcenyRealizacje" guided="Root"
+		caption="Ocena"
+		tablecaption="Oceny"
+	>
+    <interface>IŹródłoPowiązaniaStrukturyOrganizacyjnej</interface>
+    <key name="WgTerminu" keyprimary="true">
+      <keycol name="Termin" />
+    </key>
+    <key name="WgDaty">
+      <keycol name="Data" />
+    </key>
+    <col name="Zrodlo" type="IŹródłoOceny" readonly="true" 
+         children="PowiązaneOceny"
+         relname="Realizacje ocen dla źródła"
+         />
+    <col name="Etap" type="EtapyRealizacjiOceny" required="true" readonly="set" category="Ogólne"/>
+    <col name="Definicja" type="DefinicjaOceny" required="true" children="Oceny">
+      <verifier name="OcenaRealizacja.ElementStrukturyFirmyRequiredVerifier"/>
+      <verifier name="OcenaRealizacja.ElementStrukturyOrganizacyjnejRequiredVerifier"/>
+    </col>
+    <col name="ElementStrukturyFirmy" type="IElementStrukturyFirmy" category="Ogólne"
+			children="OcenyElementuStruktury"
+			relname="Oceny elementu struktury"
+      relright="other"
+		/>
+    <col name="Odpowiedzialny" type="IOdpowiedzialnyZaOcenę">
+      <keycol name="Termin"/>
+    </col>
+    <col name="Okres" type="FromTo" required="noverified" />
+    <col name="Termin" type="date" required="true" />
+    <col name="Data" type="date" />
+  </table>
+
+  <table name="OcenaOceniany" tablename="OcenyOceniani"
+    caption="Oceniany"
+    tablecaption="Oceniani"
+  >
+    <col name="Ocena" type="OcenaRealizacja"
+			keyunique="true"
+      keyprimary="true"
+			readonly="true"
+			required="true"
+			relname="Oceniani na ocenie"
+			children="Oceniani"
+			relguided="inner"
+			delete="cascade"
+		>
+      <keycol name="Oceniany"/>
+    </col>
+    <col name="Oceniany" type="IOceniany" required="true" children="Oceniani" relname="Oceniany na ocenie"/>
+    <col name="Anulowany" type="boolean" readonly="set"/>
+  </table>
+
+  <table name="OcenaOceniający" tablename="OcenyOceniajacy"
+    caption="Oceniający"
+    tablecaption="Oceniający"
+  >
+    <col name="Ocena" type="OcenaRealizacja"
+			keyunique="true"
+      keyprimary="true"
+			readonly="true"
+			required="true"
+			relname="Oceniający na ocenie"
+			children="Oceniający"
+			relguided="inner"
+			delete="cascade"
+		>
+      <keycol name="Oceniajacy"/>
+    </col>
+    <col name="Oceniajacy" type="IOceniający" required="true" children="Oceniający" relname="Oceniający na oceniający na ocenie"/>
+    <col name="Anulowany" type="boolean" readonly="set"/>
+  </table>
+
+  <enum name="TypArkuszaOceny"/>
+  <enum name="EtapyArkuszaOceny"/>
+
+  <table name="OcenaArkusz" tablename="OcenyArkusze" guided="Root"
+    caption="Arkusz oceny"
+    tablecaption="Arkusze oceny"
+  >
+    <col name="Ocena" type="OcenaRealizacja"
+      keyprimary="true"
+			readonly="true"
+			required="true"
+			relname="Arkusze na ocenie"
+			children="Arkusze"
+			delete="cascade"
+		>
+      <keycol name="DefinicjaArkusza"/>
+      <keycol name="OcenianyRef"/>
+      <keycol name="Typ"/>
+    </col>
+    <col name="DefinicjaArkusza" type="DefinicjaArkuszaOceny" required="true">
+      <verifier name="OcenaArkusz.OceniajacyRequiredVerifier"/>
+    </col>
+    <col name="Typ" type="TypArkuszaOceny" readonly="set" required="true"/>
+    <col name="Etap" type="EtapyArkuszaOceny" required="true" readonly="set" category="Ogólne">
+      <verifier name="OcenaArkusz.OceniajacyRequiredVerifier"/>
+    </col>
+    <col name="Oceniany" type="OcenaOceniany" children="Arkusze" required="true"/>
+    <col name="OcenianyRef" type="IOceniany" required="noverified" readonly="set" relname="Oceniany na arkuszu">
+      <keycol name="Ocena"/>
+    </col>
+    <col name="Oceniajacy" type="OcenaOceniający" children="Arkusze">
+      <verifier name="OcenaArkusz.OceniajacyRequiredVerifier" onadded="true"/>
+    </col>
+    <col name="OceniajacyRef" type="IOceniający" readonly="set" relname="Oceniający na arkuszu">
+      <keycol name="Ocena"/>
+    </col>
+    <col name="WartoscWgKategorii" type="boolean" readonly="set"/>
+    <col name="Wartosc" type="percent" readonly="set"/>
+    <col name="WartoscWgWagi" type="percent" readonly="set"/>
+  </table>
+
+  <subrow name="WartośćElementuOceny">
+    <col name="Wykonanie" type="decimal" caption="Wykonanie"/>
+    <col name="Ocena" type="ElementSkaliOcen">
+      <verifier name="WartośćElementuOceny.UzasadnienieRequiredVerifier"/>
+    </col>
+    <col name="Wartosc" type="decimal" caption="Wartość">
+      <verifier name="WartośćElementuOceny.WartośćZakresVerifier"/>
+    </col>
+    <col name="Uzasadnienie" type="text">
+      <verifier name="WartośćElementuOceny.UzasadnienieRequiredVerifier"/>
+    </col>
+  </subrow>
+
+  <table name="OcenaPozycjaArkusza" tablename="OcenyPozArkuszy"
+    caption="Pozycja arkusza ocen"
+    tablecaption="Pozycje arkuszy ocen"
+  >
+    <col name="Arkusz" type="OcenaArkusz"
+			readonly="true"
+			required="true"
+      keyprimary="true"
+			relname="Pozycje arkuszy ocen"
+			children="Pozycje"
+			relguided="inner"
+			delete="cascade"
+			keyclass="Lp" keyclasscol="Lp"
+		/>
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne"
+			description="Liczba porządkowa wypłaty na planownej liście płac." />
+    <col name="Definicja" type="DefinicjaElementuOceny" required="true" readonly="true" keyunique="true">
+      <keycol name="Arkusz"/>
+    </col>
+    <col name="Wartosc" type="WartośćElementuOceny"/>
+    <col name="Max" type="decimal" readonly="set"/>
+    <col name="Waga" type="decimal" readonly="set"/>
+    <col name="Wyliczana" type="boolean" readonly="set"/>
+    <col name="Wymagana" type="boolean" readonly="set"/>
+    <col name="Znormalizowana" type="percent" readonly="set"/>
+    <col name="ZnormalizowanaWgWagi" type="percent" readonly="set"/>
+  </table>
+
+  <table name="OcenaKategoriaArkusza" tablename="OcenyKatArkuszy"
+    caption="Kategoria arkusza oceny"
+    tablecaption="Kategorie arkusza oceny"
+  >
+    <col name="Arkusz" type="OcenaArkusz"
+			readonly="true"
+			required="true"
+      keyprimary="true"
+			relname="Wartości kategorii arkuszy ocen"
+			children="Kategorie"
+			relguided="inner"
+			delete="cascade"
+		/>
+    <col name="Kategoria" type="KategoriaElementuOceny" required="true" readonly="true" children="Kategorie" keyunique="true">
+      <keycol name="Arkusz"/>
+    </col>
+    <col name="Wartosc" type="percent" readonly="set"/>
+    <col name="WartoscWgWagi" type="percent" readonly="set"/>
+  </table>
+
+</module>

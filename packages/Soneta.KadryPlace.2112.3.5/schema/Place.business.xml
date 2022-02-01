@@ -1,0 +1,1516 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Place" namespace="Soneta.Place" versionName="soneta">
+  <import>../..</import>
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.Kasa</using>
+	<using>Soneta.Kadry</using>
+	<using>Soneta.Kalend</using>
+  <using>Soneta.CRM</using>
+  
+  <!-- ====================================================================================== -->
+  <!-- DEFINICJA LISTY PŁAC -->
+  <enum name="RozliczanieListPłac"/>
+  <enum name="NaliczanieKosztówUzyskaniaPrzychodu"/>
+  <table name="DefinicjaListyPlac" tablename="DefListPlac" name8="DefLstPl" guided="Root" caption="Definicja listy płac" tablecaption="Definicje list płac" config="true">
+    <interface>IRightsSource</interface>
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+			<keycol name="Symbol" />
+		</key>
+    <col name="Nadrzedna" type="DefinicjaListyPlac" category="Ogólne" 
+       children="Definicje" 
+       relname="Nadrzedna lista definicji listy płac"/>
+		<col name="Symbol" type="string" length="12" required="true" category="Ogólne" />
+		<col name="Nazwa" type="string" length="30" localization="dictionary" category="Ogólne" />
+		<!-- DEFINICJA -->
+		<col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" />
+		<col name="WidoczneCechy" type="text" category="Definicja" />
+		<col name="Seria" type="boolean" caption="Definicja" />
+		<col name="Wydzial" type="boolean" caption="Jednostka organizacyjna"/>
+		<col name="DefinicjaED" type="DefinicjaDokumentu"
+			relname="Definicja listy płac w ewidencji dokumentów" 
+			description="Definicja dokumentu w ewidencji dokumentów" 
+		/>
+    <col name="WalutaPlatnosci" type="Waluta" category="Ogólne" 
+         required="true" 
+         relname="Waluta dla płatności z wybranej listy płac"/>
+    <col name="ProceduraISO" type="IsoProcedura" caption="Definicja" />
+    <col name="Rozliczanie" type="RozliczanieListPłac" caption="Definicja" />
+    <col name="SchematPodzialowy" type="SchematPodz" cstype="ISchematPodziałowy"/>
+    <col name="ZawszePrzeliczajOpisAnalityczny" type="boolean"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="Algorytm" type="text">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+    <!-- 8.4 -->
+    <col name="KosztyUzyskaniaPrzychodu" type="NaliczanieKosztówUzyskaniaPrzychodu" readonly="set" caption="Definicja" />
+    <col name="UlgaPodatkowa" type="boolean" readonly="set" caption="Definicja" />
+  </table>
+  <!-- ====================================================================================== -->
+  <!-- ODBIORCA ELEMENTU -->
+  <!-- Tabela nie może być konfiguracyjna, ze względu na relację do podmiotu kasowego -->
+  <table name="OdbiorcaElementu" tablename="OdbElementow" name8="EdbElem" cached="true" warnings="Off">
+    <col name="Definicja" type="DefinicjaElementu" readonly="true" required="true" category="Ogólne"
+			relname="Definicja relacji odbiorcy elementu"
+			keyprimary="true" 
+			keyunique="true" 
+			delete="cascade"
+			relguided="inner"
+		/>
+    <col name="Odbiorca" type="IPodmiotKasowy" readonly="true" required="true" category="Ogólne"
+			relname="Odbiorca relacji odbiorcy elementu"
+		/>
+    <col name="Rachunek" type="RachunekBankowyPodmiotu" category="Ogólne"
+			relname="Rachunek relacji odbiorcy elementu"
+		/>
+  </table>
+  <!-- ====================================================================================== -->
+	<!-- PROGU STAŻU PRACY -->
+	<table name="ProgStazuPracy" tablename="ProgiStazuPracy" name8="PrgStzPr" config="true">
+		<!-- RELACJE -->
+		<col name="Definicja" type="DefinicjaElementu" readonly="true" required="true" category="Ogólne" 			
+			relname="Prog akordu" 
+			children="Progi" 
+			keyprimary="true" 
+			keyunique="true" 
+			delete="cascade"
+			relguided="inner"
+		>
+			<keycol name="Prog"/>
+		</col>
+		<!-- OGÓLNE -->
+		<col name="Prog" type="int" category="Próg" />
+		<col name="Wartosc" type="percent" category="Próg" />
+	</table>
+	<!-- DEFINICJA ELEMENTU -->
+	<enum name="RodzajPomniejszenia"/>
+	<subrow name="KorektaDefElementu">
+		<col name="Odchylki" type="boolean" description="Określa, czy element wypłaty ma uwzględniać odchyłki +/- czasu pracy" />
+		<col name="Nieusprawiedliwione" type="RodzajPomniejszenia" description="Korekta z tytułu nieobecności nieusprawiedliwionych" />
+		<col name="Usprawiedliwione" type="RodzajPomniejszenia" description="Korekta z tytułu pozostałych nieobecności usprawiedliwionych" />
+		<col name="Platne" type="RodzajPomniejszenia" description="Korekta z tytułu urlopów i innych nieobecności usprawiedliwionych płatnych" />
+		<col name="Macierzynske" type="RodzajPomniejszenia" description="Korekta z tytułu urlopu macierzynskiego" />
+		<col name="Rehabilitacyjne" type="RodzajPomniejszenia" description="Korekta z tytułu urlopu rehabilitacyjnego" />
+		<col name="Opiekuncze" type="RodzajPomniejszenia" description="Korekta z tytułu zwolnienia opiekuńczego" />
+		<col name="Chorobowe" type="RodzajPomniejszenia" description="Korekta z tytułu zwolnień lekarskich" />
+		<col name="Wychowawcze" type="RodzajPomniejszenia" description="Korekta z tytułu urlopów wychowawczych" />
+    <col name="OgraniczeniePomniejszen" type="boolean" description="Określa, czy suma pomniejszeń elementu może być większa niż jego wartość po odchyłkach" />
+    <col name="WybraneOdchylki" type="boolean"/>
+    <col name="OdchylkiPlus" type="boolean"/>
+    <col name="OdchylkiMinus" type="boolean"/>
+    <col name="Postojowe" type="boolean" modifier="public virtual"/>
+    <col name="OdchylkiAkord" type="boolean"/>
+    <col name="WybraneOdchylkiPlus" type="boolean"/>
+    <col name="OdchylkiPlus50" type="boolean"/>
+    <col name="OdchylkiPlus100" type="boolean"/>
+    <col name="OdchylkiPlusSW" type="boolean"/>
+    <col name="OdchylkiPlusPozostale" type="boolean"/>
+    <col name="OdchylkiRozliczane" type="boolean"/>
+  </subrow>
+	<subrow name="CzasDefElementu">
+		<col name="Typ" type="TypCzasuPracy"/>
+		<col name="Strefa" type="DefinicjaStrefy" 
+			relname="Definicja strefy w definicji elementu"
+		>
+			<verifier name="CzasDefElementu.StrefaVerifier" onadded="true"/>
+		</col>
+	</subrow>
+  <enum name="TypWspolczynnikaAlgorytmu"/>
+  <enum name="TypPracyNaDzień"/>
+  <subrow name="WspolczynnikDefElementu">
+		<col name="Typ" type="TypWspolczynnikaAlgorytmu"/>
+    <col name="Wskaznik" type="boolean"/>
+    <col name="NazwaWskaznika" type="string" length="30"/>
+		<col name="PracaWFirmie" type="boolean"/>
+    <col name="PracaNaDzien" type="TypPracyNaDzień"/>
+		<col name="PodstawaStazu" type="DefPodstawyStazu" 
+			relname="Podstawa stażu definicji elementu"
+		/>
+	</subrow>
+	<enum name="PodstawaAlgorytmuZa"/>
+  <enum name="SposobyProporcjonalności"/>
+  <enum name="SposobyPrzeliczeniaNa1h"/>
+  <subrow name="KreatorAlgorytmu">
+		<col name="PodstawaTyp" name12="PdsTyp" type="TypPodstawyAlgorytmu"/>
+		<col name="PodstawaNazwa" name12="PdsNazwa" type="string" length="128"/>
+		<col name="Proporcjonalnie" name12="Prop" type="boolean"/>
+    <col name="SposobProporcjonalnosci" name12="Prop" type="SposobyProporcjonalności"/>
+    <col name="PodstawaZa" type="PodstawaAlgorytmuZa"/>
+		<col name="Wspolczynnik" name12="Ws" type="WspolczynnikDefElementu"/>
+		<col name="Czas" name12="Cz" type="CzasDefElementu"/>
+		<col name="Korekta" name12="Kr" type="KorektaDefElementu"/>
+    <col name="PrzeliczNa1h" type="SposobyPrzeliczeniaNa1h"/>
+  </subrow>
+	<subrow name="JakUrlopWypoczynkowy">
+	</subrow>
+	<subrow name="JakUrlopOkolicznosciowy">
+	</subrow>
+	<subrow name="JakEkwiwalentZaUrlop">
+    <col name="WgWymiaruEtatu" type="boolean"/>
+    <col name="DefinicjaLimitu" type="DefinicjaLimitu" relname="JakEkwiwalentZaUrlopDefinicjaLimituRelation"/>
+  </subrow>
+	<subrow name="EdytorAlgorytmu">
+	</subrow>
+	<subrow name="JakChorobowe">
+		<col name="Zatrudnienie" name12="ChrZatr" type="ChorobowyZatrudnienie"/>
+	</subrow>
+	<subrow name="KlasaAlgorytmu">
+		<col name="Nazwa" type="string" length="30"/>
+	</subrow>
+	<subrow name="ZaOkresNieobecnosci">
+		<col name="Macierzynskiego" type="boolean"/>
+		<col name="Rehabilitacyjnego" type="boolean"/>
+		<col name="Opiekunczego" type="boolean"/>
+		<col name="Chorobowego" type="boolean"/>
+    <col name="Wychowawczego" type="boolean"/>
+  </subrow>
+  <subrow name="PomniejszeniaIOdchyłki">
+    <col name="WybranaStrefa" type="DefinicjaStrefy"/>
+  </subrow>
+
+  <enum name="TypWartosciUmowyAlgorytm" />
+  <enum name="RodzajeRozliczeniaUmowyAlgorytm" />
+  <enum name="KontrolaMinimalnaStawkaGodz"/>
+  <subrow name="AlgorytmUmowy">
+    <col name="TypWartosci" type="TypWartosciUmowyAlgorytm"/>
+    <col name="RodzajRozliczenia" type="RodzajeRozliczeniaUmowyAlgorytm"/>
+    <col name="MinimalnaStawkaGodz" type="KontrolaMinimalnaStawkaGodz"/>
+  </subrow>
+
+  <subrow name="AlgorytmRozliczenieCzasuUmowy">
+    <col name="Podstawowa" type="DefinicjaElementu"/>
+    <col name="WliczanyDoRozliczenia" type="boolean"/>
+  </subrow>
+
+  <subrow name="ZapisObliczeń">
+    <col name="Nazwa" type="string" length="64"/>
+  </subrow>
+
+  <enum name="TypAlgorytmuElementu" />
+	<enum name="ChorobowyZatrudnienie"/>
+	<enum name="ChorobowyWariant"/>
+	<enum name="TypPodstawyAlgorytmu"/>
+	<enum name="TypCzasuPracy"/>
+  <enum name="TypLimituPotrącenia"/>
+  <subrow name="AlgorytmDefElementu">
+		<col name="Priorytet" type="int" />		
+		<col name="Potracenie" type="boolean" caption="Potrącenie"/>
+    <col name="LimitPotracenia" type="TypLimituPotrącenia" caption="Limit potrącenia"/>
+    <col name="Typ" type="TypAlgorytmuElementu" required="true" />
+		<col name="KreatorAlgorytmu" name12="KA" type="KreatorAlgorytmu"/>
+		<col name="JakUrlopWypoczynkowy" name12="Wp" type="JakUrlopWypoczynkowy"/>
+		<col name="JakUrlopOkolicznosciowy" name12="Uo" type="JakUrlopOkolicznosciowy"/>
+		<col name="JakEkwiwalentZaUrlop" name12="Eu" type="JakEkwiwalentZaUrlop"/>
+		<col name="Edytor" name12="Ea" type="EdytorAlgorytmu"/>
+		<col name="JakChorobowe" name12="Ch" type="JakChorobowe"/>		
+		<col name="Klasa" name12="Kl" type="KlasaAlgorytmu"/>
+		<col name="ZaNieobecnosc" name12="Nie" type="ZaOkresNieobecnosci"/>
+    <col name="PomniejszeniaIOdchylki" type="PomniejszeniaIOdchyłki"/>
+    <col name="Liczba" type="int" modifier="internal"/>
+		<col name="Podstawa" name12="Pds" type="currency"/>
+		<col name="Ulamek" name12="Wsp" type="Fraction"/>
+		<col name="Czas" type="time"/>
+		<col name="Dni" type="int" modifier="internal"/>
+		<col name="DodPodstawa" type="string" localization="dictionary" length="30"/>
+		<col name="DodUlamek" type="string" length="30"/>
+		<col name="DodProcent" type="string" length="30"/>
+		<col name="DodWspolczynnik" type="string" length="30"/>
+		<col name="DodCzas" type="string" length="30"/>
+		<col name="DodDni" type="string" length="30"/>
+		<col name="ElPodglad" type="boolean"/>
+		<col name="ElPodstawa1" type="string" localization="dictionary" length="30"/>
+		<col name="ElPodstawa2" type="string" localization="dictionary" length="30"/>
+    <col name="ElPodstawa3" type="string" localization="dictionary" length="30"/>
+    <col name="ElPodstawa4" type="string" localization="dictionary" length="30" modifier="public virtual"/>
+    <col name="ElPodstawa5" type="string" localization="dictionary" length="30" modifier="public virtual"/>
+    <col name="ElUlamek" type="string" length="30"/>
+		<col name="ElProcent" type="string" length="30"/>
+		<col name="ElWspolczynnik" type="string" length="30"/>
+		<col name="ElCzas" type="string" length="30"/>
+		<col name="ElDni" type="string" length="30"/>		
+		<col name="ElIlosc" type="string" length="30"/>
+    <col name="ElPodstawaOkres" type="string" length="30"/>
+    <col name="ElRazemCzas" type="string" length="30"/>
+    <col name="ElRazemDni" type="string" length="30"/>
+    <col name="Umowa" type="AlgorytmUmowy"/>
+    <col name="RozliczenieCzasuUmowy" type="AlgorytmRozliczenieCzasuUmowy"/>
+    <col name="ZapisObliczen" type="ZapisObliczeń"/>
+  </subrow>
+	<enum name="TypKosztowUzyskaniaPrzychodu" />
+  <enum name="TypPomniejszeniaPodstawyFIS"/>
+	<subrow name="KosztyUzyskaniaPrzychodu">
+		<col name="Typ" type="TypKosztowUzyskaniaPrzychodu" />
+		<col name="Procent" type="percent" />
+	</subrow>
+  <enum name="TypZaliczkiPodatku" />
+  <enum name="NaliczaniePit26" />
+  <subrow name="ZaliczkaPodatku">
+		<col name="Typ" type="TypZaliczkiPodatku" />
+		<col name="Procent" type="percent" />
+		<col name="PomniejszonaZUS" type="TypPomniejszeniaPodstawyFIS"/>
+    <col name="NaliczaniePit26" type="NaliczaniePit26" modifier="public virtual"/>
+  </subrow>
+	<enum name="TypUlgiPodatkowej" />
+	<subrow name="UlgaPodatkowa">
+		<col name="Typ" type="TypUlgiPodatkowej" />
+	</subrow>
+	<enum name="PozycjaRCA" />
+	<enum name="KodRNA" />
+	<enum name="PozycjaRP7" />
+	<enum name="TypUbezpieczeniaSpolecznego" />
+	<subrow name="UbezpieczenieSpoleczne">
+		<col name="Typ" type="TypUbezpieczeniaSpolecznego"/>
+	</subrow>
+	<enum name="TypUbezpieczeniaZdrowotnego" />
+	<enum name="TypPomniejszeniaFIS" />
+  <subrow name="UbezpieczenieZdrowotne">
+    <col name="Typ" type="TypUbezpieczeniaZdrowotnego"/>
+    <col name="PomniejszaFIS" name12="FIS" type="TypPomniejszeniaFIS"/>
+    <col name="PomniejszoneZUS" name12="ZUS" type="boolean"/>
+  </subrow>
+  <enum name="TypSkładkiFP" />
+  <enum name="TypSkładkiFGŚP" />
+  <subrow name="NarzutyNaWynagrodzenie">
+    <col name="SkladkaFP" type="TypSkładkiFP"/>
+    <col name="SkladkaFGSP" type="TypSkładkiFGŚP"/>
+  </subrow>
+  <enum name="TypUmowyCywilnoPrawnej"/>
+  <enum name="TrybPodleganiaRozporzadzeniuMF070122"/>  
+	<subrow name="DeklaracjeDefElementu">
+		<col name="PozycjaPIT" type="PozycjaPIT" relname="PozycjaPIT dla definicji elementu" />
+    <col name="OpisNaPIT8C" type="string" length="80" relname="Opis pozycji na deklaracji PIT-8C, blok D.">
+      <attribute>Dictionary("Opis na PIT-8C")</attribute>
+    </col>
+		<col name="Priorytet" type="int"/>
+		<col name="Koszty" name12="Ks" type="KosztyUzyskaniaPrzychodu" />
+		<col name="Zaliczka" name12="Zal" type="ZaliczkaPodatku" />
+		<col name="Ulga" type="UlgaPodatkowa" />
+		<col name="KodRSA" type="KodRSA" relname="KodZUS dla definicji elementu" />
+		<col name="PozycjaRCA" type="PozycjaRCA" />
+		<col name="KodRNA" type="KodRNA" />
+		<col name="PozycjaRP7" type="PozycjaRP7" />
+		<col name="Spoleczne" name12="Sp" type="UbezpieczenieSpoleczne" />
+    <col name="Zdrowotne" name12="Zd" type="UbezpieczenieZdrowotne" />
+    <col name="Narzuty" name12="Zd" type="NarzutyNaWynagrodzenie" />
+    <col name="Umowa" type="TypUmowyCywilnoPrawnej"/>
+    <col name="UmowaTyUb" type="TytulUbezpieczenia4" />
+    <col name="UmowaJakEtat" type="boolean"/>
+    <col name="NieWliczajSOD" name12="NieSOD" type="boolean" modifier="protected"/>
+    <col name="NieRozrzucaj" name12="NieRoz" type="boolean" modifier="protected"/>
+    <col name="PodstawaSkladek" type="PodstawaSkładekZUS"/>
+    <col name="NieoskladkowanyZUS" type="boolean"/>
+    <col name="TrybPodleganiaRozpMF070122" type="TrybPodleganiaRozporzadzeniuMF070122"/>
+  </subrow>
+	<enum name="TypPodstawyUrlopu" />
+	<enum name="TypWspolczynnikaUrlopu"/>
+	<subrow name="PodstawaUrlopu">
+		<col name="Typ" type="TypPodstawyUrlopu" />
+    <col name="Dopelnienie" type="boolean" />
+		<col name="WspolczynnikTyp" name12="WspTyp" type="TypWspolczynnikaUrlopu"/>
+		<col name="WspolczynnikNazwa" name12="WspNazwa" type="string" length="30">
+			<verifier name="PodstawaUrlopu.WspolczynnikNazwaVerifier"/>
+		</col>
+	</subrow>
+	<enum name="TypPodstawyZasilku" />
+	<subrow name="PodstawaZasilkow">
+		<col name="Typ" type="TypPodstawyZasilku"/>
+		<col name="Chorobowych" type="boolean" />
+		<col name="Macierzynskich" type="boolean" />
+		<col name="Rehabilitacyjnych" type="boolean" />
+		<col name="Opiekunczych" type="boolean" />
+	</subrow>
+  <subrow name="PodstawaSkładekZUS">
+    <col name="UrlopWychowawczy" type="TypPodstawyZasilku"/>
+  </subrow>
+  <enum name="SposobyWliczaniaDoPodstawyChorobowego" />
+  <enum name="DefinicjeMiesiecy"/>
+  <subrow name="NieobecnosciDefElementu">
+		<col name="WahaniaWysokosci" name12="WahWys" type="boolean" />
+		<col name="Urlop" name12="Url" type="PodstawaUrlopu" />
+		<col name="Ekwiwalent" name12="Ekw" type="PodstawaUrlopu" />
+		<col name="ZasilkiPracownicy" name12="ZPrc" type="PodstawaZasilkow" />
+		<col name="ZasilkiInni" name12="ZInn" type="PodstawaZasilkow" />
+    <col name="DefinicjaLimitu" type="DefinicjaLimitu" relname="NieobecnosciDefElementuDefinicjaLimituRelation"/>
+    <col name="WliczanieDoPodstawyChorobowego" type="SposobyWliczaniaDoPodstawyChorobowego"/>
+    <col name="OdMiesiaca" type="DefinicjeMiesiecy"/>
+    <col name="DoMinimalnej" type="boolean"/>    
+  </subrow>
+	<enum name="PrecyzjaZaokraglenia" />
+	<enum name="SposobZaokraglenia" />
+	<subrow name="Zaokraglenie">
+		<col name="Precyzja" type="PrecyzjaZaokraglenia" />
+		<col name="Sposob" type="SposobZaokraglenia" />
+		<col name="Podstawa" type="boolean" description="Podstawa ma zostać zaokrąglona do 1 grosza"/>
+	</subrow>
+	<enum name="TypOkresuNaliczania"/>
+  <enum name="DlaKażdejUmowy"/>
+  <subrow name="OkresNaliczania">
+		<col name="Naliczanie" type="TypNaliczenia" required="true" category="Ogólne" />
+		<col name="Opoznienie" type="int" description="Opóźnienie naliczenia elementu w stosunku do rozliczanego okresu" />
+		<col name="Typ" type="TypOkresuNaliczania" required="true"/>
+		<col name="Ilosc" type="int"/>
+    <col name="DlaKazdejUmowy" type="DlaKażdejUmowy"/>
+  </subrow>
+	<enum name="KategoriaWynagrodzeniaGUS"/>
+	<subrow name="StatystykaGUSPL">
+		<col name="Kategoria" type="KategoriaWynagrodzeniaGUS"/>
+    <col name="ZaliczajDoCzasuPracy" type="boolean"/>
+	</subrow>
+  <subrow name="DodatkoweInformacje">
+    <col name="DodatekDoEtatu" type="boolean" />
+    <col name="RefundowanyInfo" type="RodzajRefundacjiWynagrodzenia" modifier="public virtual"/>
+  </subrow>
+  <subrow name="RozliczenieElementu">
+    <col name="Ewidencja" type="EwidencjaSP"/>
+    <col name="ZmianaOdbiorcy" type="boolean"/>
+    <col name="WspolnaPlatnosc" type="boolean" description="Wszystkie elementy wg danej dafinicji mają być rozliczone jedną płatnością"/>
+    <col name="OpisPrzelewu" type="string" length="80"/>
+  </subrow>
+  <enum name="PodstawyZajęciaKomorniczego"/>
+  <subrow name="ZajęcieWynagrodzenia">
+    <col name="Komornik" type="PodstawyZajęciaKomorniczego"/>
+    <col name="Alimenty" type="PodstawyZajęciaKomorniczego"/>
+    <col name="Pozostale" type="PodstawyZajęciaKomorniczego"/>
+  </subrow>
+  <enum name="PodstawyWynagrodzeniaZaGranicą"/>
+  <subrow name="PracownicyZaGranicą">
+    <col name="KorektaPodstaw" type="boolean"/>
+    <col name="Podstawa" type="PodstawyWynagrodzeniaZaGranicą"/>
+  </subrow>
+  <enum name="ElementStanowiKUP"/>
+  <!-- DEFINICJA ELEMENTU -->
+	<enum name="TypZatrudnienia"/>
+  <enum name="RodzajeNaliczaniaListPłac"/>
+  <enum name="RodzajRefundacjiWynagrodzenia"/>
+  <enum name="UwzgledniajZwrotSkladkiPPK"/>
+  <table name="DefinicjaElementu" tablename="DefElementow" guided="Root" name8="DefElem" config="true">
+		<key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+    <key name="WgKodu">
+      <keycol name="Kod" />
+    </key>
+    <!-- OGÓLNE -->
+		<col name="Podstawowa" type="DefinicjaElementu" category="Ogólne"
+			relname="Podstawowa definicja definicji elementu"
+			children="Definicje"
+		/>
+    <col name="Wydzial" type="Wydzial" category="Ogólne"
+      caption="Jednostka organizacyjna"         
+			relname="Jednostka organizacyjna praw definicji elementu"
+		/>
+    <col name="Nastepny" type="DefinicjaElementu" category="Ogólne">
+      <verifier name="DefinicjaElementu.DoDniaVerifier" />
+    </col>
+    <col name="DoDnia" type="date" required="true" category="Obliczenia">
+      <verifier name="DefinicjaElementu.DoDniaVerifier" />
+    </col>
+    <col name="RodzajZrodla" type="RodzajŹródłaWypłaty" readonly="true" required="true" category="Ogólne" />
+		<col name="Nazwa" type="string" length="40" localization="dictionary" required="true" category="Ogólne" />
+    <col name="NazwaPomocnicza" type="string" localization="dictionary" length="40" category="Ogólne" />
+    <col name="Skrot" type="string" length="12" localization="dictionary" required="true" category="Ogólne" />
+    <col name="Kod" type="string" length="12" category="Ogólne"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+		<col name="Kolejnosc" type="int" category="Ogólne"/>
+		<col name="Zatrudnienie" type="TypZatrudnienia" required="true" category="Ogólne"/>
+		<col name="DefinicjaListyPlac" type="DefinicjaListyPlac" category="Ogólne" 
+      relname="Definicja listy płac definicji elementu" 
+      children="DefinicjeElementow" 
+    />
+    <col name="Zakres" type="IZakresDefinicji" category="Ogólne" 
+      relname="Zakres danych definicji elementu wynagrodzenia" 
+      children="DefinicjeElementow" 
+    />
+		<col name="OkresNaliczania" name12="ONal" type="OkresNaliczania" category="Ogólne"/>
+		<col name="Algorytm" name12="Alg" type="AlgorytmDefElementu" category="Ogólne" />
+		<col name="Deklaracje" name12="Dek" type="DeklaracjeDefElementu" />
+		<col name="Nieobecnosci" name12="Nie" type="NieobecnosciDefElementu" />
+		<col name="Zaokraglenie" name12="Zaokr" type="Zaokraglenie" />
+    <col name="GUS" type="StatystykaGUSPL"/>
+    <col name="Rozliczenie" type="RozliczenieElementu"/>
+    <col name="Zajecie" type="ZajęcieWynagrodzenia"/>
+    <col name="Korygowany" type="boolean" />
+		<col name="MinimalneWynagrodzenie" type="boolean" />
+		<col name="DoWyplaty" type="boolean" />
+		<col name="ZawszeGotowka" type="boolean" />
+		<col name="GenerujZerowy" type="boolean" />
+		<col name="Aktualizacja" type="boolean" description="Aktualizacja zapisu po wyplacie (dotyczy tylko dodatkow)" />
+		<col name="Zerowanie" type="boolean" description="Zerowanie współczynników po wypłace (dotyczy tylko dodatkow)" />
+    <col name="Dodatkowe" type="DodatkoweInformacje"/>
+    <col name="Tekst" type="text">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+    <col name="WidoczneCechy" type="text" category="Definicja" />
+    <col name="RodzajNaliczania" type="RodzajeNaliczaniaListPłac" category="Ogólne"/>
+    <col name="PracownicyZaGranica" type="PracownicyZaGranicą" category="Ogólne"/>
+    <col name="StanowiKUP" type="ElementStanowiKUP" category="Ogólne"/>
+    <col name="UwzgledniajZwrotSkladkiPPK" type="UwzgledniajZwrotSkladkiPPK"/>
+    <col name="UwzgledniajWLimicieZFSS" type="boolean"/>
+    <col name="PulpitPracownika" type="boolean"/>
+  </table>
+	<!-- ====================================================================================== -->
+	<!-- LISTA PŁAC -->
+	<table name="ListaPlac" tablename="ListyPlac" name8="LstPlac" guided="Root" caption="Lista płac" tablecaption="Listy płac">
+		<interface>IDokumentKsiegowalny</interface>
+		<key name="WgOkresu">
+			<keycol name="Okres.To" />
+		</key>
+    <key name="WgDatyWyplaty" keyprimary="true">
+      <keycol name="DataWyplaty" />
+    </key>
+    <key name="WgMiesiacaZUS">
+      <keycol name="MiesiacZUSDzien" />
+    </key>
+    <key name="WgDaty">
+      <keycol name="Data" />
+    </key>
+    <!-- DOKUMENT -->
+		<col name="Definicja" type="DefinicjaListyPlac" required="true" category="Dokument" 
+			relname="Definicja listy płac" 
+      relright="true"
+		>
+			<keycol name="Wydzial" />
+			<keycol name="Okres.To" />
+		</col>
+		<col name="Numer" name12="Nr" type="NumerDokumentu" category="Dokument" />
+		<col name="Data" type="date" required="true" category="Dokument" 
+			description="Data naliczania listy płac" 
+		/>
+		<col name="Seria" type="string" length="30" category="Dokument">
+			<attribute>Dictionary("Seria listy płac")</attribute> 
+		</col>
+		<!-- OGÓLNE -->
+		<col name="Wydzial" type="Wydzial" required="true" category="Ogólne" 
+      caption="Jednostka organizacyjna"
+			relname="Jednostka organizacyjna listy płac" 
+			relright="true"
+		/>
+		<col name="Naliczanie" type="TypNaliczenia" required="true" category="Ogólne" />
+		<col name="DataWyplaty" type="date" required="true" category="Ogólne" description="Data przekazania środków do dyspozycji pracownika. Na jej podstawie jest wyliczany mies,rok" />
+    <col name="MiesiacZUSDzien" type="date" required="true" readonly="set" caption="Miesiąc deklaracji ZUS" category="Ogólne" description="Miesiąc w którym zostaną rozliczone składki ZUS">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <!-- OBLICZENIA -->
+		<col name="Okres" name12="Okr" type="FromTo" required="true" category="Obliczenia" description="Okres za jaki mają być naliczane wchodzące na wybraną listę wypłaty" />
+		<col name="MiesWstecz" type="int" category="Obliczenia" />
+
+    <!-- ISO -->
+    <col name="NumerProceduryISO" type="string" length="20" category="Dokument" readonly="set"/>    
+  </table>
+	<!-- ====================================================================================== -->
+	<!-- WYPŁATA -->
+  <interface name="IPowiązanieWypłaty"/>
+	<table name="Wyplata" tablename="Wyplaty" guided="Root" namespace="Soneta.Place"
+		caption="Wypłata" 
+		tablecaption="Wypłaty" 
+	>
+		<interface>IDokumentPlatny</interface>
+		<interface>IDokumentKsiegowalny</interface>
+    <interface>IZrodloOpisuAnalitycznego</interface>
+    <key name="WgData" keyprimary="true">
+			<keycol name="Data"/>
+		</key>
+    <key name="WgMiesiacaZUS">
+      <keycol name="MiesiacZUSDzien" />
+    </key>
+    <key name="WgPracMiesZUS">
+      <keycol name="Pracownik" />
+      <keycol name="MiesiacZUSDzien" />
+    </key>
+    <key name="WgListaPlacPracownik">
+      <keycol name="ListaPlac" />
+      <keycol name="Pracownik" />
+    </key>
+    <!-- DOKUMENT -->
+    <!-- relacja do listy płac nie może być relguided='inner' bo uniemożliwia pracę na wielu stanowiskach na różnych wypłatach z tej samej listy -->
+    <col name="ListaPlac" type="ListaPlac" required="true" readonly="true" category="Dokument"
+			relname="Lista płac wypłaty"
+			children="Wyplaty"
+			delete="cascade"
+			relright="true"
+    >
+			<keycol name="Numer.Numer"/>
+		</col>
+		<col name="Pracownik" type="Pracownik" required="true" readonly="true" category="Dokument" 
+			relname="Wypłaty pracownika" 
+			children="Wyplaty" 
+			relright="other"
+		>
+			<keycol name="Data"/>
+		</col>
+    <col name="Definicja" type="DefinicjaDokumentu" category="Dokument"
+			relname="Definicja wypłaty"
+		/>
+    <col name="Powiazanie" type="IPowiązanieWypłaty" readonly="true" category="Dokument"
+			relname="Powiązanie wypłaty"
+		/>
+    <col name="Typ" type="TypWyplaty" selector="true" readonly="true" required="true" category="Dokument" />
+		<col name="Bufor" type="boolean" category="Dokument" />
+		<col name="Numer" name12="Nr" type="NumerDokumentu" category="Dokument" />
+		<col name="Data" type="date" required="true" readonly="set" category="Dokument" />
+		<col name="Wartosc" type="currency" category="Dokument" readonly="set"
+       description="Wartość (kwota do wypłaty) dokumentu w PLN">
+			<verifier name="ZobowiazaniaVerifier" />
+		</col>
+    <col name="TabelaKursowa" type="TabelaKursowa" category="Księgowość" readonly="set"
+			relname="Tabela kursowa zapłaty"
+		/>
+    <col name="Kurs" type="double" category="Dokument" readonly="set"/>
+    <col name="WartoscCy" type="currency" category="Dokument" readonly="set"
+       description="Wartość (kwota do wypłaty) dokumentu po przeliczeniu na walutę listy płac">
+    </col>
+    <col name="MiesiacDeklaracji" type="YearMonth" required="true" readonly="set" caption="Miesiąc deklaracji" category="Wypłaty"/>
+    <col name="MiesiacZUSDzien" type="date" required="true" readonly="set" caption="Miesiąc deklaracji ZUS" category="Ogólne" description="Miesiąc w którym zostaną rozliczone składki ZUS">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <col name="MiesWstecz" type="int" category="Obliczenia" />
+    <col name="ZapisObliczen" type="text"/>
+  </table>
+	<!-- ====================================================================================== -->
+	<!-- ELEMENT WYPŁATY -->
+  <enum name="NaliczKorektęElementu"/>
+	<table name="WypElement" tablename="WypElementy" caption="Element wypłaty" tablecaption="Elementy wypłaty" guided="Root">
+		<key name="WgDaty" keyprimary="true">
+			<keycol name="Pracownik"/>
+			<keycol name="Data"/>
+		</key>
+    <key name="WgOkresuListy">
+      <keycol name="Pracownik"/>
+      <keycol name="OkresListy.To"/>
+    </key>
+    <key name="WgMiesiacZUS">
+      <keycol name="Pracownik"/>
+      <keycol name="MiesiacZUSDzien"/>
+    </key>
+    <col name="Pracownik" type="Pracownik" required="true" category="Ogólne" readonly="true"
+			relname="Elementy wypłaty pracownika" 
+			children="Elementy"
+			relright="other"
+		>
+			<keycol name="Okres.To" />
+		</col>
+		<col name="Wyplata" type="Wyplata" required="true" category="Ogólne" setonlynull="true"
+			relname="Elementy wypłaty"
+			children="Elementy"
+			delete="cascade"
+			relright="true"
+      relguided="inner"
+		/>
+		<col name="Wydzial" type="Wydzial" required="true" category="Ogólne" 
+      caption="Jednostka organizacyjna"
+			relname="Elementy wydziału" 
+		/>
+		<!-- ELEMENT -->
+		<col name="BazaZrodla" type="IBazaZrodlaWyplaty" readonly="true" category="Element"
+			relname="Baza źródła"
+			relright="false"
+		>
+			<keycol name="RodzajZrodla"/>
+			<keycol name="Okres.To"/>
+		</col>
+		<col name="RodzajZrodla" type="RodzajŹródłaWypłaty" selector="true" required="true" category="Element" readonly="true" />
+		<col name="Definicja" type="DefinicjaElementu" required="true" category="Element" 
+			relname="Definicja elementu elementu" 
+		/>
+		<col name="Nazwa" type="string" length="40" required="true" category="Element" />
+		<col name="Okres" name12="Okr" type="FromTo" category="Element" />
+    <col name="OkresListy" type="FromTo" category="Element" readonly="set" required="true"/>
+    <col name="Data" type="date" required="true" readonly="set" category="Element" />
+    <col name="MiesiacZUSDzien" type="date" required="true" readonly="set" caption="Miesiąc deklaracji ZUS" category="Ogólne" description="Miesiąc w którym zostaną rozliczone składki ZUS">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <col name="Korekta" type="boolean" caption="Wartość" category="Element" 
+			description="Określa, czy element wypłaty jest zmodyfikowany ręcznie przez operatora."/>
+    <col name="NaliczKorekte" type="NaliczKorektęElementu" readonly="set" caption="Nalicz korektę" category="Element"
+			description="Określa, czy należy dla elementu naliczać element korygujący."/>
+    <col name="Wartosc" type="decimal" caption="Wartość" category="Element"/>
+		<col name="Procent" type="percent" category="Element"/>
+		<!-- PODATKI I SKŁADKI ZUS -->
+		<col name="Podatki" name12="Pod" type="Podatki" category="Podatki" />
+		<col name="RodzajSkladki" type="RodzajSkladki" category="Podatki" modifier="public virtual" caption="Rodzaj składki">
+			<attribute>Editor("Soneta.Forms.Design.FlagsEditor,Soneta.Forms", typeof(System.Drawing.Design.UITypeEditor))</attribute>
+		</col>
+    <!-- STORNO-->
+    <col name="StanStorna" type="StanStornaElementu" readonly="set"/>
+    <col name="Wystornowany" type="boolean" readonly="set" description="Do elementu naliczono element stornujący. Mógł on zostać już usunięty."/>
+    <col name="KorektaWyrokTK" type="boolean" caption="Korekta TK" description="Korekta wynagrodzenia lub zasiłku z tytułu wyroku Trybunału Konstytucyjnego z dnia 24 czerwca 2008 r., sygn. akt SK 16/06 (Dz. U. nr 119, poz. 771)."/>
+    <col name="ZapisObliczen" type="text"/>
+    <col name="KosztyUzyskaniaPrzychodu" type="KosztyUzyskaniaPrzychoduFirma"/>
+    <col name="Podatki2021" type="Podatki2021" category="Podatki" />
+  </table>
+  <subrow name="KosztyUzyskaniaPrzychoduFirma">
+  </subrow>
+  <subrow name="SkladkaZUS">
+    <col name="Podstawa" name12="Pod" type="decimal" />
+    <col name="Prac" name12="P" type="decimal" />
+    <col name="Firma" name12="F" type="decimal" />
+  </subrow>
+  <subrow name="SkladkaZUSFirma">
+		<col name="Podstawa" name12="Pod" type="decimal" />
+		<col name="Skladka" name12="Skl" type="decimal" />
+	</subrow>
+  <subrow name="SkladkaZUSBudżet">
+    <col name="Podstawa" type="decimal" />
+    <col name="Skladka" type="decimal" />
+  </subrow>
+  <subrow name="SkładkaPPK">
+    <col name="Podstawa" type="decimal" />
+    <col name="PodstPracodawcy" type="decimal" />
+    <col name="PodstPracownika" type="decimal" />
+    <col name="DodPracodawcy" type="decimal" />
+    <col name="DodPracownika" type="decimal" />
+    <col name="PracodawcyDoPodatku" type="decimal" />
+  </subrow>
+  <subrow name="PodatekVAT">
+		<col name="DefinicjaStawki" type="DefinicjaStawkiVat" name12="DefSt"
+			description="Definicja stawki VAT opisująca rodzaj stawki 22%, 7%, itp"
+			relname="Definicja elementu wypłaty VAT"/>
+		<col name="Stawka" type="StawkaVat" name12="Sw"
+			description="Typ stawki VAT" />
+		<col name="Podstawa" name12="Pdst" type="decimal" />
+		<col name="Podatek" name12="Pod" type="decimal" />
+	</subrow>
+	<subrow name="Podatki">
+		<col name="Korekta" type="boolean" />
+    <col name="TyUb" type="TytulUbezpieczenia" />
+    <col name="OrgTyUb" type="TytulUbezpieczenia" />
+    <col name="BudzetTyUb" type="TytulUbezpieczenia" />
+    <col name="Koszty" type="decimal" />
+		<col name="Ulga" type="decimal" />
+		<col name="ProcentFIS" type="percent" readonly="set" />
+    <col name="PodstawaFIS" type="decimal" />
+    <col name="NalFIS" type="decimal" />
+		<col name="ZalFIS" type="decimal" />
+		<col name="Zaniechanie" type="decimal" />
+    <col name="Przychod50" type="decimal" />
+    <col name="Przychod26" type="decimal" />
+    <col name="Brutto50" type="decimal" />
+		<col name="Koszty50" type="decimal" />
+    <col name="KosztyZUSNieodlicz" type="decimal" description="Suma składek ZUS niepomniejszających podstawy opodatkowania" modifier="internal virtual"/>
+    <col name="ZdrowotneDoOdliczenia" type="decimal" description="Składka na NFZ do odliczenia od zaliczki podatku"/>
+    <col name="ZdrowotneDoOdliczenia26" type="decimal" description="Składka 26 latka na NFZ do odliczenia od zaliczki podatku"/>
+    <col name="Emerytalna" name12="Emer" type="SkladkaZUS" />
+		<col name="Rentowa" name12="Rent" type="SkladkaZUS" />
+		<col name="Chorobowa" name12="Chor" type="SkladkaZUS" />
+		<col name="Wypadkowa" name12="Wyp" type="SkladkaZUS" />
+		<col name="Zdrowotna" name12="Zdr" type="SkladkaZUS" />
+    <col name="EmerytalnaBudzet" type="SkladkaZUSBudżet" />
+    <col name="RentowaBudzet" type="SkladkaZUSBudżet" />
+    <col name="ZdrowotnaBudzet" type="SkladkaZUSBudżet" />
+    <col name="FP" type="SkladkaZUSFirma" />
+		<col name="FGSP" type="SkladkaZUSFirma" />
+    <col name="FEP" type="SkladkaZUSFirma" />
+    <col name="VAT" type="PodatekVAT" />
+    <col name="PPK" type="SkładkaPPK" />
+    <col name="UlgaKlasaSrednia" type="decimal" />
+    <col name="UlgaDuzaRodzina" type="decimal" />
+    <col name="UlgaEmeryt" type="decimal" />
+    <col name="UlgaZagranica" type="decimal" />
+    <col name="ZalFISPL" type="decimal" />
+    <col name="ZalFISKorekta" type="decimal" />
+    <col name="ZalFISDoplata" type="decimal" />
+  </subrow>
+  <subrow name="Podatki2021">
+    <col name="Koszty" type="decimal" />
+    <col name="KosztyZUS" type="decimal" />
+    <col name="Ulga" type="decimal" />
+    <col name="ProcentFIS" type="percent" readonly="set" />
+    <col name="PodstawaFIS" type="decimal" />
+    <col name="NalFIS" type="decimal" />
+    <col name="ZalFIS" type="decimal" />
+    <col name="Zaniechanie" type="decimal" />
+    <col name="Przychod50" type="decimal" />
+    <col name="Przychod26" type="decimal" />
+    <col name="Brutto50" type="decimal" />
+    <col name="Koszty50" type="decimal" />
+    <col name="KosztyZUSNieodlicz" type="decimal" modifier="internal virtual" />
+    <col name="ZdrowotneDoOdliczenia" type="decimal" />
+    <col name="ZdrowotneDoOdliczenia26" type="decimal" />
+  </subrow>
+  <!-- ===================================================================================== -->
+	<!-- SKŁADNIK ELEMENTU -->
+	<table name="WypSkladnik" tablename="WypSkladniki" caption="Składnik wypłaty" tablecaption="Składniki wypłaty" warnings="Off">
+		<!-- ELEMENT -->
+		<col name="Element" type="WypElement" category="Pracownik" 
+			relname="Składniki elementu wypłaty" 
+			children="Skladniki" 
+			required="true" 
+			delete="cascade"
+			relright="true"
+			relguided="inner"
+      keyprimary="true"
+		>
+			<keycol name="Rodzaj" />
+		</col>
+		<!-- OGÓLNE -->
+		<col name="Nieobecnosc" type="Nieobecnosc" relname="Składnik pomniejszający nieobecność" children="Pomniejszenia" category="Ogólne" />
+		<col name="Okres" name12="Okr" type="FromTo" category="Ogóle" />
+		<col name="Rodzaj" type="RodzajSkładnikaWypłaty" selector="true" required="true" category="Ogólne" />
+		<col name="Wartosc" type="decimal" category="Ogólne" caption="Wartość w PLN" />
+		<col name="WartoscCy" type="currency" category="Ogólne" caption="Wartość w walucie" />
+		<col name="Podstawa1" type="doublecy" category="Parametry"/>
+		<col name="Podstawa2" type="doublecy" category="Parametry"/>
+    <col name="Podstawa3" type="doublecy" category="Parametry"/>
+    <col name="Podstawa4" type="doublecy" category="Parametry" modifier="public virtual"/>
+    <col name="Podstawa5" type="doublecy" category="Parametry" modifier="public virtual"/>
+    <col name="Ilosc" type="double" category="Parametry"/>
+		<col name="Ulamek" name12="Wsp" type="Fraction" category="Parametry"/>
+		<col name="Czas" type="time" category="Parametry" />
+		<col name="Dni" type="int" category="Parametry" />
+    <col name="PodstawaOkres" type="FromTo" category="Parametry" />
+    <!-- STORNO-->
+    <col name="StanStorna" type="StanStornaElementu" readonly="set"/>
+  </table>
+  <!-- ====================================================================================== -->
+  <!-- ELEMENT WYPŁATY -->
+  <table name="StornoElementu" tablename="StornaElementow" caption="Storno elementu" tablecaption="Storna elementów" warnings="Off">
+    <col name="Pracownik" type="Pracownik" required="true" category="Ogólne" readonly="true"
+			relname="Storna elementów wypłaty pracownika"
+			children="StornaElementow"
+		>
+      <keycol name="MiesiacZUSDzien" />
+    </col>
+    <col name="Stornowany" type="WypElement" category="Ogólne"
+      readonly="true"
+			relname="Element stornowany"
+			children="Stornujące"
+			required="true"
+			relright="true"
+			relguided="inner"
+      keyprimary="true"
+		/>
+    <col name="Stornujacy" type="WypElement" category="Ogólne"
+      readonly="set"
+			relname="Element stornujący"
+			children="Stornowane"
+			relright="true"
+		/>
+    <col name="RodzajStorna" type="RodzajStornaElementu" required="true" readonly="true"/>
+    <col name="Automatyczne" type="boolean" readonly="true"/>
+    <col name="StanStorna" type="StanStornaElementu" required="true" readonly="set"/>
+    <col name="MiesiacZUSDzien" type="date" required="true" readonly="set" caption="Miesiąc deklaracji ZUS" category="Ogólne" description="Miesiąc w którym zostaną rozliczone składki ZUS">
+      <attribute>Browsable(false)</attribute>
+    </col>
+  </table>
+  <!-- ====================================================================================== -->
+	<!-- ZANIECHANIE PODATKOWE -->
+	<table name="ZaniechaniePodatkowe" tablename="ZaniechPodatkowe" name8="ZanPod" guided="Root"
+		caption="Zaniechanie podatkowe"
+		tablecaption="Zaniechania podatkowe"
+	>
+		<!-- PRACOWNIK -->
+		<col name="Pracownik" type="Pracownik" readonly="true" category="Pracownik" 
+			relname="Zaniechania podatkowe pracownika" 
+			children="ZaniechaniaPodatkowe" 
+			keyclass="Date"
+			keyclasscol="Data"
+			delete="cascade"
+			relright="Primary"
+		/>
+		<!-- OGÓLNE -->
+		<col name="Data" type="date" required="true" category="Ogólne">
+			<verifier name="ZaniechaniePodatkowe.WartoscVerifier" onadded="true"/>
+		</col>
+		<col name="Wartosc" type="decimal" required="true" category="Ogólne">
+			<verifier name="ZaniechaniePodatkowe.WartoscVerifier"/>
+		</col>
+		<col name="Decyzja" type="string" length="40" category="Ogólne" />
+		<col name="Roczne" type="boolean" readonly="true" category="Ogólne" />
+		<!-- NALICZAJ DLA WYPŁAT -->
+		<col name="Etat" type="boolean" category="Naliczaj dla">
+			<verifier name="ZaniechaniePodatkowe.ZrodloVerifier" onadded="true"/>
+		</col>
+		<col name="Umowa" type="boolean" category="Naliczaj dla">
+			<verifier name="ZaniechaniePodatkowe.ZrodloVerifier"/>
+		</col>
+	</table>
+  <!-- ====================================================================================== -->
+  <!-- KOSZTY AUTORSKIE -->
+  <table name="KosztAutorski" tablename="KosztyAutorskie" guided="Root"
+		caption="Koszty autorskie"
+		tablecaption="Koszty autorskie"
+	>
+    <!-- PRACOWNIK -->
+    <col name="Pracownik" type="Pracownik" readonly="true" category="Pracownik"
+			relname="Koszty autorskie pracownika"
+			children="KosztyAutorskie"
+			delete="cascade"
+			relright="Primary"
+      keyunique="true"
+		>
+      <keycol name="Data"/>
+    </col>
+    <!-- OGÓLNE -->
+    <col name="Data" type="date" required="true" readonly="set" category="Ogólne"/>
+    <col name="Kwota" type="decimal" category="Ogólne" caption="Podstawa"/>
+    <col name="Procent" type="percent" category="Ogólne" caption="Podstawa"/>
+    <col name="Opis" type="string" length="80" category="Ogólne" />
+    <col name="GodzKUP50" type="time" category="Ogólne" caption="Godziny KUP50"/>
+    <col name="GodzBezKUP50" type="time" category="Ogólne" caption="Godziny bez KUP50"/>
+  </table>
+  <!-- ====================================================================================== -->
+	<!-- POZYCJA PIT -->
+	<table name="PozycjaPIT" tablename="PozycjePIT" name8="PozPIT" guided="Root" config="true"
+         caption="Pozycja na deklaracji PIT" tablecaption="Pozycje na deklaracjach PIT">
+		<key name="WgKodu" keyunique="true">
+			<keycol name="Kod" />
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Kod" type="string" length="20" category="Ogólne" />
+		<col name="Kategoria" type="string" length="20" required="true" category="Ogólne" />
+		<col name="Opis" type="string" length="200" required="true" localization="dictionary" category="Ogólne" />
+		<col name="Blokada" type="boolean" category="Ogólne"/>
+		<!-- POZYCJE -->
+    <col name="PIT4" type="int" category="Etat" />
+    <col name="PIT4R" type="int" category="Etat" />
+    <col name="PIT11" type="int" category="Etat" />
+		<col name="PIT40" type="int" category="Etat" />
+		<col name="PIT8A" type="int" category="Umowa" />
+    <col name="PIT8AR" type="int" category="Umowa" />
+    <col name="PIT8B" type="int" category="Umowa" />
+		<col name="PIT8C" type="int" category="Umowa" />
+    <col name="PIT8S" type="int" category="Umowa" />
+    <col name="IFT1" type="int" category="Umowa" />
+    <col name="PITR" type="int" category="Umowa" />
+    <col name="Pit26" type="boolean" />
+  </table>
+	<!-- ====================================================================================== -->
+	<!-- KOD RSA -->
+	<enum name="TypKoduRSA" />
+	<enum name="WymaganeUbezpieczenie"/>
+	<table name="KodRSA" tablename="KodyRSA" name8="PozRSA" guided="Root" config="true"
+         caption="Kod na deklaracji RSA" tablecaption="Kody na deklaracji RSA">
+		<key name="WgKodu" keyunique="true">
+			<keycol name="Kod" />
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Kod" type="int" category="Ogólne" />
+		<col name="Dodatkowy" type="int" category="Ogólne" />
+		<col name="Korekta" type="int" category="Ogólne" />
+		<col name="Okres" type="FromTo" category="Ogólne" />
+		<col name="Opis" type="string" length="210" required="true" localization="dictionary" category="Ogólne" />
+		<col name="Kategoria" type="string" length="35" required="true" category="Ogólne" />
+		<col name="Typ" type="TypKoduRSA" required="true" category="Ogólne" />
+		<col name="PozycjaRCA" type="PozycjaRCA" category="Ogólne" />
+		<col name="WymaganeUbezpieczenie" name12="WymUbezp" type="WymaganeUbezpieczenie" category="Ogólne"/>
+		<col name="Chorobowe" type="boolean"/>
+    <col name="Wypadkowe" type="boolean"/>
+    <col name="Budzet" type="boolean"/>
+    <col name="Wynagrodzenie" type="boolean"/>
+		<col name="ZasilekChorobowy" name12="ZasChor" type="boolean"/>
+		<col name="WynagrodzenieChorobowe" name12="WynChor" type="boolean"/>
+		<col name="WgOkresu" type="boolean"/>		
+	</table>
+	<!-- ====================================================================================== -->
+	<!-- Zaliczka -->
+	<table name="Zaliczka" tablename="Zaliczki" guided="Root">
+		<interface>IBazaZrodlaWyplaty</interface>
+    <interface>IPowiązanieWypłaty</interface>
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Zaliczka pracownika" 
+			children="Zaliczki"
+			relright="true"
+      keyprimary="true"
+		>
+			<keycol name="Stan" />
+		</col>
+		<col name="Stan" type="StanZaliczki" />
+		<col name="Wartosc" type="currency" caption="Wartość" />
+		<col name="Splacono" type="currency" caption="Spłacono" />
+		<col name="Data" type="date" />
+		<col name="DefinicjaSplaty" type="DefinicjaElementu" required="true" 
+			relname="Definicja spłaty zaliczki" 
+		/>
+	</table>
+	<!-- ====================================================================================== -->
+	<!-- PodstawaNieobecnosci -->
+	<enum name="TypyPodstawNieobecnosci"/>
+	<table name="PodstawaNieobecnosci" tablename="PodstawyNieobec" name8="PodstNie" warnings="Off">
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Podstawy nieobecności pracownika"
+			children="PodstawyNieobecności"
+			relright="true"
+			keyclass="Date"
+			keyclasscol="Data"
+			delete="cascade"
+      keyprimary="true"
+      relguided="inner"
+		>
+      <keycol name="Typ" />
+    </col>
+    <key name="WgDaty"
+			keyclass="Date"
+			keyclasscol="DataWyplaty"
+    >
+      <keycol name="Pracownik"/>
+      <keycol name="Typ" />
+    </key>
+    <col name="Typ" type="TypyPodstawNieobecnosci" selector="true" readonly="true" required="true"/>
+		<col name="Data" type="date" required="true" readonly="set"/>
+    <col name="DataWyplaty" type="date" required="true" caption="Data wypłaty"/>
+    <col name="Norma" type="time" modifier="public virtual" />
+		<col name="Praca" type="time" modifier="public virtual" />
+    
+		<col name="Miesieczne" type="decimal" modifier="public virtual" caption="Miesięczne"/>
+		<col name="Kwartalne" type="decimal" modifier="public virtual"/>
+		<col name="Roczne" type="decimal" modifier="public virtual"/>
+		<col name="ProcentSkladki" type="percent" modifier="public virtual" caption="Procent składki" description="Procent składki potrąconej"/>
+		<col name="Podstawa" type="decimal" modifier="public virtual" description="Podstawa naliczania chorobowego za wskazany miesiąc"/>
+
+    <col name="WNominalnej" type="decimal" modifier="public virtual" category="Podstawa urlopu" caption="W nominalnej"/>
+    <col name="WWyplaconejMale" type="decimal" modifier="public virtual" category="Podstawa urlopu" caption="W wypłaconej (małe wahania)"/>
+    <col name="WWyplaconejZnaczne" type="decimal" modifier="public virtual" category="Podstawa urlopu" caption="W wypłaconej (znaczne wahania)"/>
+    <col name="PrzeliczaneStawka" type="decimal" modifier="public virtual" category="Podstawa urlopu" caption="Przeliczane (stawka)"/>
+    <col name="PrzeliczaneMinimalne" type="decimal" modifier="public virtual" category="Podstawa urlopu" caption="Przeliczane (minimalne)"/>
+
+    <col name="PodstawaM" type="decimal" modifier="public virtual" description="Podstawa naliczania macierzyńskiego za wskazany miesiąc"/>
+    <col name="PodstawaR" type="decimal" modifier="public virtual" description="Podstawa naliczania rehabilitacyjnego za wskazany miesiąc"/>
+    <col name="PodstawaO" type="decimal" modifier="public virtual" description="Podstawa naliczania opiekuńczego za wskazany miesiąc"/>
+  </table>
+  <!-- ====================================================================================== -->
+  <!-- PodstawaNieobecnosci -->
+  <table name="OświadczenieZusOpieka" tablename="OswiadZusOpieka" guided="Root" caption="Oświadczenie do zasiłku opiekuńczego" tablecaption="Oświadczenia do zasiłku opiekuńczego">
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Oświadczenia ZUS opieka pracownika"
+			children="OpiekaPracownika"
+			relright="true"
+			keyclass="Date"
+			keyclasscol="Data"
+      keyprimary="true"
+      keyunique="true"
+    />
+    <col name="Opiekun" type="CzlonekRodziny"
+			relname="Oświadczenia ZUS opieka opiekuna"
+			children="OpiekaOpiekuna"
+		>
+      <keycol name="Data" />
+    </col>
+    <col name="Podopieczny" type="CzlonekRodziny"
+			relname="Oświadczenia ZUS opieka podopiecznego"
+			children="OpiekaPodopiecznego"
+		>
+      <keycol name="Data" />
+    </col>
+    <col name="Data" type="date" required="true"/>
+    <col name="DzieckoDo8tygodna" type="int"/>
+    <col name="DzieckoDo8lat" type="int"/>
+    <col name="DzieckoChoreDo14lat" type="int"/>
+    <col name="DzieckoNiepelnospDo18lat" type="int"/>
+    <col name="PozostaliChorzy" type="int"/>
+  </table>
+  <!-- ====================================================================================== -->
+  <!-- Zaliczka -->
+  <table name="DodatekAutomatyczny" tablename="DodAutomatyczne" guided="Root"
+         caption="Dodatek automatyczny" tablecaption="Dodatki automatyczne">
+    <interface>IBazaZrodlaWyplaty</interface>
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Dodatki automatyczne pracownika"
+			children="DodatkiAutomatyczne"
+			relright="true"
+      keyprimary="true"
+      delete="cascade"
+		>
+      <keycol name="Nazwa" />
+    </col>
+    <col name="Nazwa" type="string" length="40" readonly="true" required="true" category="Ogólne" />
+    <col name="Element" type="DefinicjaElementu" readonly="true" required="true" category="Ogólne"
+         relname="Definicja elementu dodatku automatycznego"
+         keyunique="true"
+         >
+      <keycol name="Pracownik" />
+    </col>
+    <col name="Okres" type="FromTo" readonly="set" required="true" category="Ogólne" />
+  </table>
+  <!-- ====================================================================================== -->
+  <!-- Rezerwy urlopowe i inne -->
+  <table name="DefinicjaPlanowanejListyPłac" tablename="DefPlanListPlac" guided="Root" 
+         caption="Definicja planowanej listy płac" 
+         tablecaption="Definicje planowanych list płac" config="true">
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" />
+    <col name="Nazwa" type="string" length="30" category="Ogólne" />
+    <!-- DEFINICJA -->
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" />
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="DefinicjaED" type="DefinicjaDokumentu"
+			relname="Definicje planowanych list płac w ewidencji dokumentów"
+			description="Definicja planowanej listy płac w ewidencji dokumentów"
+		/>
+    <col name="Element" type="DefinicjaElementu" category="Element"
+			relname="Definicja elementu planowanej listy płac"
+		/>
+    <col name="WidoczneCechy" type="text"/>
+    <col name="Algorytm" type="text">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+  </table>
+
+  <table name="PlanowanaListaPłac" tablename="PlanListyPlac" guided="Root" 
+         caption="Planowana lista płac" 
+         tablecaption="Planowane listy płac">
+    <interface>IDokumentKsiegowalny</interface>
+    <key name="WgDaty">
+      <keycol name="Data" />
+    </key>
+    <key name="WgDatyWyplaty" keyprimary="true">
+      <keycol name="DataWyplaty" />
+    </key>
+    <col name="Definicja" type="DefinicjaPlanowanejListyPłac" required="true" category="Ogólne"
+			relname="Definicja planowanej listy płac"
+		/>
+    <col name="DefinicjaListyPlac" type="DefinicjaListyPlac" required="true" category="Ogólne"
+			relname="Definicja listy płac planowanej listy płac"
+		/>
+    <col name="Wydzial" type="Wydzial" required="true" category="Ogólne" caption="Jednostka organizacyjna"
+			relname="Jednostka organizacyjna planowanej listy płac"
+			relright="true"
+		>
+      <keycol name="Data" />
+    </col>
+    <col name="Numer" type="NumerDokumentu" category="Dokument" />
+    <col name="Data" type="date" required="true" category="Dokument"
+			description="Data naliczania listy"
+		/>
+    <col name="Seria" type="string" length="30" category="Dokument">
+      <attribute>Dictionary("Seria listy płac")</attribute>
+    </col>
+    <col name="DataWyplaty" type="date" required="true" category="Ogólne" caption="Data wypłaty" description="Data przekazania środków do dyspozycji pracownika. Na jej podstawie jest wyliczany mies,rok" />
+    <col name="MiesiacZUSDzien" type="date" required="true" readonly="set" caption="Miesiąc deklaracji ZUS" category="Ogólne" description="Miesiąc w którym zostaną rozliczone składki ZUS">
+      <attribute>Browsable(false)</attribute>
+    </col>
+    <col name="Okres" type="FromTo" required="true" category="Obliczenia" description="Okres za jaki mają być naliczane wchodzące na wybraną listę wypłaty" />
+    <col name="MiesWstecz" type="int" category="Obliczenia"  caption="Miesięcy wstecz"/>
+    <col name="Naliczanie" type="TypNaliczenia" required="true" category="Obliczenia" />
+  </table>
+
+  <table name="PlanowanaWypłata" tablename="PlanowaneWyplaty"
+		caption="Planowana wypłata"
+		tablecaption="Planowane wypłaty"
+	>
+    <interface>IZrodloOpisuAnalitycznego</interface>
+    <col name="ListaPlac" type="PlanowanaListaPłac" required="true" readonly="true" category="Dokument"
+      keyprimary="true"
+			relname="Planowana wypłata planowanej listy"
+			children="Wypłaty"
+			delete="cascade"
+			relright="true"
+      relguided="inner"
+			keyclass="Lp" keyclasscol="Lp"
+		/>
+    <col name="Lp" type="int" required="true" category="Ogólne" batchfield="false"
+			description="Liczba porządkowa wypłaty na planownej liście płac." />
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true" category="Dokument"
+			relname="Plnowana wypłata pracownika"
+			children="PlanowaneWypłaty"
+			relright="true"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Bufor" type="boolean" readonly="set" category="Dokument" />
+    <col name="Data" type="date" required="true" readonly="true" category="Dokument" />
+    <col name="Wartosc" type="currency" category="Planowana wypłata" caption="Do wypłaty" />
+  </table>
+
+  <table name="PlanowanyElementWypłaty" tablename="PlanElementyWyp"
+		caption="Planowany element"
+		tablecaption="Planowane elementy"
+	>
+    <col name="Wyplata" type="PlanowanaWypłata" required="true" readonly="true" category="Dokument"
+      keyprimary="true"
+			relname="Planowany elemen planowanej wypłaty"
+			children="Elementy"
+			delete="cascade"
+			relright="true"
+      relguided="inner"
+		/>
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true" category="Dokument"
+			relname="Plnowane elementy wypłat pracownika"
+			children="PlanowaneElementy"
+			relright="true"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Definicja" type="DefinicjaElementu" readonly="true" required="true" category="Dokument"
+			relname="Definicja elementu planowanego elementu"
+		/>
+    <col name="Data" type="date" required="true" readonly="true" category="Dokument" />
+    <col name="Okres" type="FromTo" required="true" readonly="true" category="Planowana wypłata" description="Okres za jaki naliczono rezerwę" />
+    <col name="Wartosc" type="decimal" category="Planowana wypłata" caption="Wartość" />
+    <col name="Brutto" type="decimal" category="Planowana wypłata"/>
+    <col name="Narzuty" type="decimal" category="Planowana wypłata"/>
+    <col name="Koszty" type="decimal" category="Planowana wypłata" caption="Razem koszty" />
+    <col name="Podstawa1" type="doublecy" category="Planowana wypłata" />
+    <col name="Podstawa2" type="doublecy" category="Planowana wypłata" />
+    <col name="Podstawa3" type="doublecy" category="Planowana wypłata" />
+    <col name="Podstawa4" type="doublecy" category="Planowana wypłata" modifier="public virtual"/>
+    <col name="Podstawa5" type="doublecy" category="Planowana wypłata" modifier="public virtual"/>
+    <col name="Czas" type="time" category="Planowana wypłata" />
+    <col name="Dni" type="int" category="Planowana wypłata" />
+    <col name="BazaZrodlaTbl" type="string" length="16" modifier="protected" readonly="true"/>
+    <col name="BazaZrodlaId" type="int" modifier="protected" readonly="true"/>
+    <col name="Podatki" type="Podatki" category="Podatki" />
+    <col name="RodzajSkladki" type="RodzajSkladki" category="Podatki" caption="Rodzaj składki">
+      <attribute>Editor("Soneta.Forms.Design.FlagsEditor,Soneta.Forms", typeof(System.Drawing.Design.UITypeEditor))</attribute>
+    </col>
+    <col name="ZapisObliczen" type="text"/>
+    <col name="Podatki2021" type="Podatki2021" category="Podatki" />
+  </table>
+  <!-- ====================================================================================== -->
+  <!-- KOSZTY AUTORSKIE -->
+  <table name="ZasiłekInnyPłatnik" tablename="ZasInnyPlatnik" guided="Root"
+		caption="Zasiłek (inny płatnik)"
+		tablecaption="Zasiłki (inny płatnik)"
+	>
+    <!-- PRACOWNIK -->
+    <col name="Pracownik" type="Pracownik" readonly="true" category="Pracownik"
+			relname="Zasiłki innego płatnika dla pracownika"
+			children="ZasInnyPłatnik"
+			delete="cascade"
+			relright="Primary"
+		>
+      <keycol name="Rodzaj"/>
+      <keycol name="Data"/>
+    </col>
+    <!-- OGÓLNE -->
+    <col name="Rodzaj" type="RodzajZasiłkuInnegoPłatnika" required="true" readonly="true" category="Ogólne"/>
+    <col name="Netto" type="boolean" category="Ogólne"/>
+    <col name="Data" type="date" required="true" readonly="set" category="Ogólne"/>
+    <col name="Kwota" type="decimal" required="true" category="Ogólne"/>
+    <col name="Opis" type="string" length="80" category="Ogólne" />
+  </table>
+  
+  <!-- ====================================================================================== -->
+  <!-- Rozliczenie wynagrodzenia -->
+  <interface name="IRozliczenieWynagrodzeniaHost"/>
+  <table name="RozliczenieWynagrodzenia" tablename="RozliczWynagrodz" caption="Rozliczenie wynagrodzenia" tablecaption="Rozliczenia wynagrodzenia" >
+    <col name="Host" type="IRozliczenieWynagrodzeniaHost" readonly="true" required="true" category="Ogólne"
+         children="RozliczeniaWynagrodzenia" 
+         relname="RozliczenieWynagrodzenia dla Host" 
+         delete="cascade" 
+         relright="true" 
+         keyprimary="true"  
+         relguided="outer"
+			   keyclass="Lp" keyclasscol="Priorytet"/>
+    <col name="Blokada" type="boolean" category="Ogólne">
+      <verifier name="RozliczenieWynagrodzenia.FilterVerifier" onadded="true"/>
+    </col>
+    <col name="Priorytet" type="int" category="Ogólne"/>
+    <col name="Rachunek" type="RachunekBankowyPodmiotu" category="Rozliczenie" delete="cascade">
+      <keycol name="Host"/>
+      <keycol name="Priorytet"/>
+    </col>
+    <col name="Ewidencja" type="EwidencjaSP" category="Rozliczenie"/>
+    <col name="Kwota" type="currency" category="Rozliczenie">
+      <verifier name="RozliczenieWynagrodzenia.RozliczenieVerifier" onadded="true"/>
+    </col>
+    <col name="Procent" type="percent" category="Rozliczenie">
+      <verifier name="RozliczenieWynagrodzenia.RozliczenieVerifier"/>
+    </col>
+    <col name="Waluta" type="Waluta" category="Warunki"/>
+    <col name="Etat" type="boolean" category="Warunki">
+      <verifier name="RozliczenieWynagrodzenia.FilterVerifier"/>
+    </col>
+    <col name="Umowa" type="boolean" category="Warunki">
+      <verifier name="RozliczenieWynagrodzenia.FilterVerifier"/>
+    </col>
+    <col name="Inne" type="boolean" category="Warunki">
+      <verifier name="RozliczenieWynagrodzenia.FilterVerifier"/>
+    </col>
+  </table>
+
+  <!-- ====================================================================================== -->
+  <!-- BilansOtwarciaPIT -->
+  
+  <table name="BilansOtwarciaPIT" tablename="BilansyOtwPIT"
+    caption="Bilans otwarcia PIT"
+    tablecaption="Bilansy otwarcia PIT"
+    guided="Root"
+  >
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true" category="Dokument"
+			relname="Bilansy otwarcia PIT"
+			children="BilansyOtwarciaPIT"
+			relright="true"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Data" type="date" required="true" category="Dokument" />
+    <col name="Bufor" type="boolean" category="Dokument" modifier="public virtual"/>
+    <col name="Spoleczne" type="decimal" caption="Koszty ZUS" />
+    <col name="Spoleczne26" type="decimal" caption="Koszty ZUS (26)" modifier="public virtual"/>
+    <col name="Spoleczne26Zwol" type="decimal" caption="Koszty ZUS (od przychodu zwolnionego, 26)" modifier="public virtual"/>
+    <col name="ZdrDoOdlicz" type="decimal" caption="Składka zdrowotna (odliczana)" />
+    <col name="ZdrDoOdlicz26" type="decimal" caption="Składka zdrowotna (odliczana, 26)" modifier="public virtual"/>
+    <col name="ZdrDoOdlicz26Zwol" type="decimal" caption="Składka zdrowotna (od przychodu zwolnionego, 26)" modifier="public virtual"/>
+    <col name="Przychod26ZwolEtat" type="decimal" caption="Przchód (26, etat)" modifier="public virtual"/>
+    <col name="Przychod26ZwolUmowa" type="decimal" caption="Przchód (26, umowa)" modifier="public virtual"/>
+  </table>
+
+  <table name="ElementBilansuOtwarciaPIT" tablename="ElementyBOPIT"
+		caption="Element bilansu otwarcia PIT"
+		tablecaption="Elementy bilansów otwarcia PIT"
+	>
+    <col name="Dokument" type="BilansOtwarciaPIT" required="true" readonly="true" category="Dokument"
+      keyprimary="true"
+			relname="Elementy bilansów otwarcia PIT"
+			children="Elementy"
+			delete="cascade"
+			relright="true"
+      relguided="inner"
+      keyunique="true"
+		>
+      <keycol name="PozycjaPIT"/>
+      <keycol name="Pit26"/>
+    </col>
+    <col name="PozycjaPIT" type="PozycjaPIT" readonly="true" required="true" category="Dokument"
+			relname="Definicja elementu planowanego elementu"
+		/>
+    <col name="Przychod" type="decimal" caption="Przychód" modifier="public virtual"/>
+    <col name="Przychod50" type="decimal" caption="Przychód 50%" modifier="public virtual"/>
+    <col name="Koszty" type="decimal" caption="Koszty" modifier="public virtual"/>
+    <col name="Koszty50" type="decimal" caption="Koszty 50%" modifier="public virtual"/>
+    <col name="Zwolniony" type="decimal" caption="Dochód zwolniony od podatku" modifier="public virtual"/>
+    <col name="Zaliczka" type="decimal" caption="Zaliczka PIT" modifier="public virtual"/>
+    <col name="Pit26" type="boolean" caption="Przychód do 26 lat" readonly="true"/>
+  </table>
+
+
+
+
+  <!-- UMOWY ZEWNETRZNE -->
+  <!-- Definicja elementu rozliczenia -->
+  <enum name="TypAlgorytmuRozliczenia"/>
+  <table name="DefinicjaElementuRozliczenia" tablename="DefElementowRozl" guided="Root" config="true">
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgKodu">
+      <keycol name="Kod" />
+    </key>
+    <col name="Nazwa" type="string" length="40" localization="dictionary" required="true" category="Ogólne" />
+    <col name="Kod" type="string" length="12" category="Ogólne"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="Typ" type="TypAlgorytmuRozliczenia" required="true" modifier="public virtual"/>
+    <col name="Edytor" type="EdytorAlgorytmuRozliczenia"/>
+    <col name="Kreator" type="KreatorAlgorytmuRozliczenia"/>
+    <col name="Podstawy" type="PodstawyAlgorytmuRozliczenia"/>
+    <col name="Tekst" type="text">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+		<col name="Potracenie" type="boolean" modifier="internal"/>
+		<col name="Ulamek" type="Fraction" modifier="public virtual"/>
+		<col name="Czas" type="time" modifier="public virtual"/>
+    <col name="WidoczneCechy" type="text" category="Definicja" />
+    <col name="Priorytet" type="int" />
+    <col name="GenerujZerowy" type="boolean" />
+  </table>
+  <subrow name="EdytorAlgorytmuRozliczenia">
+  </subrow>
+  <enum name="TypPodstawyRozliczenia"/>
+  <subrow name="KreatorAlgorytmuRozliczenia">
+		<col name="PodstawaTyp" type="TypPodstawyRozliczenia" modifier="public virtual"/>
+		<col name="Podstawa" type="currency" modifier="public virtual"/>
+		<col name="PodstawaNazwa" type="string" length="128" modifier="public virtual"/>
+    <col name="SposobProporcjonalnosci" type="SposobyProporcjonalności" modifier="public virtual"/>
+    <col name="PodstawaZa" type="PodstawaAlgorytmuZa" modifier="public virtual"/>
+		<col name="Wspolczynnik" type="WspolczynnikDefElementu"/>
+		<col name="Czas" type="CzasDefElementu"/>
+    <col name="PrzeliczNa1h" type="SposobyPrzeliczeniaNa1h" modifier="public virtual"/>
+  </subrow>
+  <subrow name="PodstawyAlgorytmuRozliczenia">
+		<col name="Podstawa" type="string" localization="dictionary" length="30" modifier="public virtual"/>
+		<col name="Ulamek" type="string" length="30" modifier="public virtual"/>
+		<col name="Procent" type="string" length="30" modifier="public virtual"/>
+		<col name="Wspolczynnik" type="string" length="30" modifier="public virtual"/>
+		<col name="Czas" type="string" length="30" modifier="public virtual"/>
+		<col name="Dni" type="string" length="30" modifier="public virtual"/>
+		<col name="Ilosc" type="string" length="30" modifier="public virtual"/>
+		<col name="ElPodstawa" type="string" localization="dictionary" length="30" modifier="public virtual"/>
+		<col name="ElPodstawa2" type="string" localization="dictionary" length="30" modifier="public virtual"/>
+    <col name="ElPodstawa3" type="string" localization="dictionary" length="30" modifier="public virtual"/>
+    <col name="ElUlamek" type="string" length="30" modifier="public virtual"/>
+		<col name="ElProcent" type="string" length="30" modifier="public virtual"/>
+		<col name="ElWspolczynnik" type="string" length="30" modifier="public virtual"/>
+		<col name="ElCzas" type="string" length="30" modifier="public virtual"/>
+		<col name="ElDni" type="string" length="30" modifier="public virtual"/>		
+		<col name="ElIlosc" type="string" length="30" modifier="public virtual"/>
+  </subrow>
+  <!-- Dokument rozliczenia kontrahenta -->
+  <table name="DokumentRozliczeniaKontrahenta" tablename="DokumentyRozlKon" guided="Root" caption="Dokument rozliczenia kontrahenta" tablecaption="Dokumenty rozliczenia kontrahenta">
+    <key name="WgDaty" keyprimary="true">
+      <keycol name="Data"/>
+    </key>
+    <col name="Kontrahent" type="Kontrahent" required="true" category="Ogólne" readonly="true"
+			relname="Rozliczenia kontrahenta"
+			relright="other"
+		>
+      <keycol name="Okres.To" />
+    </col>
+    <col name="Data" type="date" category="Dokument" />
+    <col name="Okres" name12="Okr" type="FromTo" required="true" category="Obliczenia"/>
+    <col name="Numer" name12="Nr" type="NumerDokumentu" category="Dokument" />
+    <col name="Bufor" type="boolean" category="Dokument" />
+    <col name="Definicja" type="DefinicjaDokumentu" required="true" category="Dokument" relname="Definicja dokumentu rozliczenia"/>
+    <col name="Seria" type="string" length="12" category="Ogólne" modifier="public virtual">
+      <attribute>Dictionary("Seria rozlicz UZ")</attribute>
+    </col>
+    <col name="WartoscCy" type="currency" readonly="set" modifier="public virtual"/>   
+  </table>
+  <!-- Rozliczenie pracownika -->
+  <table name="DokumentRozliczeniaPracownika" tablename="DokumentyRozlPra" guided="Root" namespace="Soneta.Place"
+		caption="Rozliczenie pracownika"
+		tablecaption="Rozliczenia pracownika"
+	>
+    <key name="WgData" keyprimary="true">
+      <keycol name="Data"/>
+    </key>
+        <col name="Pracownik" type="Pracownik" required="true" category="Ogólne" readonly="true"
+			relname="Rozliczenia pracownika"
+			children="ElementyRozlPrac"
+			relright="other"
+		>
+      <keycol name="Okres.To" />
+    </col>
+    <col name="Lp" type="int" category="Ogólne" batchfield="false" />
+    <col name="Data" type="date" category="Dokument" />
+    <col name="Okres" name12="Okr" type="FromTo" required="true" category="Obliczenia"/>
+    <col name="Umowa" type="UmowaZewnetrzna" category="Ogólne">
+    </col>
+    <col name="Dokument" type="DokumentRozliczeniaKontrahenta" required="true" readonly="true" category="Dokument"
+  relname="Rozliczenia pracownika"
+  children="Rozliczenia"
+  delete="cascade"
+  relright="other"
+         relguided="inner"
+         keyclass="Lp" keyclasscol="Lp"
+		>
+      <keycol name="Data"/>
+    </col>
+  <col name="Numer" name12="Nr" type="NumerDokumentu" category="Dokument" />
+      <col name="Definicja" type="DefinicjaDokumentu" category="Dokument"
+			relname="Definicja rozliczenia"
+		/>
+    <col name="Bufor" type="boolean" category="Dokument" />
+    <col name="WartoscCy" type="currency" readonly="set" modifier="public virtual"/>   
+  </table>
+  <!-- Element rozliczenia -->
+  <table name="ElementRozliczeniaPracownika" tablename="ElementyRozlPrac" caption="Element rozliczenia" tablecaption="Elementy rozliczenia" guided="Root">
+    <key name="WgData" keyprimary="true">
+      <keycol name="Data"/>
+    </key>
+  	<col name="Dokument" type="DokumentRozliczeniaPracownika" required="true" category="Ogólne" setonlynull="true" readonly="set"
+			relname="Elementy rozliczenia"
+			children="Elementy"
+			delete="cascade"
+			relright="true"
+      relguided="inner"
+		/>
+    <col name="Pracownik" type="Pracownik" required="true" category="Ogólne" readonly="true"
+			relname="Elementy rozliczenia pracownika"
+			children="ElementyRozliczenia"
+			relright="other"
+		>
+      <keycol name="Okres.To" />
+    </col>
+    <col name="Umowa" type="UmowaZewnetrzna" children="ElemRozliPracownika" required="true" readonly="true">
+      <keycol name="Okres.To" />
+    </col>
+    <col name="Informacja" type="InformacjaDoRozliczenia" required="true" readonly="true">
+      <keycol name="Okres.To" />
+    </col>
+    <col name="Definicja" type="DefinicjaElementuRozliczenia" required="true" readonly="true"/>
+    <col name="Data" type="date" modifier="public virtual" required="true" readonly="set"/>
+    <col name="Okres" type="FromTo" required="true" modifier="public virtual"/>
+    <col name="Podstawa" type="doublecy" modifier="public virtual"/>
+    <col name="Podstawa2" type="doublecy" modifier="public virtual"/>
+    <col name="Podstawa3" type="doublecy" modifier="public virtual"/>
+    <col name="Czas" type="time" modifier="public virtual"/>
+    <col name="Dni" type="int" modifier="public virtual"/>
+    <col name="Ulamek" type="Fraction" modifier="public virtual"/>
+    <col name="Procent" type="percent" modifier="public virtual"/>
+    <col name="Wspolczynnik" type="double" modifier="public virtual"/>
+    <col name="Ilosc" type="double" modifier="public virtual"/>
+    <col name="WartoscCy" type="currency" readonly="set" modifier="public virtual"/>            
+    <col name="Korekta" type="boolean" caption="Wartość" category="Element" description="Określa, czy element rozliczenia jest zmodyfikowany ręcznie przez operatora."/>
+  </table>
+  <!-- Powiazanie dokumentów kontrahenta z dokumentami ewidencji -->
+  <table name="RozliczenieDokKontrahenta" tablename="RozliDokKontr"
+    caption="Dokument ewidencji rozliczeń kontrahentów"
+    tablecaption="Dokumenty ewidencji rozliczeń kontrahentów"
+  >
+    <col name="Dokument" type="DokumentRozliczeniaKontrahenta"
+			keyunique="true"
+      keyprimary="true"
+			readonly="true"
+			required="true"
+			relname="Dokumenty ewidencji rozliczeń kontrahentów"
+			children="DokumentyEwidencji"
+			relguided="inner"
+			delete="cascade"
+		>
+      <keycol name="DokumentEwidencji"/>
+    </col>
+    <col name="DokumentEwidencji" type="DokEwidencji" required="true" modifier="public virtual"/>
+    <col name="Kwota" type="currency" required="true" modifier="public virtual"/>
+  </table>
+
+  
+  <!-- ====================================================================================== -->
+	<!-- Deklaracja dodatkowe -->
+	<enum name="StanZaliczki" />
+	<enum name="TypNaliczenia" />
+	<enum name="TypWyplaty" />
+	<enum name="KodRGA" />
+	<enum name="RodzajŹródłaWypłaty" />
+	<enum name="RodzajSkładnikaWypłaty" />
+	<enum name="RodzajSkladki" />
+  <enum name="RodzajStornaElementu"/>
+  <enum name="StanStornaElementu"/>
+  <enum name="RodzajZasiłkuInnegoPłatnika"/>
+  <interface name="IBazaZrodlaWyplaty" />
+  <interface name="IZakresDefinicji" />
+  
+  <!-- ====================================================================================== -->
+  <!-- ERP7 - bilans otwarcia -->
+  <!-- BilansOtwarciaWynagrodzeniaERP7 -->
+  <table name="WynagrodzenieERP7" tablename="WynagrodzeERP7">
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true"
+      keyprimary="true"
+      relname="Wynagrodzenie ERP7"
+      children="WynagrodzeniaERP7"
+      delete="cascade"
+      relright="true"
+      keyunique="true"
+		>
+      <keycol name="Rok" />
+    </col>
+    <col name="Rok" type="int" required="true"/>
+    <col name="MiesiacPrzekroczeniaZUS" type="int"/>
+    <col name="KwotyStaleZmienne" type="decimal"/>
+    <col name="KwotySwiadczeniaKol3" type="decimal"/>
+    <col name="KwotySwiadczeniaKol4" type="decimal"/>
+    <col name="KwotyNieoskladkowane" type="decimal"/>
+    <col name="KwotyWypadkowego" type="decimal"/>
+    <col name="KwotyInne" type="decimal"/>
+    <col name="RodzajInne" type="string" length="30"/>
+    <col name="LacznaKwota" type="decimal"/>
+  </table>
+  <!-- BilansOtwarciaNieobecnosciERP7 -->
+  <enum name="KategorieERP7"/>
+  <table name="NieobecnoscERP7" tablename="NieobecnosciERP7">
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true"
+      keyprimary="true"
+      relname="Nieobecnosc ERP7"
+      children="NieobecnosciERP7"
+      delete="cascade"
+      relright="true"
+		>
+      <keycol name="Okres.To" />
+    </col>
+    <col name="Nazwa" type="string" length="80" required="true"/>
+    <col name="Typ" type="KategorieERP7" required="true"/>
+    <col name="Okres" type="FromTo" required="true"/> 
+  </table>
+</module>

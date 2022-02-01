@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        name="Przeszeregowania"
+        namespace="Soneta.Przeszeregowania"
+        versionName="soneta"
+>
+  <import>../..</import>
+  <using>Soneta.Config</using>
+  <using>Soneta.Kadry</using>
+  <using>Soneta.Place</using>
+
+  <enum name="RealizacjaPrzeszeregowania"/>
+
+  <table name="Przeszeregowanie" tablename="Przeszeregowania"
+      caption="Przeszeregowanie pracowników"
+      tablecaption="Przeszeregowania pracowników"
+      guided="Root"
+  >
+    <key name="WgDaty" keyprimary="true">
+      <keycol name="Data"/>
+    </key>
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Data" type="date" required="true"/>
+    <col name="Nazwa" type="string" length="30" required="true"/>
+    <col name="Realizacja" type="RealizacjaPrzeszeregowania" required="true"/>
+    <col name="DataWykonania" type="date" readonly="set"/>
+    <col name="Uwagi" type="text"/>
+  </table>
+
+  <enum name="RodzajPrzeszergowania"/>
+  
+  <table name="ElementPrzeszeregowania" tablename="ElementyPrzeszer"
+      caption="Element przeszeregowania"
+      tablecaption="Elementy przeszeregowań"
+  >
+		<col name="Przeszeregowanie" type="Przeszeregowanie" required="true" readonly="true"
+			relname="Elementy przeszeregowania" 
+			children="Elementy" 
+			delete="cascade" 
+			relright="true"
+			relguided="inner"
+      keyunique="true"
+         keyprimary="true"
+    >
+      <keycol name="Pracownik"/>
+      <keycol name="Definicja"/>
+    </col>
+
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true"
+			relname="Pracownik przeszeregowania"
+			children="ElementyPrzeszeregowania"
+			relright="true"
+			delete="cascade" 
+		/>
+
+    <col name="Definicja" type="DefinicjaElementu"
+			relname="Definicja elementu przeszeregowania"
+		/>
+
+    <col name="RodzajPrzeszergowania" type="RodzajPrzeszergowania" selector="true" required="true" readonly="true"/>
+
+    <col name="Grupa" type="GrupaZaszeregowania"
+			relname="Grupa elementu przeszeregowania"
+		/>
+
+    <col name="Nazwa" type="string" length="80"/>
+    
+    <col name="Kwota" type="currency"/>
+    <col name="ZmianaKwoty" type="currency"/>
+    <col name="ProcentowaZmianaKwoty" type="percent"/>
+
+    <col name="KwotaPrecyzja" type="PrecyzjaZaokraglenia"/>
+    <col name="KwotaSposob" type="SposobZaokraglenia"/>
+
+    <col name="Procent" type="percent"/>
+    <col name="ZmianaProcentu" type="percent"/>
+    
+    <col name="Wskaznik" type="string" length="40"/>
+    <col name="Krotnosc" type="double"/>
+    <col name="ZmianaKrotnosci" type="double"/>
+  </table>
+</module>

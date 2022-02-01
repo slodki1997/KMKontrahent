@@ -1,0 +1,1243 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Kalend" namespace="Soneta.Kalend" versionName="soneta">
+  <import>../..</import>
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.Kadry</using>
+	<using>Soneta.Place</using>
+  <subrow name="CzasPracy">
+    <col name="OdGodziny" type="time"/>
+    <col name="Czas" type="time"/>
+  </subrow>
+  <!-- CZYTNIK RCP -->
+	<table name="CzytnikRCP" tablename="CzytnikiRCP" name8="CzytnRCP" guided="Root" config="true"
+		caption="Czytnik RCP"
+		tablecaption="Czytniki RCP"
+	>
+		<key name="WgNazwy" keyunique="true" >
+			<keycol name="Nazwa" />
+		</key>
+		<col name="Nazwa" type="string" localization="dictionary" length="30" required="true"/>
+		<col name="Format" type="string" length="40" required="true"/>
+		<col name="Sciezka" type="string" length="80" 
+			description="Ścieżka do programu obsługującego import z RCP"
+		/>
+		<col name="Wejscia" type="string" length="30"/>
+		<col name="Wyjscia" type="string" length="30"/>
+		<col name="WejsciaSluzbowe" type="string" length="30"/>
+		<col name="WyjsciaSluzbowe" type="string" length="30"/>
+    <col name="WejsciaPrywatne" type="string" length="30"/>
+    <col name="WyjsciaPrywatne" type="string" length="30"/>
+    <col name="Zablokowany" type="boolean" category="Ogólne" />
+    <col name="RozszerzenieNazwyPliku" type="string" length="120"/>
+    <col name="KatalogImport" type="string" length="200"/>
+    <col name="KatalogKopia" type="string" length="200"/>
+  </table>
+<!-- DEFINICJA LIMITU -->
+	<enum name="TypLimitu"/>
+  <enum name="NaliczanieLimitu"/>
+  <table name="DefinicjaLimitu" tablename="DefinicjeLimitow" name8="DefLim" guided="Root" config="true"
+		caption="Definicja limitu"
+		tablecaption="Definicje limitów"
+	>
+		<key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Nazwa" type="string" length="40" localization="dictionary" required="true" category="Ogólne"/>
+		<col name="Blokada" type="boolean" category="Ogólne"/>		
+		<!-- DEFINICJA -->
+		<col name="Typ" type="TypLimitu" category="Definicja"/>
+		<col name="Kumulowany" type="boolean" category="Definicja"/>
+    <col name="KumulowanyMinus" type="boolean" category="Definicja"/>
+    <col name="Automatyczny" type="boolean" category="Definicja"/>
+		<col name="TylkoOstrzezenie" type="boolean" category="Definicja"/>
+		<col name="Proporcjonalny" type="boolean" category="Definicja"/>
+		<col name="Limit" type="int" category="Definicja"/>
+    <col name="Naliczanie" type="NaliczanieLimitu" required="true" category="Definicja"/>
+    <col name="PierwszyUrlop" type="boolean" category="Definicja"/>
+    <col name="WspolneZaokraglenie" type="DefinicjaLimitu" category="Definicja"/>
+  </table>
+	
+<!-- LIMIT NIEOBECNOSCI-->
+	<enum name="TypLimituNieobecności"/>
+	<table name="LimitNieobecnosci" tablename="LimNieobecnosci" name8="LimNieob"
+		caption="Limit nieobecności"
+		tablecaption="Limity nieobecności"
+	>
+		<!-- OGÓLNE -->
+    <key name="WgOkres">
+      <keycol name="Okres.To" />
+    </key>
+    <key name="WgPracownikOkres">
+      <keycol name="Pracownik" />
+      <keycol name="Okres.To" />
+    </key>
+    <col name="Typ" type="TypLimituNieobecności" selector="true" readonly="true" required="true" category="Ogólne"/>
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Ogólne"
+			relname="Limity pracownika" 
+			children="Limity" 
+			delete="cascade"
+			keyclass="FromTo"
+			keyclasscol="Okres"
+			relright="true"
+			relguided="inner"
+      keyprimary="true"
+		>
+			<keycol name="Definicja"/>
+    </col>
+    <col name="Definicja" type="DefinicjaLimitu" required="true" readonly="true" category="Ogólne"
+			relname="Defincje limitów"
+		>
+      <keycol name="Okres.To" />
+    </col>
+    <col name="KumulowanyMinus" type="boolean" category="Definicja"/>
+    <col name="Okres" type="FromTo" required="true" category="Ogólne"/>
+    <col name="Naliczanie" type="NaliczanieLimitu" readonly="true" required="true" category="Definicja"/>
+    <!-- LIMIT -->
+		<col name="Limit" type="int" modifier="public virtual" category="Limit" />
+		<col name="PierwszyUrlop" type="boolean" modifier="public virtual" category="Limit"/>
+		<col name="Korekta" type="int" readonly="set" category="Limit"
+			description="Korekta wartości limitu ze względu na urlopy bezpłatne trwające dłużej niż 1 miesiąc"/>
+		<col name="KorektaMies" type="int" readonly="set" specialaccess="true" category="Limit"
+			description="Korekta długości okresu (ilości miesięcy) ze względu na urlopy bezpłatne trwające dłużej niż 1 miesiąc"/>
+		<col name="Zmiana" type="int" category="Limit"
+			description="Zmiana wartości limitu wprowadzona przez użytkownika"/>
+		<col name="Wykorzystane" type="int"  readonly="set" specialaccess="true" category="Limit"
+			description="Ilość wykorzystanych dni urlopu"/>
+    <col name="Ekwiwalent" type="int" readonly="set" specialaccess="true" category="Limit"
+			description="Ilość dni wypłaconych w ekwiwalencie"/>
+    <col name="PodstawaGodz" type="decimal" readonly="set" specialaccess="true" category="Urlop wypoczynkowy"
+			description="Limit urlopu po uwzględnieniu wymiaru etatu"/>
+		<col name="LimitGodz" type="time" readonly="set" specialaccess="true" category="Urlop wypoczynkowy"
+			description="Limit w godzinach wynikający z kodeksu pracy"/>
+		<col name="ZmianaGodz" type="time" category="Urlop wypoczynkowy"
+			description="Zmiana wartości limitu/godz wprowadzona przez użytkownika"/>
+    <col name="WykorzystanyPoprzGodz" type="time" category="Urlop wypoczynkowy" readonly="set" specialaccess="true"
+			description="Limit urlopu wypoczynkowego wykorzystanego u poprzednich pracodawców przypadający na bieżące zatrudnienie (godz.)"/>
+    <col name="WykorzystaneGodz" name12="WykorzGodz" type="time" readonly="set" specialaccess="true" category="Urlop wypoczynkowy"
+			description="Ilość wykorzystanych godzin urlopu"/>
+    <col name="EkwiwalentGodz" type="time" readonly="set" specialaccess="true" category="Urlop wypoczynkowy"
+			description="Ilość godzin wypłaconych w ekwiwalencie"/>
+  </table>
+<!-- DEFINICJA STREFY -->	
+	<enum name="TypStrefy"/>
+	<enum name="TypRozliczenia"/>
+  <enum name="TypPodstawyNadgodzin"/>
+  <enum name="TypPostojowego"/>
+  <table name="DefinicjaStrefy" tablename="DefinicjeStref" name8="DefStref" guided="Root" config="true"
+		caption="Definicja strefy"
+		tablecaption="Definicje stref"
+	>
+		<key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+    <key name="WgKodu">
+      <keycol name="Kod" />
+    </key>
+    <!-- OGÓLNE -->
+		<col name="Nazwa" type="string" length="30" localization="dictionary" required="true" category="Ogólne"/>
+    <col name="Kod" type="string" length="12" category="Ogólne"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>		
+		<!-- DEFINICJA -->
+		<col name="Ukryta" type="boolean" category="Definicja"
+			description="Definicja niedostępna dla operatora definiującego dzień"
+		>
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="Wchodzi" type="boolean" category="Definicja"
+			description="Uwzględniania w dobowym planie pracy. Strefy z flagą praca nie mogą na siebie nachodzić i są uwzględniane podczas importu RCP"
+		/>
+		<col name="Typ" type="TypStrefy" category="Definicja"
+			description="Informacja o sposobie wpływania na dobowy czas pracy"
+		/>
+		<col name="Praca" type="CzasPracy" category="Definicja"/>
+		<col name="Rozliczenie" type="TypRozliczenia" category="Definicja"/>	
+		<col name="Wspolczynnik" type="percent" category="Definicja"/>
+    <col name="PodstawaNadgodzin" type="TypPodstawyNadgodzin" description="Określa sposób uwzględniania czasu pracy w podstawie nadgodzin"/>
+    <col name="Postojowe" type="TypPostojowego" category="Definicja" modifier="public virtual"/>
+    <!-- enovaNet -->
+		<col name="Net" name12="DfNet" type="DefinicjaStrefyNet" category="enovaNet"/>
+    <col name="Rozliczana" type="boolean" category="Definicja"/>
+  </table>
+
+	<!-- enovaNet -->
+	<subrow name="DefinicjaStrefyNet">
+		<col name="WidocznaWNet" type="boolean" description="Czy definicja jest dostępna z poziomu pulpitów" category="enovaNet"/>
+	</subrow>
+
+	<!-- STREFA DEFINICJI DNIA -->	
+	<table name="StrefaDnia" tablename="StrefyDni" name8="StrDni" config="true"
+		caption="Strefa dnia"
+		tablecaption="Strefy dni"
+	>
+		<!-- OGÓLNE -->
+		<col name="Dzien" type="DefinicjaDnia" readonly="true" required="true" category="Ogólne"
+			children="Strefy"
+			relname="Strefa definicji dnia"
+			reldefault="true"
+			delete="cascade"
+			relguided="inner"
+      keyprimary="true"   
+		/>
+		<col name="Definicja" type="DefinicjaStrefy" required="true" category="Ogólne"
+			relname="Definicja strefy definicji dnia"
+		/>
+		<!-- STREFA -->
+		<col name="Praca" type="CzasPracy" category="Strefa"/>
+	</table>
+<!-- DEFINICJA DNIA -->	
+	<enum name="TypDnia"/>
+	<table name="DefinicjaDnia" tablename="DefinicjeDni" name8="DefDni" guided="Root" config="true"
+		caption="Definicja dnia"
+		tablecaption="Definicje dni"
+	>
+    <interface>IŹródłoKoloruElementu</interface>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+    <key name="WgKodu">
+      <keycol name="Kod" />
+    </key>
+    <!-- OGÓLNE -->
+		<col name="Nazwa" type="string" length="30" localization="dictionary" required="true" category="Ogólne"/>
+    <col name="Kod" type="string" length="12" category="Ogólne"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>	
+		<col name="NadgodzinySW" type="boolean" category="Ogólne"/>
+		<!-- DEFINICJA -->
+		<col name="Typ" type="TypDnia" category="Definicja"/>
+		<col name="Praca" type="CzasPracy" category="Definicja"/>
+    <col name="TolerancjaWe" type="time"/>
+    <!-- enovaNet -->
+    <col name="Net" name12="DfNet" type="DefinicjaDniaNet" category="enovaNet"/>
+  </table>
+
+  <!-- enovaNet -->
+  <subrow name="DefinicjaDniaNet">
+    <col name="WidocznaWNet" type="boolean" description="Czy definicja jest dostępna z poziomu pulpitów" category="enovaNet"/>
+  </subrow>
+
+  <!-- STREFA KALENDARZA -->	
+	<table name="StrefaKalendarza" tablename="StrefyKalandarza" name8="StKalend"
+		caption="Strefa dnia"
+		tablecaption="Strefy dni"
+	>
+		<!-- OGÓLNE -->
+		<col name="Dzien" type="DzienKalendarzaBase" readonly="true" required="true" category="Ogólne"
+			children="Strefy" 
+			relname="Strefa dnia w kalendarzu"
+			reldefault="true"
+			delete="cascade"
+			keyprimary="true"
+			relguided="inner"
+      relright="true"
+		/>
+		<col name="Definicja" type="DefinicjaStrefy" required="true" modifier="public virtual" category="Ogólne"
+			relname="Definicje strefy dnia w kalendarzu"
+		/>
+		<!-- STREFA -->
+		<col name="Praca" type="CzasPracy" category="Strefa"/>
+	</table>
+<!-- DZIEŃ KALENDARZA -->	
+	<enum name="TypKalendarza"/>
+	<table name="DzienKalendarzaBase" tablename="DniKalendarza" name8="KalDni">
+		<!-- OGÓLNE -->
+		<col name="Kalendarz" type="KalendarzBase" readonly="true" required="true" modifier="public virtual" category="Ogólne"
+			children="Dni" 
+			relname="Dni kalendarza"
+			keyclass="Date" 
+			keyclasscol="Data"
+			keyprimary="true"
+			delete="cascade"
+			relguided="inner"
+      relright="true"
+		/>
+		<col name="Typ" type="TypKalendarza" selector="true" readonly="true" required="true" category="Ogólne"/>
+		<col name="Definicja" type="DefinicjaDnia" required="true" modifier="public virtual" category="Ogólne"
+			relname="Definicje dni w kalendarzu"
+		/>
+		<!-- DZIEŃ -->
+		<col name="Data" type="date" readonly="true" required="true" modifier="public virtual" category="Dzień"/>
+		<col name="Praca" type="CzasPracy" category="Dzień"/>
+    <col name="TolerancjaWe" type="time"/>
+  </table>
+<!-- KALENDARZ -->	
+	<enum name="BilansowanieNadgodzin"/>
+  <enum name="RozliczanieNadgodzin"/>
+  <enum name="RozliczanieDobowych"/>
+  <enum name="AlgorytmNorma"/>
+	<enum name="TypOkresuNadgodzin"/>
+  <enum name="RodzajePierwszyPrzepracowany"/>
+	<subrow name="Nadgodziny">
+    <col name="Rozliczaj" type="boolean"/>
+    <col name="RozliczanieDobowych" type="RozliczanieDobowych"/>
+    <col name="AlgorytmDobowa" type="AlgorytmNorma"/>
+		<col name="AlgorytmTygodniowa" type="AlgorytmNorma"/>
+		<col name="WartoscDobowa" type="time"/>
+		<col name="WartoscTygodniowa" type="time"/>
+		<col name="WartoscDobowaTygodniowa" name12="WartDobTyg" type="time"/>
+    <col name="TypOkresu" type="TypOkresuNadgodzin">
+      <verifier name="Nadgodziny.TypOkresuOdDniaVerifier"/>
+    </col>
+		<col name="Okres" type="int"/>
+    <col name="DlaKazdejUmowy" type="DlaKażdejUmowy"/>
+    <col name="DoboweMiesiecznie" type="boolean"/>
+    <col name="SwiateczneMiesiecznie" type="boolean"/>
+    <col name="NieujemneBilansowanieOkresowe" type="boolean"/>
+    <col name="BilansowanieMiesiecznie" type="boolean"/>
+    <col name="Przesuniecie" type="int"/>
+    <col name="Rocznie" type="boolean" />
+    <col name="OdDnia" type="date">
+      <verifier name="Nadgodziny.TypOkresuOdDniaVerifier"/>
+    </col>
+		<col name="Bilansowanie" name12="Bilans" type="BilansowanieNadgodzin"/>	
+		<col name="Rozliczanie" name12="Rozlicz" type="RozliczanieNadgodzin"/>
+		<col name="Nadgodz50" type="time"/>
+    <col name="PodstawaWgNormyKP" type="boolean"/>
+    <col name="PriorytetOkresowych" type="boolean" modifier="public virtual"/>
+  </subrow>
+	<subrow name="Nocne">
+		<col name="Rozliczaj" type="boolean"/>
+		<col name="Limit" type="time"/>
+		<col name="Od" type="time"/>
+		<col name="Do" type="time"/>
+	</subrow>
+  <enum name="WeryfikacjaRegulCzasuPracy"/>
+	<table name="KalendarzBase" tablename="Kalendarze" name8="Kalend" guided="Root">
+		<key name="WgNazwy" keyunique="true" keyprimary="true"> 
+			<keycol name="Typ"/>
+			<keycol name="Nazwa"/>
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Typ" type="TypKalendarza" selector="true" required="true" readonly="true" category="Ogólne"/>
+		<col name="Nazwa" type="string" length="30" required="true" modifier="public virtual" category="Ogólne"/>
+		<col name="Blokada" type="boolean" category="Ogólne"/>
+		<col name="NormaDobowa" type="time" category="Urlop"
+			description = "Dobowa norma czasu pracy dla limitu urlopu wypoczynkowego"
+		/>
+    <col name="PierwszyPrzepracowany" type="RodzajePierwszyPrzepracowany" category="Urlop"
+         description="Sposób wyliczania pierwszego przepracowanego miesiaca dla urlopu w pierwszym roku zatrudnienia"/>
+    <!-- KALENDARZ -->
+		<col name="UwzglWymiarEtatu" type="boolean" category="Kalendarz"/>
+		<col name="BladBraku" type="boolean" category="Kalendarz"/>
+		<col name="DefinicjaDnia" type="DefinicjaDnia" required="true" category="Kalendarz"
+			relname="Standardowe dni w kalendarzach"
+		/>
+    <col name="BezWeryfikacjiRegul" type="boolean" category="Ogólne" modifier="protected"/>
+    <col name="WeryfikacjaRegul" type="WeryfikacjaRegulCzasuPracy" category="Ogólne" modifier="protected"/>
+    <col name="RuchomyCzasPracy" type="boolean" category="Ogólne"/>
+    <col name="RownowaznyCzasPracy" type="boolean" category="Ogólne"/>
+    <col name="Algorytm" type="text">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+      <!-- DOPŁATY -->
+		<col name="Nadgodziny" name12="Nad" type="Nadgodziny" category="Dopłaty"/>
+    <col name="Nocne" name12="Noc" type="Nocne" category="Dopłaty"/>
+    <col name="PoczatekDobyPracNiSW" type="time" category="Dopłaty"/>
+    <!-- PRACOWNIK -->
+		<col name="Pracownik" type="Pracownik" readonly="true" category="Pracownik"
+			children="Kalendarze"
+			relname="Indywidualny kalendarz pracownika"
+			delete="cascade"
+      relright="true"
+		/>
+    <!-- enovaNet -->
+    <col name="Net" name12="DfNet" type="DefinicjaSeriiNet" category="enovaNet"/>
+  </table>
+
+  <!-- enovaNet -->
+  <subrow name="DefinicjaSeriiNet">
+    <col name="WidocznaWNet" type="boolean" description="Czy definicja jest dostępna z poziomu pulpitów" category="enovaNet"/>
+  </subrow>
+
+  <!-- STREFA DNIA PRACY -->	
+	<table name="StrefaPracy" tablename="StrefyPracy" name8="StrPracy"
+		caption="Strefa dnia"
+		tablecaption="Strefy dni"
+	>
+    <interface>IRozliczenieNadgodzinHost</interface>
+		<!-- OGÓLNE -->
+		<col name="Dzien" type="DzienPracy" readonly="true" required="true" category="Ogólne"
+			children="Strefy" 
+			relname="Strefa dnia pracy"
+			reldefault="true"
+			delete="cascade"
+			relguided="inner"
+      keyprimary="true"
+      relright="true"
+		/>
+		<!-- STREFA -->
+    <col name="Definicja" type="DefinicjaStrefy" required="true" category="Strefa"
+			relname="Definicje strefy dnia pracy"
+		/>
+		<col name="Praca" type="CzasPracy" category="Strefa"/>
+    <col name="CzasRozliczany" type="time" category="Strefa" caption="Czas rozliczany"/>
+    <col name="Rozliczenie" type="ElementRozliczeniaCzasuPracy" category="Strefa" caption="Rozliczenie" readonly="set" children="StrefyPracy"/>
+  </table>
+  
+  <!-- STREFA DNIA RCP -->
+  <table name="StrefaRCP" tablename="StrefyRCP" name8="StrRCP"
+		caption="Strefa RCP"
+		tablecaption="Strefy RCP"
+	>
+    <!-- OGÓLNE -->
+    <col name="Dzien" type="DzienRCP" readonly="true" required="true" category="Ogólne"
+			children="Strefy"
+			relname="Strefa dnia RCP"
+			reldefault="true"
+			delete="cascade"
+			relguided="inner"
+      keyprimary="true"
+      relright="true"
+		/>
+    <!-- STREFA -->
+    <col name="Definicja" type="DefinicjaStrefy" required="true" category="Strefa"
+			relname="Definicje strefy dnia RCP"
+		/>
+    <col name="Praca" type="CzasPracy" category="Strefa"/>
+    <col name="CzasRozliczany" type="time" category="Strefa" caption="Czas rozliczany"/>
+    <col name="Rozliczenie" type="ElementRozliczeniaCzasuPracy" category="Strefa" caption="Rozliczenie" readonly="set" children="StrefyRCP"/>
+    <col name="Lp" type="int" category="Strefa"/>
+  </table>
+  
+  <!-- WEJŚCIE WYJŚCIE -->
+	<enum name="TypWejsciaWyjscia"/>
+	<table name="WejscieWyjscie" tablename="WejsciaWyjscia" name8="WejWyj"
+		caption="Wejście/Wyjście"
+		tablecaption="Wejścia/Wyjścia"
+	>
+		<!-- OGÓLNE -->
+		<col name="Dzien" type="DzienPracy" readonly="true" required="true" category="Ogólne"
+			children="WeWy" 
+			relname="Wejścia wyjścia w dniu"
+			delete="cascade"
+			relguided="inner"
+			keyprimary="true"
+			keyclass="Lp" keyclasscol="Lp"
+      relright="true"
+		/>
+		<!-- WEWY -->
+    <col name="Lp" type="int" required="true" category="Ogólne" batchfield="false"
+			description="Liczba porządkowa kolejnych wejść wyjść" />
+    <col name="Godzina" type="time" category="WeWy"/>
+		<col name="Typ" type="TypWejsciaWyjscia" category="WeWy" />
+		<col name="Operacja" type="int" category="WeWy"/>
+	</table>
+  <!-- WEJŚCIE WYJŚCIE IMPORT -->
+  <enum name="TypWeryfikacjiWeWy"/>
+  <table name="WejscieWyjscieI" tablename="WejsciaWyjsciaI" name8="WejWyjI"
+		caption="Dane z RCP"
+		tablecaption="Dane z RCP"
+	>
+    <!-- OGÓLNE -->
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Ogólne"
+			children="WeWyI"
+			relname="Import WeWy"
+			keyprimary="true"
+			delete="cascade"
+			relguided="inner"
+      relright="true"
+    >
+      <keycol name="Data" />
+    </col>
+    <!-- WEWY IMPORT -->
+    <key name="WgDaty">
+      <keycol name="Data" />
+    </key>
+    <col name="Data" type="date" category="WeWyI" required="true" />
+    <col name="Godzina" type="time" category="WeWyI">
+      <attribute>Format("+")</attribute>
+    </col>    
+    <col name="Typ" type="TypWejsciaWyjscia" category="WeWyI" />
+    <col name="Operacja" type="int" category="WeWyI" />
+    <col name="Zaimportowany" type="boolean" category="WeWyI" />
+    <col name="Stan" type="TypWeryfikacjiWeWy" category="WeWyI" />
+    <col name="CzytnikRCP" type="CzytnikRCP" category="WeWyI" />
+    <col name="Zmodyfikowany" type="boolean" category="WeWyI" />
+    <col name="Uwagi" type="string" length="200" category="WeWyI" />
+    <col name="WeWyO" type="WejscieWyjscieO" category="Ogólne" children="WeWyI" relname="WeWyO"/>
+  </table>
+  <!-- WEJŚCIE WYJŚCIE ORYGINALNE -->
+  <table name="WejscieWyjscieO" tablename="WejsciaWyjsciaO" name8="WejWyjO"
+		caption="Oryginalne dane z RCP"
+		tablecaption="Oryginalne dane z RCP"
+	>
+    <!-- OGÓLNE -->
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Ogólne"
+			children="WeWyO"
+			relname="Oryginalne WeWy"
+			keyprimary="true"
+			delete="cascade"
+			relguided="inner"
+      relright="true"
+    >
+      <keycol name="Data" />
+    </col>
+    <!-- WEWY IMPORT -->
+    <key name="WgDaty">
+      <keycol name="Data" />
+    </key>
+    <col name="Data" type="date" category="WeWyO" required="true" />
+    <col name="Godzina" type="time" category="WeWyO" />
+    <col name="DataEdytowana" type="date" category="WeWyO"/>
+    <col name="GodzinaEdytowana" type="time" category="WeWyO" />
+    <col name="Typ" type="TypWejsciaWyjscia" category="WeWyO" />
+    <col name="Operacja" type="int" category="WeWyO" />
+    <col name="CzytnikRCP" type="CzytnikRCP" category="WeWyO" />
+    <col name="Uwagi" type="string" length="200" category="WeWyO" />
+  </table>
+  <!-- DZIEŃ PRACY -->	
+	<table name="DzienPracy" tablename="DniPracy" name8="PrcDni"
+		caption="Dzień pracy"
+		tablecaption="Dni pracy"
+	>
+		<!-- OGÓLNE -->
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Ogólne"
+			children="DniPracy" 
+			relname="Dni pracy"
+			keyclass="Date" 
+			keyclasscol="Data"
+			keyprimary="true"
+			delete="cascade"
+			relguided="inner"
+      relright="true"         
+		/>
+		<!-- DZIEŃ -->
+		<col name="RcpOK" type="boolean" category="Dzień"
+			description="Informacja o stanie rekordu po imporcie z RCP"
+		>
+			<verifier name="DzienPracy.RcpVerifier"/>
+		</col>
+		<col name="Data" type="date" readonly="true" required="true" category="Dzień"/>
+		<col name="Praca" type="CzasPracy" category="Dzień"/>
+	</table>
+  <!-- DZIEŃ RCP -->	
+  <enum name="StanWeryfikacjiRCP"/>
+	<table name="DzienRCP" tablename="DniRCP" name8="PrcRCP"
+		caption="Dzień RCP"
+		tablecaption="Dni RCP"
+	>
+		<!-- OGÓLNE -->
+		<col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Ogólne"
+			children="DniRCP" 
+			relname="Dni RCP"
+			keyclass="Date" 
+			keyclasscol="Data"
+			keyprimary="true"
+			delete="cascade"
+			relguided="inner"
+      relright="true"         
+		/>
+		<!-- DZIEŃ -->
+		<col name="StanRCP" type="StanWeryfikacjiRCP" category="Dzień"
+			description="Informacja o stanie weryfikacji rekordu z RCP"
+		>
+		</col>
+    <col name="RcpOK" type="boolean" category="Dzień"
+			description="Informacja o stanie rekordu po imporcie z RCP"
+		>
+    </col>
+    <col name="Data" type="date" readonly="true" required="true" category="Dzień"/>
+		<col name="Praca" type="CzasPracy" category="Dzień"/>
+		<col name="Uwagi" type="text" category="Dzień"/>
+		<col name="Bledy" type="text" category="Dzień"/>
+    <col name="StrefyOrg" type="text" category="Dzień"/>
+  </table>	
+<!-- STREFA ZESTAWIENIA CZASU PRACY -->
+	<table name="StrefaZestawienia" tablename="StrefyZestawien" name8="StrZest"
+		caption="Strefa zastawienia"
+		tablecaption="Strefy zestawień"
+	>
+    <interface>IRozliczenieNadgodzinHost</interface>
+    <!-- OGÓLNE -->
+		<!-- USUNIĘTE UNIQUE dbversion="3"
+			Usunięcie unique umożliwia dodawanie tych samych stref z różnymi cechami-->
+		<col name="Zestawienie" type="ZestawieniePracy" readonly="true" required="true" category="Ogólne"
+			children="Strefy" 
+			relname="Strefa zestawienia"
+			reldefault="true"
+			delete="cascade"
+			keyprimary="true"
+			relguided="inner"
+      relright="true"
+		>
+			<keycol name="Definicja"/>
+		</col>
+		<!-- STREFA -->
+		<col name="Definicja" type="DefinicjaStrefy" required="true" category="Strefa"
+			relname="Definicje strefy zestawienia"
+		/>
+		<col name="Czas" type="time" category="Strefa"/>
+	</table>
+<!-- ZESTAWIENIE CZASU PRACY -->
+	<table name="ZestawieniePracy" tablename="ZestawieniaPracy" name8="ZestPrac"
+		caption="Zestawienie czasu pracy"
+		tablecaption="Zestawienia czasu pracy"
+	>
+		<!-- OGÓLNE -->
+		<col name="Pracownik" type="Pracownik" readonly="true" required ="true" category="Ogólne"
+			relname="Zestawienia czasu pracy pracownika" 
+			children="Zestawienia" 
+			keyclass="FromTo" 
+			keyclasscol="Okres"
+			delete="cascade"
+			keyprimary="true"
+			relguided="inner"
+      relright="true"
+		/>
+		<col name="Okres" type="FromTo" required="true" category="Ogólne"/>		
+		<col name="PracaDni" type="int" category="Ogólne"/>
+	</table>
+  <!-- STREFA ZESTAWIENIA UMOWY -->
+  <table name="StrefaZestawieniaUmowy" tablename="StrefyZestawUmow"
+		caption="Strefa zastawienia umowy"
+		tablecaption="Strefy zestawień umów"
+	>
+    <!-- OGÓLNE -->
+    <col name="Zestawienie" type="ZestawienieUmowy" readonly="true" required="true" category="Ogólne"
+			children="Strefy"
+			relname="Strefa zestawienia umowy"
+			reldefault="true"
+			delete="cascade"
+			keyprimary="true"
+			relguided="inner"
+      relright="true"
+    />
+    <col name="Czas" type="time" category="Strefa"/>
+    <col name="Ilosc" type="double" category="Strefa"/>
+    <col name="Stawka" type="currency" category="Strefa"/>
+    <col name="Wartosc" type="currency" readonly="set" category="Strefa"/>
+  </table>
+  <!-- ZESTAWIENIE UMOWY -->
+  <table name="ZestawienieUmowy" tablename="ZestawieniaUmow"
+		caption="Zestawienie umowy"
+		tablecaption="Zestawienia umów"
+	>
+    <!-- OGÓLNE -->
+    <col name="Umowa" type="Umowa" readonly="true" required ="true" category="Ogólne"
+			relname="Zestawienia umów"
+			children="Zestawienia"
+			keyclass="FromTo"
+			keyclasscol="Okres"
+			delete="cascade"
+			keyprimary="true"
+			relguided="inner"
+      relright="true"
+		/>
+    <col name="Okres" type="FromTo" required="true" category="Ogólne"/>
+    <col name="Wartosc" type="currency" readonly="set" category="Ogólne"/>
+  </table>
+  <!-- DEFINICJA NIEOBECNOŚCI -->	
+	<enum name="TypNieobecnosci"/>
+	<enum name="RozliczenieNieobecnosci"/>
+	<enum name="PrzyczynaNieobecnosci"/>
+	<enum name="TypOkresuNieobecności"/>
+  <enum name="WpływaNaPFRON"/>
+  <enum name="WpływaNaSOD"/>
+  <enum name="PomniejszeniaStażuPracy"/>
+  <enum name="SposobyPomniejszania"/>
+  <enum name="PomnOkresSzWarunkiSzCharakter"/>
+  <table name="DefinicjaNieobecnosci" tablename="DefNieobecnosci" name8="DefNie" guided="Root" config="true"
+		caption="Definicja nieobecności"
+		tablecaption="Definicje nieobecności"
+	>
+    <interface>IŹródłoKoloruElementu</interface>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+    <key name="WgKodu">
+      <keycol name="Kod" />
+    </key>
+    <!-- OGÓLNE -->
+		<col name="Nazwa" type="string" length="40" localization="dictionary" required="true" category="Ogólne"/>
+    <col name="Kod" type="string" length="12" category="Ogólne"/>
+    <col name="Skrot" type="string" length="12" required="true" localization="dictionary" category="Ogólne"/>		
+		<col name="Blokada" type="boolean" category="Ogólne"/>		
+		<!-- DEFINICJA -->
+		<col name="Typ" type="TypNieobecnosci" required="true" category="Definicja">
+      <verifier name="DefinicjaNieobecnosci.ElementZbiegVerifier"/>
+    </col>
+    <col name="Przyczyna" type="PrzyczynaNieobecnosci" category="Definicja">
+      <verifier name="DefinicjaNieobecnosci.ElementZbiegVerifier" onadded="true"/>
+    </col>
+		<col name="TypOkresu" type="TypOkresuNieobecności" category="Definicja"/>
+		<col name="Limit" type="DefinicjaLimitu" category="Definicja"
+			relname="Limity nieobecności"
+		/>
+		<col name="KodRSA" type="KodRSA" category="Definicja"
+			children="DefinicjeNieobecnosci" 
+			relname="KodRSA dla definicji nieobecnosci"
+		/>
+		<col name="KodRGA" type="KodRGA" category="Definicja"/>
+		<col name="Rozliczenie" type="RozliczenieNieobecnosci" category="Definicja">
+			<verifier name="DefinicjaNieobecnosci.ElementVerifier" onadded="true"/>
+      <verifier name="DefinicjaNieobecnosci.ElementZbiegVerifier" onadded="true"/>
+    </col>
+		<col name="Element" type="DefinicjaElementu" category="Definicja"
+			relname="Typ elementu rozliczajacego nieobecnosc"
+		>
+			<verifier name="DefinicjaNieobecnosci.ElementVerifier"/>
+		</col>
+    <col name="ElementZbieg" type="DefinicjaElementu" category="Definicja"
+			relname="Typ elementu rozliczajacego nieobecnosc dla zbiegu"
+		>
+      <verifier name="DefinicjaNieobecnosci.ElementZbiegVerifier"/>
+    </col>
+    <col name="PomniejszaWynagrodzenie" type="boolean"/>
+    <col name="PomniejszaStazPracy" type="PomniejszeniaStażuPracy"/>
+    <col name="PomniejszaLimitUrlopu" type="boolean"/>
+    <col name="PomniejszaLimitUrlopuTymczasowy" type="boolean"/>
+    <col name="PFRON" type="WpływaNaPFRON"/>
+    <col name="SOD" type="WpływaNaSOD" caption="SODiR (WE)"/>
+    <col name="SODUstawa" type="WpływaNaSOD" caption="SODiR (ustawa)"/>
+    <col name="WidoczneCechy" type="text" category="Definicja" />
+    <col name="WniosekUrlopowy" type="boolean"/>
+    <col name="Planowana" type="boolean"/>
+    <col name="Weryfikuj" type="boolean"/>
+    <col name="ZawieszenieSkladkiFPMies" type="int"/>
+    <col name="SposobPomniejszania" type="SposobyPomniejszania"/>
+    <col name="PomnOkresSzWarunkiSzCharakter" type="PomnOkresSzWarunkiSzCharakter"/>
+  </table>
+<!-- NIEOBECNOŚĆ -->	
+	<interface name="IZrodloNieobecnosci"/>
+	<enum name="PrzyczynaZwolnienia"/>
+  <enum name="KontynuacjaOkrZas"/>
+  <enum name="ZwolnienieKwarantanna"/>
+  <subrow name="ZwolnienieZUS">
+		<col name="KodChoroby" type="string" length="5">
+			<verifier name="ZwolnienieZUS.KodChorobyVerifier"/>
+      <verifier name="ZwolnienieZUS.KontynuacjaOkrZasVerifier"/>
+      <verifier name="ZwolnienieZUS.KoniecOkrZasVerifier"/>
+    </col>
+		<col name="Przyczyna" type="PrzyczynaZwolnienia">
+			<verifier name="ZwolnienieZUS.KodChorobyVerifier"/>
+      <verifier name="ZwolnienieZUS.KoniecOkrZasVerifier"/>
+    </col>
+    <col name="LeczenieSzpitalne" type="boolean"/>
+    <col name="Kwarantanna" type="ZwolnienieKwarantanna"/>
+    <col name="BezOkresuWyczekiwania" type="boolean"/>
+    <col name="KontynuacjaOkrZas" type="KontynuacjaOkrZas">
+      <verifier name="ZwolnienieZUS.KontynuacjaOkrZasVerifier"/>
+      <verifier name="ZwolnienieZUS.KoniecOkrZasVerifier"/>
+    </col>
+    <col name="PrzedluzenieOkrZas" name12="PrzedOZ" type="boolean"/>
+		<col name="PrzedluzeniaData" name12="PrzedData" type="date"/>
+		<col name="ZwolnienieWystawione" name12="ZwolWyst" type="date">
+			<verifier name="ZwolnienieZUS.DataZwolnieniaVerifier"/>
+		</col>
+		<col name="Numer" type="string" length="9">
+			<verifier name="ZwolnienieZUS.NumerZwolnieniaVerifier"/>
+		</col>
+		<col name="ZwolnienieDostarczone" name12="ZwolDost" type="date">
+			<verifier name="ZwolnienieZUS.DataZwolnieniaVerifier"/>
+		</col>
+		<col name="PomniejszajZasilek" name12="PomnZas" type="boolean"/>
+		<col name="PierwszyBezplatny" name12="PBezp" type="boolean"/>
+    <col name="PonownieUstalPodstawe" type="boolean" readonly="set"/>
+  </subrow>
+  <enum name="RozliczenieUrlopuMacierzyńskiego"/>
+  <subrow name="UrlopMacierzyński">
+    <col name="Rozliczenie" type="RozliczenieUrlopuMacierzyńskiego" category="Ogólne"/>
+  </subrow>
+  <subrow name="UrlopWychowawczy">
+  </subrow>
+  <enum name="PrzyczynaUrlopu"/>
+	<subrow name="UrlopWypoczynkowy">
+		<col name="Przyczyna" type="PrzyczynaUrlopu" category="Ogólne">
+			<verifier name="UrlopWypoczynkowy.NaŻądanieVerifier"/>
+		</col>
+    <col name="PodstawaDo" type="date" category="Ogólne">
+      <verifier name="UrlopWypoczynkowy.PodstawaTymczasowegoVerifier"/>
+    </col>
+  </subrow>
+  <enum name="PrzyczynaUrlopuOkolicznościowego"/>
+  <subrow name="UrlopOkolicznościowy">
+    <col name="Przyczyna" type="PrzyczynaUrlopuOkolicznościowego" category="Ogólne">
+      <verifier name="UrlopOkolicznościowy.LimitVerifier"/>
+    </col>
+  </subrow>
+  <enum name="WersjaZLA"/>
+  <subrow name="ZLA">
+    <col name="Zrodlo" type="text" category="ZLA" />
+    <col name="Wersja" type="WersjaZLA" category="ZLA" />
+    <col name="Data" type="date" category="ZLA" />
+  </subrow>  
+  <enum name="TypŹródłaNieobecności"/>
+	<table name="Nieobecnosc" tablename="Nieobecnosci"
+		caption="Nieobecność"
+		tablecaption="Nieobecności"
+    warnings="Off"
+    guided="Root"
+	>
+		<interface>IZrodloNieobecnosci</interface>
+		<interface>IBazaZrodlaWyplaty</interface>
+		<!-- OGÓLNE -->
+		<col name="Zrodlo" type="IZrodloNieobecnosci" readonly="true" required ="true" category="Ogólne"
+			relname="Nieobecności źródła" 
+			children="Nieobecnosci" 
+			keyclass="FromTo" 
+			keyclasscol="Okres"
+			delete="cascade"
+			relright="true"
+      keyprimary="true"
+      keyunique="false"
+		/>
+		<col name="TypZrodla" type="TypŹródłaNieobecności" selector="true" required="true" readonly="true" category="Ogólne"/>
+		<col name="Definicja" type="DefinicjaNieobecnosci" required="true" category="Ogólne"
+			relname="Definicje nieobecności"
+		>
+      <verifier name="Nieobecnosc.NormaVerifier"/>
+      <verifier name="Nieobecnosc.DefinicjaOkresVerifier"/>
+      <verifier name="Nieobecnosc.LimitVerifier"/>
+      <verifier name="Nieobecnosc.LimitNaGodzinyVerifier"/>
+      <verifier name="Nieobecnosc.NieobecnoscOddanieKrwiVerifier"/>
+      <verifier name="UrlopWypoczynkowy.NaŻądanieVerifier"/>
+      <verifier name="UrlopWypoczynkowy.PodstawaTymczasowegoVerifier"/>
+      <verifier name="ZwolnienieZUS.KontynuacjaOkrZasVerifier"/>
+      <verifier name="ZwolnienieZUS.KoniecOkrZasVerifier"/>
+      <verifier name="UrlopOkolicznościowy.LimitVerifier"/>
+      <verifier name="UrlopMacierzyński.LimitVerifier"/>
+      <verifier name="UrlopMacierzyński.PelneTygodnieVerifier"/>
+    </col>
+		<col name="Okres" type="FromTo" required="true" category="Ogólne">
+      <verifier name="Nieobecnosc.PlanVerifier"/>
+      <verifier name="Nieobecnosc.PrzerwaVerifier"/>
+      <verifier name="Nieobecnosc.NormaVerifier"/>
+      <verifier name="Nieobecnosc.OkresVerifier"/>
+      <verifier name="Nieobecnosc.LimitVerifier"/>
+      <verifier name="Nieobecnosc.LimitNaGodzinyVerifier"/>
+      <verifier name="Nieobecnosc.NieobecnoscOddanieKrwiVerifier"/>
+      <verifier name="UrlopWypoczynkowy.NaŻądanieVerifier"/>
+      <verifier name="UrlopWypoczynkowy.PodstawaTymczasowegoVerifier"/>
+      <verifier name="ZwolnienieZUS.KontynuacjaOkrZasVerifier"/>
+      <verifier name="ZwolnienieZUS.KoniecOkrZasVerifier"/>
+      <verifier name="UrlopOkolicznościowy.LimitVerifier"/>
+      <verifier name="UrlopMacierzyński.LimitVerifier"/>
+      <verifier name="UrlopMacierzyński.PelneTygodnieVerifier"/>
+    </col>
+    <col name="OdGodziny" type="time" category="Ogólne">
+      <verifier name="Nieobecnosc.PlanVerifier"/>
+      <verifier name="Nieobecnosc.PrzerwaVerifier"/>
+      <verifier name="Nieobecnosc.OdGodzinyVerifier"/>
+      <verifier name="Nieobecnosc.NormaRequiredVerifier"/>
+    </col>
+    <col name="Norma" type="time" category="Ogólne">
+      <verifier name="Nieobecnosc.PlanVerifier"/>
+      <verifier name="Nieobecnosc.NormaVerifier"/>
+      <verifier name="Nieobecnosc.PrzerwaVerifier"/>
+      <verifier name="Nieobecnosc.LimitVerifier"/>
+      <verifier name="Nieobecnosc.LimitNaGodzinyVerifier"/>
+      <verifier name="Nieobecnosc.DzieńPlanuVerifier"/>
+    </col>
+    <col name="Korygowana" type="boolean" category="Ogólne" readonly="set">
+      <verifier name="Nieobecnosc.NormaVerifier"/>
+    </col>
+		<col name="RozliczenieWDniu" type="boolean" category="Rozliczenie">
+			<verifier name="Nieobecnosc.RozliczenieDataVerifier"/>
+		</col>
+		<col name="RozliczenieData" type="date" category="Rozliczenie"/>
+		<col name="Zwolnienie" name12="Zwol" type="ZwolnienieZUS" category="ZUS"/>
+		<col name="Urlop" type="UrlopWypoczynkowy" category="Urlop"/>
+    <col name="Okolicznosciowy" type="UrlopOkolicznościowy" category="Urlop okolicznościowy"/>
+    <col name="Macierzynski" type="UrlopMacierzyński" category="ZUS"/>
+    <col name="Wychowawczy" type="UrlopWychowawczy" category="ZUS"/>
+    <col name="ZawieszenieSkladkiFP" type="boolean"/>
+    <col name="NormaNie" type="time" category="Ogólne">
+      <verifier name="Nieobecnosc.LimitVerifier"/>
+    </col>
+    <col name="ZLA" type="ZLA" category="ZLA"/>
+    <col name="CzlonekRodziny" type="CzlonekRodziny">
+      <verifier name="UrlopMacierzyński.LimitVerifier"/>
+    </col>
+    <col name="Uwagi" type="text" category="Uwagi"/>
+  </table>
+  <!-- PLANOWANE NIEOBECNOŚCI -->
+  <enum name="StanPlanowanejNieobecności"/>
+  <table name="PlanowanaNieobecność" tablename="PlanNieobecnosci"
+		caption="Planowana nieobecność"
+		tablecaption="Planowane nieobecności"
+    guided="Root"
+	>
+    <!-- OGÓLNE -->
+    <key name="WgOkres">
+      <keycol name="Okres.To" />
+    </key>
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" category="Ogólne"
+			relname="Planowane nieobecności pracownika"
+			children="PlanowaneNieobecności"
+			keyclass="FromTo" 
+			keyclasscol="Okres"
+			delete="cascade"
+			relright="true"
+      keyprimary="true"
+		>
+    </col>
+    <col name="Definicja" type="DefinicjaNieobecnosci" required="true" category="Ogólne" 
+         relname="Definicje nieobecności">
+      <verifier name="PlanowanaNieobecność.LimitNieobecnościVerifier"/>
+    </col>
+    <col name="Okres" type="FromTo" required="true" category="Ogólne">
+      <verifier name="PlanowanaNieobecność.LimitNieobecnościVerifier"/>
+    </col>
+    <col name="Stan" type="StanPlanowanejNieobecności" required="true" readonly="set" category="Ogólne">      
+    </col>
+  </table>
+  <!-- DZIEŃ AKORDU -->
+	<table name="DzienAkorduBase" tablename="DniAkordow" name8="AkrDni"
+         caption="Dzień akordu" tablecaption="Dni akordów">
+		<!-- OGÓLNE -->
+		<col name="Akord" type="Akord" readonly="true" required="true" category="Ogólne"
+			children="Dni" 
+			relname="Dni akordu"
+			keyclass="Date" 
+			keyclasscol="Data"
+			keyprimary="true"
+			delete="cascade"
+			relguided="inner"
+      relright="true"
+		/>
+		<!-- DZIEŃ -->
+		<col name="Typ" type="TypAkordu" selector="true" readonly="true" required="true" category="Ogólne"/>
+		<col name="Data" type="date" required="true" readonly="true" category="Ogólne"/>
+		<col name="Czas" type="time" category="Akord"/>
+		<col name="Ilosc" type="double" category="Akord"/>
+		<col name="Wartosc" type="currency" category="Grupowy"/>
+	</table>	
+<!-- ZESTAWIENIE AKORDU -->
+	<table name="ZestawienieAkorduBase" tablename="ZestawAkordow" name8="ZestAkor"
+         caption="Zestawienie akordu" tablecaption="Zestawienia akordów">
+		<!-- OGÓLNE -->
+		<col name="Akord" type="Akord" readonly="true" required ="true" category="Ogólne"
+			relname="Zestawienia czasu pracy akordu" 
+			children="Zestawienia" 
+			keyclass="FromTo" 
+			keyclasscol="Okres"
+			keyprimary="true"
+			delete="cascade"
+			relguided="inner"
+      relright="true"
+		/>
+		<col name="Typ" type="TypAkordu" selector="true" readonly="true" required="true" category="Ogólne"/>
+		<col name="Okres" type="FromTo" required="true" category="Ogólne"/>
+		<col name="Czas" type="time" category="Akord"/>
+		<col name="Ilosc" type="double" category="Akord"/>
+		<col name="Wartosc" type="currency" category="Grupowy"/>
+	</table>
+  <!-- UMOWA IDX -->
+  <table name="NieobecnośćIdx" tablename="NieobecnosciIdx" guided="None">
+    <key name="WgOkres">
+      <keycol name="Okres.To" />
+    </key>
+    <col name="Nieobecnosc" type="Nieobecnosc" required="true" readonly="true"
+			children="Indeksy"
+			relname="Nieobecność indeksu nieobecności"
+			relright="true"
+			delete="cascade"
+			keyprimary="true"
+		/>
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true" 
+         delete="cascade"
+    >
+      <keycol name="Okres.To"/>
+    </col>
+    <col name="Definicja" type="DefinicjaNieobecnosci" required="true"
+			relname="Definicja indeksu nieobecności"
+    >
+      <keycol name="Okres.To"/>
+    </col>
+    <col name="Okres" type="FromTo" required="true"/>
+  </table>
+  <!-- DEFINICJA GRAFIA -->
+  <table name="DefinicjaGrafikaPracy" tablename="DefGrafikowPracy" guided="Root" config="true"
+		caption="Definicja grafika"
+		tablecaption="Definicje grafików"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Nazwa" type="string" length="30" required="true" localization="dictionary" category="Ogólne"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <!-- DEFINICJA -->
+    <col name="DzienOd" type="time" required="true"/>
+    <col name="DzienDo" type="time" required="true"/>
+    <col name="Xml" type="text" category="Definicja" caption="Definicja zakładki użytkownika." />
+    <col name="Algorytm" type="text" localization="dictionary">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+  </table>
+  <!-- GRAFIK -->
+  <table name="GrafikPracy" tablename="GrafikiPracy" guided="Root"
+         caption="Grafik planu pracy"
+         tablecaption="Grafiki planu pracy"
+  >
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Wydzial" type="Wydzial" category="System" readonly="true"
+      caption="Jednostka organizacyjna"
+			relright="true"
+		>
+      <keycol name="Nazwa"/>
+    </col>
+    <col name="Definicja" type="DefinicjaGrafikaPracy" required="true" category="Ogólne"/>
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+  </table>
+  <table name="GrafikPracownika" tablename="GrafPracownikow"
+         caption="Grafik pracownika"
+         tablecaption="Grafiki pracowników"
+  >
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true" category="Ogólne" 
+      relname="Grafiki pracownika"
+      children="Grafiki"
+      keyprimary="true" 
+      keyunique="true"
+    >
+      <keycol name="Grafik"/>
+    </col>
+    <col name="Grafik" type="GrafikPracy" required="true" readonly="true" category="Ogólne"
+      children="Pracownicy"
+			relright="true"
+		/>
+  </table>
+  <!-- KOLOR ELEMENTU -->
+  <interface name="IŹródłoKoloruElementu"/>
+  <enum name="TypKoloruElementu"/>
+  <table name="KolorElementu" tablename="KoloryElementow"
+         caption="Kolor elementu"
+         tablecaption="Kolory elementów"
+         config="true"
+  >
+    <col name="Zrodlo" type="IŹródłoKoloruElementu" required="true" readonly="true" category="Ogólne"
+        relname="Kolory źródeł elementów"
+        children="Kolory"
+        keyunique="true"
+			  delete="cascade"
+			  relguided="inner"
+        keyprimary="true"   
+    >
+      <keycol name="Typ"/>
+    </col>
+    <col name="Typ" type="TypKoloruElementu" required="true" category="Ogólne"/>
+    <col name="BackColor" type="int" category="Ogólne"/>
+    <col name="ForeColor" type="int" category="Ogólne"/>
+  </table>
+  <!-- DEFINICJA GRAFIKA -->
+  <enum name="RodzajeZestawieniaCzasu"/>
+  <table name="DefinicjaZestawieniaCzasu" tablename="DefZestawCzasu" guided="Root" config="true"
+		caption="Definicja zestawienia czasu"
+		tablecaption="Definicje zestawień czasu"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Nazwa" type="string" length="30" required="true" localization="dictionary" category="Ogólne"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <col name="Rodzaj" type="RodzajeZestawieniaCzasu" category="Ogólne" required="true"/>
+
+    <!-- DEFINICJA -->
+    <col name="Algorytm" type="text" localization="dictionary">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+    <col name="PulpitPracownika" type="boolean" category="Ogólne"/>
+    <col name="Multi" type="boolean" category="Ogólne"/>
+  </table>
+  
+  <!-- Zbieg pracy i rodzicielstwa-->
+  <table name="ZbiegPracyIRodzicielstwa" tablename="ZbiegiPracyIRodz"
+    caption="Zbieg pracy i rodzicielstwa"
+    tablecaption="Zbiegi pracy i rodzicielstwa"
+    guided="Root"
+  >
+    <interface>IBazaZrodlaWyplaty</interface>
+    <!-- OGÓLNE -->
+    <col name="Pracownik" type="Pracownik" readonly="true" required ="true" category="Ogólne"
+			relname="Zbiegi pracy i rodzicielstwa dla pracownika"
+			children="ZbiegiPracyIRodzicielstwa"
+			keyclass="FromTo"
+			keyclasscol="Okres"
+			delete="cascade"
+			relright="true"
+      keyprimary="true"
+		/>
+    <col name="Definicja" type="DefinicjaNieobecnosci" required="true" category="Ogólne"
+			relname="Zbiegi pracy i rodzicielstwa dla definicji nieobecności"/>
+    <col name="Okres" type="FromTo" required="true" category="Ogólne"/>
+    <col name="Macierzynski" type="UrlopMacierzyński" category="ZUS"/>
+    <col name="Wychowawczy" type="UrlopWychowawczy" category="ZUS"/>
+    <col name="ZawieszenieSkladkiFP" type="boolean"/>
+    <col name="WymiarEtatu" type="Fraction" required="true"/>
+    <col name="CzlonekRodziny" type="CzlonekRodziny"/>
+  </table>
+
+  <!-- DEFINICJA ALGORYTMU RCP -->
+  <table name="DefAlgorytmRCP" tablename="DefAlgorytmyRCP" guided="Root" config="true"
+		caption="Definicja algorytmu RCP"
+		tablecaption="Definicje algorytmów RCP"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Nazwa" type="string" length="60" localization="dictionary" required="true" category="Ogólne"/>
+    <col name="Priorytet" type="int" category="Ogólne"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+    <!-- DEFINICJA -->
+    <col name="Algorytm" type="text" localization="dictionary">
+      <attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+    </col>
+  </table>
+
+  <!-- ZESTAWIENIE DIET ZAGR -->
+  <interface name="IZestawienieDietZagrHost"/>
+  
+  <table name="ZestawienieDietZagr" tablename="ZestawDietZagr"
+		caption="Zestawienie diet pracownika za granicą"
+		tablecaption="Zestawienia diet pracowników za granicą"
+	>
+    <!-- OGÓLNE -->
+    <col name="Host" type="IZestawienieDietZagrHost" readonly="true" required ="true" category="Ogólne"
+			relname="Zestawienia diet pracownika za granicą"
+			children="ZestawieniaDiet"
+			keyclass="FromTo"
+			keyclasscol="Okres"
+			delete="cascade"
+			keyprimary="true"
+			relguided="inner"
+      relright="true"
+		/>
+    <col name="Okres" type="FromTo" required="true" category="Ogólne"/>
+    <col name="Diety" type="int" category="Ogólne"/>
+  </table>
+
+  <!-- PARTIA ROZLICZENIA NADGODZIN -->
+  <subrow name="PartiaRN" >
+    <col name="Czas" type="time" readonly="set"/>
+    <col name="Rozliczany" type="time" readonly="set" required="noverified"/>
+  </subrow>
+
+  <!-- ZASÓB ROZLICZENIA NADGODZIN -->
+  <enum name="KierunekMagazynuNadgodzin"/>
+  
+  <table name="ZasobRN" tablename="ZasobyRN" guided="None" caption="Zasób" tablecaption="Zasoby" >
+    <key name="WgKierunek">
+      <keycol name="Pracownik" />
+      <keycol name="Kierunek" />
+      <keycol name="Data" />
+    </key>
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true" relname="Zasoby magazynu nadgodzin dla pracownika"
+         children="ZasobyRN"
+         description="Pracownik, dla którego został naliczony zasób magazynu nadgodzin."
+         keyprimary="true" >
+      <keycol name="Data" />
+    </col>
+    <col name="Strefa" type="StrefaPracy" required="true" readonly="true" keyunique="true" children="Zasoby" relname="Zasoby magazynu nadgodzin dla hosta" relguided="inner" relright="true"/>
+    <col name="Kierunek" type="KierunekMagazynuNadgodzin" required="true" readonly="true" />
+    <col name="Data" type="date" required="true" readonly="set" />
+    <col name="Partia" type="PartiaRN" />
+  </table>
+
+  <!-- OBRÓT ROZLICZENIA NADGODZIN -->
+  <table name="ObrotRN" tablename="ObrotyRN" guided="None" caption="Obrót" tablecaption="Obroty" >
+    <key name="WgStrefy" keyunique="true">
+      <keycol name="StrefaNadgodziny" />
+      <keycol name="StrefaRozliczenie" />
+    </key>
+    <col name="Pracownik" type="Pracownik" required="true" readonly="true" relname="Obroty magazynu nadgodzin dla pracownika" description="Pracownik, dla którego został naliczony obrót magazynu nadgodzin." keyprimary="true">
+      <keycol name="Data" />
+    </col>
+    <col name="StrefaNadgodziny" type="StrefaPracy" required="true" readonly="true" relname="Obroty wpłat do ewidencji środków pienieżnych" relguided="inner" relright="true">
+      <keycol name="Data" />
+    </col>
+    <col name="StrefaRozliczenie" type="StrefaPracy" required="true" readonly="true" relname="Obroty wypłat z ewidencji środków pienieżnych" >
+      <keycol name="Data" />
+    </col>
+    <col name="Data" type="date" required="true" readonly="set" />
+    <col name="Nadgodziny" type="PartiaRN" />
+    <col name="Rozliczenie" type="PartiaRN" />
+  </table>
+
+  <!-- ROZLICZENIE CZASU PRACY -->
+  <enum name="RodzajeRozliczeńCzasuPracy"/>
+  <table name="DefinicjaRozliczeniaCzasuPracy" tablename="DefRozlCzasPracy" guided="Root" caption="Definicja dokumentu rozliczenia czasu pracy" tablecaption="Definicje dokumentów rozliczenia czasu pracy" config="true">
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Rodzaj" type="RodzajeRozliczeńCzasuPracy" modifier="public virtual" required="true">
+      <verifier name="DefinicjaRozliczeniaCzasuPracy.DoRozliczeniaRequiredVerifier"/>
+      <verifier name="DefinicjaRozliczeniaCzasuPracy.RozliczenieRequiredVerifier"/>
+      <verifier name="DefinicjaRozliczeniaCzasuPracy.ZlecenieRequiredVerifier"/>
+    </col>
+    <col name="Nazwa" type="string" length="50" localization="dictionary" modifier="public virtual"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Symbol" type="string" length="12" required="true" modifier="public virtual"/>
+    <col name="Zlecenie" type="DefinicjaStrefy" modifier="public virtual">
+      <verifier name="DefinicjaRozliczeniaCzasuPracy.ZlecenieRequiredVerifier"/>
+    </col>
+    <col name="DoRozliczenia" type="DefinicjaStrefy" modifier="public virtual">
+      <verifier name="DefinicjaRozliczeniaCzasuPracy.DoRozliczeniaRequiredVerifier"/>
+    </col>
+    <col name="ZgodneDoRozliczenia" type="boolean" modifier="public virtual"/>
+    <col name="Rozliczenie" type="DefinicjaStrefy" modifier="public virtual">
+      <verifier name="DefinicjaRozliczeniaCzasuPracy.RozliczenieRequiredVerifier"/>
+    </col>
+    <col name="ZgodneRozliczenie" type="boolean" modifier="public virtual"/>
+    <col name="Seria" type="boolean"/>
+    <col name="Numeracja" type="DefinicjaNumeracji"/>
+  </table>
+
+  <enum name="StanyRozliczeniaCzasuPracy"/>
+  <table name="RozliczenieCzasuPracy" tablename="RozlCzasPracy" guided="Root" caption="Rozliczenie czasu pracy" tablecaption="Rozliczenia czasu pracy">
+    <interface>IManagedRowInfoHost</interface>
+    <interface>IDokument</interface>
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true"
+      keyprimary="true"
+      relname="Rozliczenia czasu pracy pracownika"
+      children="RozliczeniaCzasuPracy"
+      relright="true"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Definicja" type="DefinicjaRozliczeniaCzasuPracy" required="true" readonly="true"
+      relname="Definicja rozliczenia czasu pracy"
+		/>
+    <col name="Seria" type="string" length="12" modifier="public virtual">
+      <attribute>Dictionary("Ser.roz.czas.prc")</attribute>
+    </col>
+    <col name="Data" type="date" required="true" modifier="public virtual"/>
+    <col name="Numer" type="NumerDokumentu" />
+    <col name="Stan" type="StanyRozliczeniaCzasuPracy" required="true" modifier="public virtual"/>
+    <col name="DataDecyzji" type="date" category="Ogólne" modifier="public virtual"/>
+    <col name="Opis" type="text" category="Ogólne" />
+  </table>
+
+  <table name="ElementRozliczeniaCzasuPracy" tablename="ElRozlCzasPracy" guided="Root" caption="Element wniosku/zlecenia rozliczenia czasu pracy" tablecaption="Elementy wniosków/zleceń rozliczenia czasu pracy">
+    <col name="Dokument" type="RozliczenieCzasuPracy" readonly="true" required="true"
+      relname="Element rozliczenia czasu pracy dokumentu"
+      children="Elementy"
+      keyunique="true"
+      relright="true"
+      relguided="inner"
+      delete="cascade"
+			keyclass="Lp" keyclasscol="Lp"
+		/>
+    <col name="Lp" type="int" required="true" category="Ogólne" batchfield="false"
+			description="Liczba porządkowa elementu na dokumencie." />
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true"
+      keyprimary="true"
+      relname="Element rozliczenia czasu pracy pracownika"
+      children="ElementyRozliczeniaCzasuPracy"
+		>
+      <keycol name="Data"/>
+    </col>
+    <col name="Definicja" type="DefinicjaStrefy" required="true" modifier="public virtual"/>
+    <col name="Data" type="date" required="true" modifier="public virtual"/>
+    <col name="OdGodziny" type="time" modifier="public virtual"/>
+    <col name="Czas" type="time" required="noverified" modifier="public virtual">
+      <verifier name="ElementRozliczeniaCzasuPracy.CzasRequiredVerifier" onadded="true"/>
+    </col>
+  </table>
+</module>

@@ -1,0 +1,74 @@
+﻿Instalowanie zestawu 'D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe'.
+Uwzględnione parametry to:
+   logtoconsole = 
+   logfile = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog
+   assemblypath = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe
+Trwa instalowanie usługi KMKontrahent...
+Trwa tworzenie źródła EventLog KMKontrahent w dzienniku Application...
+Wycofywanie zestawu 'D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe'.
+Uwzględnione parametry to:
+   logtoconsole = 
+   logfile = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog
+   assemblypath = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe
+Przywracanie dziennika zdarzeń do poprzedniego stanu dla źródła KMKontrahent.
+Podczas fazy wycofywania instalatora System.Diagnostics.EventLogInstaller wystąpił wyjątek.
+System.Security.SecurityException: Nie znaleziono źródła, ale nie można przeszukać niektórych lub wszystkich dzienników zdarzeń. Niedostępne dzienniki: Security, State.
+Podczas fazy wycofywania instalacji wystąpił wyjątek. Wyjątek ten zostanie zignorowany, a wycofywanie będzie kontynuowane. Jednak po ukończeniu wycofywania komputer może nie powrócić całkowicie do stanu początkowego.
+Instalowanie zestawu 'D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe'.
+Uwzględnione parametry to:
+   logtoconsole = 
+   logfile = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog
+   assemblypath = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe
+Trwa instalowanie usługi KMKontrahent...
+Usługa KMKontrahent została zainstalowana pomyślnie.
+Trwa tworzenie źródła EventLog KMKontrahent w dzienniku Application...
+Zatwierdzanie zestawu 'D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe'.
+Uwzględnione parametry to:
+   logtoconsole = 
+   logfile = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog
+   assemblypath = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe
+Instalowanie zestawu 'D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe'.
+Uwzględnione parametry to:
+   logtoconsole = 
+   logfile = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog
+   assemblypath = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe
+Trwa instalowanie usługi KMKontrahent...
+Trwa tworzenie źródła EventLog KMKontrahent w dzienniku Application...
+Wycofywanie zestawu 'D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe'.
+Uwzględnione parametry to:
+   logtoconsole = 
+   logfile = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog
+   assemblypath = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe
+Przywracanie dziennika zdarzeń do poprzedniego stanu dla źródła KMKontrahent.
+Odinstalowywanie zestawu 'D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe'.
+Uwzględnione parametry to:
+   logtoconsole = 
+   logfile = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog
+   assemblypath = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe
+Usuwanie źródła EventLog KMKontrahent.
+Trwa usuwanie usługi KMKontrahent z systemu...
+Usługa KMKontrahent została pomyślnie usunięta z systemu.
+Odinstalowywanie zestawu 'D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe'.
+Uwzględnione parametry to:
+   logtoconsole = 
+   logfile = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog
+   assemblypath = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe
+Usuwanie źródła EventLog KMKontrahent.
+Ostrzeżenie: źródło KMKontrahent nie jest zarejestrowane na komputerze lokalnym.
+Trwa usuwanie usługi KMKontrahent z systemu...
+Podczas dezinstalacji instalatora System.ServiceProcess.ServiceInstaller wystąpił wyjątek.
+System.ComponentModel.Win32Exception: Określona usługa nie istnieje jako usługa zainstalowana
+Podczas odinstalowywania wystąpił wyjątek. Wyjątek ten zostanie zignorowany, a dezinstalacja będzie kontynuowana. Jednak po ukończeniu dezinstalacji aplikacja może nie być w pełni odinstalowana.
+Instalowanie zestawu 'D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe'.
+Uwzględnione parametry to:
+   logtoconsole = 
+   logfile = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog
+   assemblypath = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe
+Trwa instalowanie usługi KMKontrahent...
+Usługa KMKontrahent została zainstalowana pomyślnie.
+Trwa tworzenie źródła EventLog KMKontrahent w dzienniku Application...
+Zatwierdzanie zestawu 'D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe'.
+Uwzględnione parametry to:
+   logtoconsole = 
+   logfile = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.InstallLog
+   assemblypath = D:\Repos\KM-Kontrahent\KM-Kontrahent\bin\Debug\KM-Kontrahent.exe

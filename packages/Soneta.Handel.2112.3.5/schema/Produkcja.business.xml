@@ -1,0 +1,391 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Produkcja" namespace="Soneta.Produkcja" versionName="soneta">
+  <import>../..</import>
+  <using>Soneta.Core</using>
+  <using>Soneta.Config</using>
+  <using>Soneta.Handel</using>
+  <using>Soneta.Towary</using>
+  <using>Soneta.Magazyny</using>
+  <using>Soneta.CRM</using>
+  <using>Soneta.Business.App</using>
+  <using>Soneta.Kadry</using>
+
+  <interface name="IKosztTechnHost" />
+  <interface name="IProdHistoriaZapis" />
+  <interface name="IProdZasob" />
+  <interface name="IZasobTechHost" />
+  <interface name="IProdOsoba" />
+  <enum name="StanTechnologii" />
+  <enum name="RodzajPozycjiTechn" />
+  <enum name="RodzajIlosciPozycji" />
+  <enum name="RodzajWartosciPozycji" />
+  <enum name="RodzajWartosciKosztu" />
+  <enum name="TypCzasuOperacji" />
+  <enum name="RodzajCzasuOperacji" />
+  <enum name="KosztWytworzenia.AlgorytmPodzialu"/>
+  <enum name="SposobPlanowania"/>
+  <enum name="Aktywnosc"/>
+  <enum name="RodzajZdarzenia"/>
+  <enum name="TypZasobuTechn"/>
+  <enum name="TypZdarzenia"/>
+  <enum name="StanAwarii"/>
+  <enum name="PriorytetAwarii"/>
+
+  <table name="ProdHistoria" tablename="ProdHistorie" tablecaption="Rejestracja czasu operacji" caption="ProdHistoria">
+    <col name="Zapis" description="Identyfikator obiektu, którego dotyczy zdarzenie." keyprimary="true" children="ProdHistorie"
+         type="IProdHistoriaZapis"/>
+    <col name="TypZdarzenia" type="TypZdarzenia" caption="Typ zdarzenia" readonly="true"/>
+    <col name="Ilosc" type="Quantity" caption="Ilość" readonly="true"/>
+    <col name="ProdOsoba" type="ProdOsoba" readonly="true"/>
+    <col name="Operator" type="Operator" readonly="true"/>
+    <col name="StanPo" readonly="true" caption="Stan po" type="StanRealizacji"/>
+    <col name="Data" type="date" readonly="true"/>
+    <col name="Czas" type="timesec" readonly="true"/>
+    <col name="Wyeksportowano" type="boolean" description="Zapis wyeksportowany do tabeli Akordy"/>
+  </table>
+
+  <table name="Technologia" tablename="Technologie" guided="Root" tablecaption="Technologie produkcyjne" caption="Technologia">
+    <interface>IKosztTechnHost</interface>
+    <interface>IZasobTechHost</interface>
+    <key name="WgKod" keyprimary="true" keyunique="true">
+      <keycol name="Kod" />
+    </key>
+
+    <col name="Kod" type="string" length="32" category="Ogólne" caption="Kod technologii" description="Kod technologii." required="true"  />
+    <col name="Nazwa" type="string" length="255" category="Ogólne" caption="Nazwa technologii" description="Pełna nazwa technologii." required="true" />
+    <col name="Opis" type="text" category="Ogólne" caption="Opis technologii" description="Opis technologii." />
+    <col name="Stan" type="StanTechnologii" category="Ogólne" caption="Stan technologii" description="Określa stan technologii (w buforze, zatwierdzona)."/>
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie technologii. Zablokowane technologie nie będą wyświetlane w liście wyboru."/>
+    <col name="Zlecenie" type="DokumentHandlowy" category="Handel"
+		   caption="Zlecenie produkcyjne." description="Zlecenie produkcyjne powiązane z kopią technologii wzorcowej."
+		   relguided="inner" relname="TechnologiaZlecenia" children="Technologie" keyunique="false" relright="other" />
+    <col name="TechnologiaWzor" type="Technologia" category="Ogólne" caption="Technologia wzorcowa" description="Określa technologię wzorcową dla danej technologii."
+         setonlynull="true"
+         />
+    <col name="AlgorytmPodzialuKosztu" type="KosztWytworzenia.AlgorytmPodzialu" category="Ogólne"
+         description="Algorytm proporcjonalnego podziału kosztu na części przypadające na produkowane produkty." />
+
+    <col name="Sposob" type="SposobPlanowania" category="Planowanie" caption="Sposób planowania" description="Określa, sposób planowania technologii."/>
+    <col name="DataOd" type="date" category="Planowanie" caption="Data rozpoczęcia" />
+    <col name="CzasOd" type="timesec" category="Planowanie" caption="Czas rozpoczęcia" />
+  </table>
+
+  <table name="Operacja" tablename="Operacje" guided="Root" tablecaption="Operacja produkcyjna" caption="Operacja">
+    <interface>IKosztTechnHost</interface>
+    <interface>IProdHistoriaZapis</interface>
+    <interface>IZasobTechHost</interface>
+      
+    <key name="WgTechnologiaKod" keyprimary="true" keyunique="true">
+      <keycol name="Technologia" />
+      <keycol name="Kod" />
+    </key>
+
+    <key name="WgKod">
+      <keycol name="Kod" />
+    </key>
+
+    <key name="WgLp">
+      <keycol name="Lp"/>
+    </key>
+
+    <key name="WgPlanowanyStart">
+      <keycol name="PlanowanyStart" />
+    </key>
+      
+    <col name="Kod" type="string" length="32" category="Ogólne"  caption="Kod operacji" required="true" />
+    <col name="Nazwa" type="string" length="255" category="Ogólne" caption="Nazwa operacji" required="true" />
+    <col name="Opis" type="text" category="Ogólne" caption="Opis operacji" />
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa operacji w ramach technologii." />
+    <col name="Technologia" type="Technologia" category="Ogólne" caption="Technologia" description="Określa technologię przypisaną do operacji."
+         children="Operacje" delete="cascade" keyclass="Lp" keyclasscol="Lp" relguided="inner" relright="other"/>      
+    <col name="IloscDocelowa" type="Amount" category="Ogólne" caption="Ilość docelowa"/>
+    <col name="IloscWykonana" type="Amount" category="Ogólne" caption="Ilość wykonana"/>
+    <col name="IloscBrakow" type="Amount" category="Ogólne" caption="Ilość braków"/>
+	<col name="OperacjaBazowa" type="Operacja" category="Ogólne" caption="Operacja bazowa" description="Określa operację z technologii wzorcowej dla danej operacji."
+	     setonlynull="true"/>
+    <col name="OperacjaWzor" type="Operacja" category="Ogólne" caption="Operacja wzorcowa" description="Określa operację wzorcową dla danej operacji."
+         setonlynull="true"
+         />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie operacji."/>
+    <col name="OperacjaPoprzednia" type="Operacja" category="Ogólne" caption="Operacja porzedzająca bieżącą" description="Operacja poprzedzająca bieżącą operację" />
+    <col name="Aktywnosc" type="Aktywnosc" category="Ogólne" caption="Aktywność" description="Sposób wyznaczania aktywności dla operacji." />
+    <col name="CechaAktywnosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia aktywności." />
+    <col name="RozliczenieAkordowe" type="boolean" category="Ogólne" caption="Rozliczenie akordowe" description="Rozliczenie za pomocą akordu"/>
+    <col name="DefinicjaAkordu" type="DefinicjaAkordu" caption="Definicja akordu" relright="other"/>
+    <col name="PlanowanyStart" type="datetime" description="Planowana data rozpoczęcia." />
+    <col name="PlanowanyStop" type="datetime" description="Planowana data zakończenia." />
+    <col name="StanRealizacji" type="StanRealizacji" description="Stan realizacji" />
+    <col name="DataWymagalnosci" type="datetime" description="Data wymagalnosci" />
+  </table>
+
+  <table name="PozycjaTechn" tablename="PozycjeTechn" tablecaption="Pozycje technologii" caption="Pozycja technologii" guided="Root" >
+    <col name="Technologia" type="Technologia" category="Ogólne" caption="Technologia" description="Określa technologię dla danej pozycji."
+         children="PozycjeTechn" relright="true">
+      <keycol name="Rodzaj" />
+    </col>
+
+    <col name="TechnologiaPodrzedna" type="Technologia" category="Ogólne" caption="Technologia podrzędna" description="Określa technologię podrzędną dla danej pozycji."
+         relright="other">
+      <keycol name="Rodzaj" />
+    </col>
+
+    <col name="Operacja" type="Operacja" category="Ogólne" caption="Operacja" description="Określa operację dla danej pozycji."
+         keyprimary="true" delete="cascade" children="PozycjeTechn" relname="Pozycje technologiczne">
+      <keycol name="Rodzaj" />
+    </col>
+    <col name="Towar" type="Towar" category="Ogólne" caption="Towar" description="Towar przypisany do pozycji."
+		   required="true">
+      <keycol name="Rodzaj" />
+      <keycol name="Technologia" />
+    </col>
+    <col name="Magazyn" type="Magazyn" category="Ogólne"
+         description="Magazyn docelowy produktów lub źródłowy surowców." />
+    <col name="Rodzaj" type="RodzajPozycjiTechn" category="Ogólne" caption="Rodzaj pozycji." />
+    <col name="Ilosc" type="Amount" category="Ogólne" caption="Ilość"/>
+    <col name="IloscRzeczywista" type="Amount" category="Ogólne" caption="Ilość rzeczywista"/>
+    <col name="RodzajIlosci" type="RodzajIlosciPozycji" category="Ogólne" caption="Rodzaj ilości" description="Określa sposób wyznaczania ilości." />
+    <col name="KosztWytworzenia" type="currency" category="Ogólne" caption="Koszt wytworzenia" />
+    <col name="SzacunkowyKosztWytworzenia" type="currency" category="Ogólne" caption="Szacunkowy koszt wytworzenia" />
+    <col name="KosztWspolczynnik" type="int" category="Ogólne"
+         caption="Współczynnik podziału kosztu"
+         description="Współczynnik do algorytmu proporcjonalnego podziału kosztu na części przypadające na produkowane produkty."/>
+    <col name="CechaIlosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia ilości." />
+    <col name="Aktywnosc" type="Aktywnosc" category="Ogólne" modifier="public virtual" caption="Aktywność" description="Sposób wyznaczania aktywności dla pozycji." />
+    <col name="CechaAktywnosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia aktywności." />
+    <col name="Produkt" type="PozycjaTechn" description="Produkt do którego przypisany jest surowiec." />
+    <col name="RodzajWartosci" type="RodzajWartosciPozycji" category="Ogólne" caption="Rodzaj wartości" description="Określa sposób wyznaczania wartości." />
+    <col name="CechaWartosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia wartości." />
+  </table>
+
+  <table name="KosztTechn" tablename="KosztyTechn" tablecaption="Koszty technologii" caption="Koszt technologii" guided="Root" >
+    <col name="Technologia" type="Technologia" category="Ogólne" caption="Technologia" description="Określa technologię dla danego kosztu pozycji."
+         children="KosztyTechn" delete="cascade"  relright="true" />
+    <col name="Host" type="IKosztTechnHost" category="Ogólne" keyprimary="true"
+         children="Koszty" delete="cascade" />
+    <col name="Towar" type="Towar" category="Ogólne" caption="Towar" description="Towar przypisany do pozycji."
+         required="true"
+         />
+    <col name="Wartosc" type="currency" category="Ogólne" caption="Wartość" />
+    <col name="RodzajWartosci" type="RodzajWartosciKosztu" category="Ogólne" caption="Rodzaj wartości" description="Określa sposób wyznaczania wartości." />
+    <col name="CechaWartosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia wartości." />
+    <col name="Aktywnosc" type="Aktywnosc" category="Ogólne" caption="Aktywność" description="Sposób wyznaczanie aktywności dla kosztu." />
+    <col name="CechaAktywnosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia aktywności." />
+
+    <col name="Produkt" type="PozycjaTechn" description="Produkt do którego przypisany jest surowiec." />
+  </table>
+
+  <table name="WzorcowyCzasOper" tablename="WzorcoweCzasOper" tablecaption="Wzorcowe czasy operacji" config="true">
+    <col name="Nazwa" type="string" length="64" localization="dictionary" keyprimary="true" />
+    <col name="Typ" type="TypCzasuOperacji" caption="Typ" description="Typ wzorcowego czasu operacji."/>
+    <col name="Rodzaj" type="RodzajCzasuOperacji" caption="Rodzaj czasu" description="Rodzaj czasu operacji." />
+    <col name="Jednostka" type="Jednostka" caption="Jednostka" description="Jednostka czasu." />
+    <col name="DodawanyDomyslnie" type="boolean" caption="Dodawanie domyślnie" />
+  </table>
+
+  <table name="CzasTechn" tablename="CzasyTechn" caption="Czas operacji" tablecaption="Czasy operacji" guided="Root">
+    <col name="Operacja" type="Operacja" category="Ogólne" caption="Operacja" description="Określa operację dla danego czasu."
+         keyprimary="true" delete="cascade" children="CzasyTechn" relname="Czasy operacji" relright="true" />
+    <col name="Rodzaj" type="RodzajCzasuOperacji" category="Ogólne" caption="Rodzaj czasu." />
+    <col name="Typ" type="TypCzasuOperacji" caption="Typ" description="Typ wzorcowego czasu operacji."/>
+    <col name="Opis" type="text" category="Ogólne" caption="Opis" description="Opis czasu." />
+    <col name="Czas" type="Amount" category="Ogólne" caption="Czas">
+      <verifier name="CzasTechnVerifier" />
+    </col>
+    <col name="CechaCzas" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia czasu." />
+    <col name="KosztJednostkowy" type="currency" category="Ogólne" caption="Koszt jednostkowy" />
+    <col name="JednostkaCzasuDlaKosztu" type="Jednostka" caption="Jednostka" description="Jednostka czasu dla kosztu jednostkowego.">
+      <verifier name="CzasTechnVerifier" />
+    </col>
+  </table>
+
+  <table name="ProdZasobWzorcowy" tablename="ProdZasobyW" tablecaption="Produkcyjne zasoby wzorcowe">
+    <interface>IProdZasob</interface>
+    <key name="WgSymbol" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <key name="WgBlokada">
+      <keycol name="Blokada"/>
+    </key>
+    <col name="Symbol" type="string" category="Ogólne" length="16" required="true" caption="Symbol" description="Symbol zasobu"
+         keyunique="true" modifier="public virtual"/>
+    <col name="Nazwa" type="string" category="Ogólne" length="64" caption="Nazwa" description="Nazwa zasobu"/>
+    <col name="Opis" type="text" category="Ogólne" caption="Opis" description="Opis zasobu"/>
+    <col name="Blokada" type="boolean" category="Ogolne"
+         description="Zasob zablokowany, nie powinien być wyświetlany do wybor" />
+  </table>
+
+  <table name="ProdZasob" tablename="ProdZasobyR" tablecaption="Produkcyjne zasoby rzeczywiste" guided="Root">
+    <interface>IProdZasob</interface>
+    <key name="WgSymbol" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <key name="WgBlokada">
+      <keycol name="Blokada"/>
+    </key>
+    <col name="Symbol" type="string" length="16" category="Ogólne" required="true" caption="Symbol" description="Symbol zasobu"
+         keyunique="true" modifier="public virtual"/>
+    <col name="Nazwa" type="string" length="64" category="Ogólne" caption="Nazwa" description="Nazwa zasobu"/>
+    <col name="Opis" type="text" caption="Opis" category="Ogólne" description="Opis zasobu"/>
+    <col name="Blokada" type="boolean" category="Ogolne"
+         description="Zasob zablokowany, nie powinien być wyświetlany do wybor" />
+  </table>
+
+  <table name="ProdZasobRelacja" tablename="ProdZasobyRel" tablecaption="Relacje zasobów produkcyjnych">
+    <col name="ProdZasobWzorcowy" type="ProdZasobWzorcowy" required="true" modifier="public virtual"
+         children="ZasobyProdukcyjne" relname="Zasoby produkcyjne przypisane do wzorca" delete="cascade"
+         keyprimary="true" keyunique="true">
+      <keycol name="ProdZasob"/>
+    </col>
+    <col name="ProdZasob" type="ProdZasob" required="true" modifier="public virtual"
+         children="WzorcoweZasobyProdukcyjne" relname="Zasób przypisany do wzorców" delete="cascade">
+    </col>
+  </table>
+
+  <table name="ZasobTechn" tablename="ZasobyTechn" tablecaption="Zasoby wzorcowe lub rzeczywiste przypisane do obiektów produkcyjnych">
+    <col name="Technologia" type="Technologia" category="Ogólne" caption="Technologia" description="Określa technologię dla zasobu."
+        delete="cascade" modifier="public virtual">
+      <keycol name="Typ"/>
+    </col>
+    <col name="Host" keyprimary="true" type="IZasobTechHost" description="Host zasobu"
+         required="true" delete="cascade" modifier="public virtual"
+         children="ZasobyTechn" relname="Zasoby technologiczne hosta">
+      <keycol name="Typ"/>
+    </col>
+    <col name="ProdZasob" type="IProdZasob" modifier="public virtual" keyunique="true" required="true">
+      <keycol name="Host"/>
+      <keycol name="Typ"/>
+    </col>
+    <col name="Typ" type="TypZasobuTechn" required="true"
+         readonly="true" caption="Typ" description="Typ zasobu"
+         modifier="public virtual" selector="true"/>
+    <col name="Ilosc" type="int"/>
+    <col name="ZasobTechnWzorcowy" type="ZasobTechn" delete="cascade"
+         description="Zasob wzorcowy"/>
+  </table>
+
+  <table name="ProdKompetencja" tablename="ProdKompetencje" tablecaption="Słownik kompetencji osob produkcyjnych">
+    <key name="WgSymbol" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <key name="WgBlokada">
+      <keycol name="Blokada"/>
+    </key>
+    <col name="Symbol" type="string" length="16" category="Ogólne" required="true" caption="Symbol" description="Symbol kompetencji"
+       keyunique="true" modifier="public virtual"/>
+    <col name="Nazwa" type="string" category="Ogólne" length="64" caption="Nazwa" description="Nazwa kompetencji"/>
+    <col name="Opis" type="text" category="Ogólne" caption="Opis" description="Opis kompetencji"/>
+    <col name="Blokada" type="boolean" category="Ogólne"
+         description="Jesli kompetencja jest zablokowana nie jest dostępna na listach wyboru" />
+  </table>
+
+  <table name="ProdOsobaWzorcowa" tablename="ProdOsobyWz" tablecaption="Wzorce osób wykonujących operacje produkcyjne">
+    <interface>IProdOsoba</interface>
+    <interface>IProdZasob</interface>
+    <key name="WgSymbol" keyprimary="true" keyunique="true">
+      <keycol name="Symbol"/>
+    </key>
+    <key name="WgBlokada">
+      <keycol name="Blokada"/>
+    </key> 
+    <col name="Symbol" type="string" length="16" required="true" keyprimary="true" keyunique="true" modifier="public virtual"/>
+    <col name="Nazwa" type="string" length="64" caption="Nazwa" category="Ogolne"/>
+    <col name="Opis" type="text" category="Ogólne"/>
+    <col name="Blokada" type="boolean" category="Ogólne"/>
+  </table>
+
+  <table name="ProdOsobaKompetencja" tablename="ProdOsobaKom" tablecaption="Powiązanie osoby produkcyjnej z kompetancjami">
+    <col name="ProdOsoba" type="IProdOsoba" relname="Kompetencje osoby produkcyjnej"
+         children="Kompetencje"
+         delete="cascade"
+         required="true"
+         keyprimary="true"
+         keyunique="true"
+         modifier="public virtual"
+        >
+      <keycol name="ProdKompetencja"/>
+      <attribute>Context</attribute>
+    </col>
+    <col name="ProdKompetencja" type="ProdKompetencja" delete="cascade"/>
+  </table>
+
+  <table name="ProdOsoba" tablename="ProdOsobyR" tablecaption="Osoby wykonujące operacje produkcyjne" guided="Root">
+    <interface>IProdOsoba</interface>
+    <interface>IProdZasob</interface>
+    <key name="WgSymbol" keyprimary="true" keyunique="true">
+      <keycol name="Symbol"/>
+    </key>
+    <key name="WgJestPracownik">
+      <keycol name="JestPracownik"/>
+    </key>
+    <key name="WgBlokada">
+      <keycol name="Blokada"/>
+    </key>
+    <col name="Symbol" type="string" length="16" keyprimary="true" keyunique="true" required="true" modifier="public virtual"/>
+    <col name="Imie" type="string" length ="30" modifier="public virtual" />
+    <col name="Nazwisko" type="string" length="81" modifier="public virtual" />
+    <col name="Pracownik" type="Pracownik" modifier="public virtual">
+      <verifier name="ProdOsoba.PracownikVerifier" onadded="false"/>
+    </col>
+    <col name="JestPracownik" type="boolean"/>
+    <col name="Operator" type="Operator" modifier="public virtual">
+        <verifier name="ProdOsoba.OperatorVerifier" onadded="false"/>
+    </col>
+    <col name="Blokada" type="boolean" />
+  </table>
+
+  <table name="OperacjaPoprzedzajaca" tablename="OperacjePoprzed"
+         tablecaption="Operacje poprzedzające, od których zależy możliwość wykonanania operacji">
+    <col name="Operacja" type="Operacja" required="true" keyunique="true" keyprimary="true"
+         children="OperacjePoprzedzajace">
+      <keycol name="Poprzedzajaca"/>
+      <attribute>Context</attribute>
+    </col>
+    <col name="Poprzedzajaca" type="Operacja" caption="Operacja poprzedzająca" required="true" modifier="public virtual"/>
+    <col name="MaxOpoznienie" type="Amount" caption="Max czas opóźnienia"/>
+  </table>
+
+  <table name="RelacjaProdZasobCRM" tablename="RelProdZasobCRM" tablecaption="Relacje zasobow produkcujnych z zasobami CRM">
+    <col name="ProdZasob" type="ProdZasob" required="true" keyprimary="true" keyunique="true"
+         delete="cascade" children="ZasobyCRM">
+      <keycol name="ZasobCRM"/>
+      <attribute>Context</attribute>
+    </col>
+    <col name="ZasobCRM" type="IZasobCRM" required="true" delete="cascade">
+      <verifier name="RelacjaProdZasobCRM.ZasobCRMVerifier"/>
+    </col>
+  </table>
+
+  <table name="RezerwacjaSurowca" tablename="RezerwacjeSur" tablecaption="Rezerwacje surowca">
+    <key name="WgDatyRezerwacji">
+      <keycol name="DataRezerwacji" />
+      <keycol name="Towar" />
+    </key>
+    <col name="SurowiecTechn" type="PozycjaTechn" caption="Surowiec technologiczny" required="true" keyprimary="true"
+         children="RezerwacjaSurowca" relname="Rezerwacje przypisane do surowca technologicznego" delete="cascade" relright="true"/>
+    <col name="ZasobPrzychod" type="Zasob" caption="Zasób przychodu" relright="other"/>
+    <col name="PozycjaPrzychod" type="PozycjaDokHandlowego" caption="Pozycja przychodu" relright="other"/>
+    <col name="Towar" type="Towar" caption="Towar" required="true" />
+    <col name="Ilosc" type="Quantity" caption="Ilość rezerwacji" required="true" />
+    <col name="DataRezerwacji" type="datetime" caption="Data rezerwacji" readonly="true"/>
+    <col name="Operator" type="Operator" caption="Operator" readonly="true" />
+  </table>
+
+  <table name="ProdAwaria" tablename="ProdAwarie" tablecaption="Awarie produkcyjne" guided="Root">
+    <key name="WgKod" keyunique="true" keyprimary="true" >
+      <keycol name="Kod" />
+    </key>
+    <key name="WgDataZgloszenia">
+      <keycol name="DataZgloszenia" />
+    </key>
+    <col name="Kod" type="string" length="32" caption="Kod awarii" required="true" />
+    <col name="Opis" type="text" caption="Opis awarii" />
+    <col name="ProdZasob" type="ProdZasob" caption="Zasób produkcyjny" required="true" relright="true" />
+    <col name="Operacja" type="Operacja" caption="Operacja produkcyjna" relright="other" />
+    <col name="IdentyfikatorZadania" type="guid" caption="Identyfikator Zadania"/>
+    <col name="Priorytet" type="PriorytetAwarii" caption="Priorytet awarii" />
+    <col name="Stan" type="StanAwarii" caption="Stan awarii" />
+    <col name="DataZgloszenia" type="datetime" caption="Data zgłoszenia" readonly="true" />
+    <col name="ProdOsoba" type="ProdOsoba" caption="Osoba rzeczywista" />
+    <col name="Operator" type="Operator" caption="Operator" />
+  </table>
+</module>

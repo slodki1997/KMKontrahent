@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Waluty" namespace="Soneta.Waluty" versionName="soneta">
+  <import>../..</import>
+	<using>Soneta.Core</using>
+		
+	<subrow name="Euro">
+		<col name="StalyKurs" type="boolean">
+			<verifier name="Euro.KursRequiredVerifier"/>
+		</col>
+		<col name="Kurs" type="double"/>
+		<col name="Krotnosc" type="double"/>
+		<col name="Data" type="date" description="Data od której obowiązuje stały przelicznik do EUR"/>
+	</subrow>
+	
+	<table name="Waluta" tablename="Waluty" guided="Root" config="true">
+		<key name="WgSymbolu" keyunique="true" keyprimary="true">
+			<keycol name="Symbol"/>
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Symbol" type="string" length="3" required="true" category="Ogólne"/>
+		<col name="Nazwa" type="string" length="30" localization="dictionary" required="true" category="Ogólne"/>
+		<col name="Kraj" type="string" length="30" localization="dictionary" category="Ogólne"/>
+		<!-- WALUTA -->
+		<col name="Calkowity" type="string" length="30" category="Waluta"/>
+		<col name="Dziesietny" type="string" length="30" category="Waluta"/>
+		<!-- KURS -->
+		<col name="Krotnosc" type="int" required="true" category="Kurs"/>
+		<col name="Euro" type="Euro" category="Kurs"/>
+	</table>
+
+
+	<table name="TabelaKursowa" tablename="TabeleKursowe" name8="TablKurs" guided="Root" config="true" caption="Tabela kursowa" tablecaption="Tabele kursowe" >
+		<key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa"/>
+		</key>
+		<!-- OGÓLNE -->
+		<col name="Nazwa" type="string" length="30" localization="dictionary" required="true" category="Ogólne"/>
+		<col name="WgKursuDnia" type="boolean" category="Ogólne"/>
+		<col name="WalutaBazowa" type ="Waluta" required="true" />
+		<col name="KursWBazowej" type ="boolean" />
+	</table>
+
+
+	<table name="KursWaluty" tablename="KursyWalut" config="true">
+		<!-- OGÓLNE -->
+		<col name="Tabela" type="TabelaKursowa" readonly="true" required="true" category="Ogólne"
+			children="Notowania"
+			relname="Kursy w tabeli"
+			keyclass="Date"
+			keyclasscol="Data"
+			relguided="inner" keyprimary="true" >
+			<keycol name="Waluta"/>
+		</col>
+		<col name="Waluta" type="Waluta" readonly="true" required="true" category="Ogólne"
+			children="Notowania"
+			relname="Kursy waluty"
+			keyclass="Date" 
+			keyclasscol="Data" >
+			<keycol name="Tabela"/>			
+		</col>
+		<!-- KURS -->		
+		<col name="Data" type="date" readonly="true" required="true" category="Kurs"/>
+		<col name="Krotnosc" type="int" required="true" category="Kurs"/>
+		<col name="Kurs" type="double" required="true" category="Kurs"/>
+    <col name="KursZakupu" type="double" required="true" category="Kurs"/>
+    <col name="NumerTabeli" type="string" length="30" required="false" category="Kurs"/>
+  </table>
+</module>

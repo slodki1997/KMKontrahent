@@ -1,0 +1,973 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Towary" namespace="Soneta.Towary" versionName="soneta">
+
+    <import>../..</import>
+
+    <using>Soneta.Core</using>
+    <using>Soneta.Config</using>
+    <using>Soneta.Waluty</using>
+    <using>Soneta.Kasa</using>
+    <using>Soneta.CRM</using>
+    <using>Soneta.Handel</using>
+    <using>Soneta.Magazyny</using>
+    <using>Soneta.Business.Db</using>
+
+    <simpletype name="Quantity">
+        <cstype>Quantity</cstype>
+        <cscreator>new Quantity(creator.Read_double(), creator.Read_string())</cscreator>
+        <nullcondition>value==Quantity.Zero || value==Quantity.Empty</nullcondition>
+        <dbfield type="double" postfix="Value" />
+        <dbfield type="string" postfix="Symbol" />
+    </simpletype>
+
+    <subrow name="GrupyDostawOpcje">
+        <col name="Opcje" type="WyborPartiiOpcje" modifier="public virtual"
+             caption="Wybór partii i zasobu"
+             description="Opcje wyboru partii i zasobu." />
+        <col name="Autonumerowanie" type="GrupyDostawAutonumerowanie" />
+    </subrow>
+
+    <subrow name="GrupyDostawAutonumerowanie">
+        <col name="Opcje" type="WyborPartiiAutonumerowanie"
+             caption="Autonumerowanie partii"
+             description="Opcje autonumerowania partii." />
+        <col name="Cecha" type="FeatureDefinition"
+             caption="Cecha"
+             description="Cecha wyliczająca numer partii." />
+    </subrow>
+
+    <table name="Jednostka" tablename="Jednostki" guided="Root" config="true"
+        caption="Jednostka" tablecaption="Jednostki">
+
+        <key name="WgKodu" keyunique="true" keyprimary="true">
+            <keycol name="Kod" />
+        </key>
+
+        <col name="Kod" type="string" length="10" localization="dictionary" required="true" important="true"
+            description="Nazwa jednostki wykorzystywana przy wprowadzaniu ilości."/>
+        <col name="Opis" localization="dictionary" type="string" length="80"
+                description="Opis jednostki."/>
+        <col name="Precyzja" type="int"
+                description="Precyzja zaokrąglenia ilości towaru"/>
+        <col name="Typ" type="TypJednostki"
+                description="Typ jednostki określający jej zastosowanie: masa, długość, czas, itp."/>
+        <col name="Blokada" type="boolean" important="true"
+                description="Jendostka nie będzie wyświetlana na listach podpowiedzi."/>
+        <col name="Uzupelniajaca" type="boolean"
+                description="Informuje, czy jednostka jest uzupełniająca wykorzystywana na deklaracji UE."/>
+
+    </table>
+
+    <table name="Przelicznik" tablename="Przeliczniki" config="true">
+
+        <col name="Wyliczana" type="Jednostka" keyprimary="true" keyunique="true"
+                required="true"
+                delete="cascade"
+                children="Przeliczniki"
+                description="Jednostka wyliczana z jednostki bazowej."
+                relguided="inner" >
+            <keycol name="Bazowa" />
+            <verifier name="Przelicznik.RóżneJednostkiVerifier"/>
+            <verifier name="Przelicznik.TamSamTypJednostkiVerifier"/>
+        </col>
+        <col name="Bazowa" type="Jednostka" keyunique="true"
+                required="true"
+                children="PrzelicznikiBazowe"
+                description="Jednostka bazowa, z której wyliczana jest jednostka 'Wyliczana'." >
+            <keycol name="Wyliczana" />
+            <verifier name="Przelicznik.RóżneJednostkiVerifier"/>
+            <verifier name="Przelicznik.TamSamTypJednostkiVerifier"/>
+        </col>
+        <col name="Wspolczynnik" type="Fraction" name12="Wsp" caption="Współczynnik" required="true"
+                description="Współczynnik wyliczania jednostki wyliczanej: Wyliczna=Bazowa*Wspolczynnik." />
+
+    </table>
+
+    <table name="PrzelicznikTowaru" tablename="PrzelTow" name8="PrzelTow">
+
+        <col name="Wyliczana" type="Jednostka" keyunique="true"
+                required="true"
+                description="Jednostka wyliczana z jednostki bazowej." >
+            <keycol name="Towar" />
+            <keycol name="Bazowa" />
+            <verifier name="PrzelicznikTowaru.RóżneJednostkiVerifier"/>
+            <verifier name="PrzelicznikTowaru.TamSamTypJednostkiVerifier"/>
+        </col>
+        <col name="Bazowa" type="Jednostka" keyunique="true"
+                required="true"
+                description="Jednostka bazowa, z której wyliczana jest jednostka 'Wyliczana'." >
+            <keycol name="Towar" />
+            <keycol name="Wyliczana" />
+            <verifier name="PrzelicznikTowaru.RóżneJednostkiVerifier"/>
+            <verifier name="PrzelicznikTowaru.TamSamTypJednostkiVerifier"/>
+        </col>
+        <col name="Towar" type="Towar" keyprimary="true" keyunique="true"
+                required="true" readonly="true"
+                relguided="inner"
+                delete="cascade"
+                description="Towar, dla którego zdefiniowany jest przelicznik"
+                children="PrzelicznikiTowaru" >
+            <keycol name="Wyliczana" />
+            <keycol name="Bazowa" />
+        </col>
+        <col name="Wspolczynnik" type="Fraction" name12="Wsp" caption="Współczynnik" required="true"
+                description="Współczynnik wyliczania jednostki wyliczanej: Wyliczna=Bazowa*Wspolczynnik." />
+
+    </table>
+
+    <table name="ZamiennikTowaru" tablename="ZamiennikiTowaru" name8="ZamTow">
+
+        <key name="WgPrzeciwny" keyprimary="false" keyunique="false">
+            <keycol name="Zamiennik"/>
+            <keycol name="Dwustronny"/>
+        </key>
+        <col name="Lp" type="int" required="true" batchfield="false"
+          description="Liczba porządkowa zamienników na towarze.">
+        </col>
+        <col name="Zamiennik" type="Towar" caption="Zamiennik" keyunique="true"
+          required="true" readonly="false" modifier="public virtual"
+          description="Towar, dla którego zdefiniowany jest zamiennik">
+            <keycol name="Towar"/>
+        </col>
+        <col name="JednostkaZam" type="Jednostka" name12="JendZam" caption="JednostkaZam"
+          required="false" modifier="public virtual" readonly="set"
+          description="Jednostka zamiennika." >
+            <attribute>Obsolete("Zamienniki")</attribute>
+        </col>
+        <col name="Wspolczynnik" type="Fraction" name12="Wspol" caption="Współczynnik"
+          description="Współczynnik wyliczania jednostki zamiennika z jednostki towaru." />
+        <col name="Towar" type="Towar" caption="Towar" keyprimary="true"
+                required="true" readonly="true"
+                relguided="inner"
+          relright="true"
+                delete="cascade"
+                description="Towar, dla którego zdefiniowany jest zamiennik"
+                children="ZamiennikiTowaru"
+          keyclass="Lp" keyclasscol="Lp" >
+        </col>
+        <col name="JednostkaTow" type="Jednostka" name12="JednTow" caption="JednostkaTow"
+                required="false" modifier="public virtual" readonly="set"
+                description="Jednostka towaru." >
+            <attribute>Obsolete("Zamienniki")</attribute>
+        </col>
+        <col name="Dwustronny" type="boolean" name12="Dwustr" caption="Dwustronny"
+          description="Czy zamienniki jest dwustronny." />
+
+    </table>
+
+    <table name="Towar" tablename="Towary" guided="Root" optimisticlocking="true">
+
+        <interface>IElementSlownika</interface>
+        <interface>IElementSlownikZewnRel</interface>
+        <interface>IKodowany</interface>
+        <interface>IAdresyWWWHost</interface>
+
+        <key name="WgKodu" keyunique="true" keyprimary="true">
+            <keycol name="Kod" />
+        </key>
+        <key name="WgNazwy">
+            <keycol name="Nazwa" />
+        </key>
+        <key name="WgNumeruKatalogowego">
+            <keycol name="NumerKatalogowy" />
+        </key>
+        <key name="WgEAN">
+            <keycol name="EAN" />
+        </key>
+        <key name="WgPrefiksGTIN13">
+            <keycol name="PrefiksGTIN13"/>
+        </key>
+
+        <!-- OGÓLNE -->
+        <col name="Kod" type="string" length="100" category="Ogólne" required="true" important="true"
+                 description="Symbol, skrócona nazwa towaru" />
+        <col name="Typ" type="TypTowaru" required="true" category="Ogólne" important="true"
+                 description="Określa czy towar, usługa, produkt" />
+        <col name="Opakowanie" type="boolean" category="Ogólne"
+                 description="Określa czy towar jest opakowaniem."
+                 important="true" />
+        <col name="Nazwa" type="string" length="200" required="true" category="Ogólne" important="true"
+                 description="Nazwa, dowolny napis, który może być wykorzystywany na dokumencie handlowym.">
+            <verifier name="Towar.NazwaVerifier" />
+            <verifier name="Towar.NazwaFiskalnaVerifier" />
+        </col>
+        <col name="EAN" type="string" length="130" category="Ogólne"
+                 description="Kod kreskowy wykorzystywany do szybkiego wyszukiwania towaru za pomocą czytnika.">
+            <verifier name="Towar.EANUniqueVerifier" />
+        </col>
+        <col name="NumerKatalogowy" type="string" length="100" category="Ogólne"
+                 description="Numer katalogowy towaru, dowolny napis">
+            <verifier name="Towar.NumerKatalogowyUniqueVerifier" />
+        </col>
+        <col name="Jednostka" type="Jednostka" required="true" category="Ogólne"
+                 description="Podstawowa jednostka magazynowa towaru. Wszystkie inne jednostki muszą być przeliczane na tę jednostkę."
+                 relname="Jednostka towarowa"		/>
+        <col name="DefinicjaStawki" type="DefinicjaStawkiVat" required="true" category="Ogólne"
+                 description="Definicja stawki VAT (procent stawki VAT) dla operacji sprzedaży"
+                 relname="Stawka VAT towaru">
+            <verifier name="Towar.SWWVerifier" />
+            <verifier name="Towar.NazwaFiskalnaVerifier" />
+        </col>
+        <col name="DefinicjaStawkiZakupu" type="DefinicjaStawkiVat" required="true" category="Ogólne" name12="DefStawkiZak"
+                 description="Definicja stawki VAT (procent stawki VAT) dla operacji zakupu."
+                 relname="Stawka VAT zakupu towaru" />
+        <col name="SWW" type="string" length="20" category="Ogólne"
+                 description="Numer SWW lub PKWIU dla towarów o obniżonej stawce VAT sprzedaży.">
+            <verifier name="Towar.SWWVerifier" />
+        </col>
+        <!-- Mateusz - task 10121 - 7.7 -->
+        <col name="PodstawaZwolnienia" type="string" length="100" category="Ogólne"
+               description="Podstawa prawna do stosowania stawki ZW.">
+            <verifier name="Towar.SWWVerifier" />
+            <attribute>Dictionary("Towar.Zwolnienie", ManualList=true)</attribute>
+        </col>
+        <!-- Mateusz - task 10478 - 7.8 -->
+        <col name="NabywcaPodatnik" type="boolean" category="Dodatkowe" caption="Nabywca podatnik"
+                 description="Sprzedaż opodatkowana po stronie nabywcy" modifier="public virtual"/>
+        <col name="MPP" type="boolean" category="Dodatkowe" caption="Mechanizm podzielonej płatności"
+		             description="Wymaga mechanizmu podzielonej płatności." modifier="public virtual"/>
+
+        <col name="Narzut" type="percent" category="Ceny"
+                     description="Narzut procentowy wykorzystywany do wyliczania ceny hurtowej"/>
+        <col name="Marza" type="percent" caption="Marża" category="Ceny"
+                 description="Marża procentowa wykorzystywana do wyliczania ceny detalicznej"/>
+        <col name="CenaZakupuKartotekowa" type="doublecy" category="Ceny"
+                 description="Cena zakupu przechowywana na kartotece towarowej" />
+        <!-- /OGÓLNE -->
+
+        <!-- DODATKOWE -->
+        <col name="CN" type="KodCN" category="UE Intrastat" required="false" caption="Kod CN" modifier="public virtual" relname="Kod CN" >
+
+        </col>
+        <col name="NazwaIntrastat" type="string" length="255" category="UE Intrastat"
+                 description="Nazwa o ile wypełniona wykorzystywana na deklaracji Interastat." />
+        <col name="KosztDodatkowy" type="boolean" category="UE Intrastat"
+                 description="Pozycja ma być traktowana przez księgowość jako koszt dodatkowy podnoszący wartość towarów." />
+        <col name="AktualizujCeny" type="WarunekAktualizacjiCeny" category="Ogólne"
+                 description="Określa kiedy cena danego towaru ma być aktualizowana po wprowadzeniu przychodu." />
+        <col name="Blokada" type="boolean" category="Dodatkowe"
+                 description="Określa, czy dany towar ma być widoczny na listach wyboru podczas pracy.">
+            <verifier name="Towar.BlokadaVerifier" onadded="false" />
+        </col>
+        <col name="Precyzja" type="int" category="Dodatkowe"
+                 description="Precyzja zaokrąglenia (wyliczania) cen towaru"/>
+        <col name="VATOdMarzy" type="boolean" category="Dodatkowe"
+                 description="VAT od pozycji towaru liczony jest od marży. Na pozycji dokumentu handlowego jest NP." />
+        <col name="DefinicjaPowstaniaObowiazkuVATInfo" type="DefinicjaPowstaniaObowiazkuVATInfo" category="Dodatkowe"
+                 description="Informacje o definicji powstania obowiązku VAT." />
+        <col name="DoWyprzedazy" type="boolean" category="Dodatkowe"
+                 description="Flaga oznaczająca, że towar jest tylko dostępny do wyprzedaży. Nie można go już kupować." />
+        <col name="WyborPartii" type="boolean" category="Dodatkowe" name12="WyborPartii" modifier="public virtual"
+                 description="Określa czy dany towar ma podlegać wyborowi partii.">
+            <attribute>Obsolete("patrz: WyborPartiiOpcje.Opcje")</attribute>
+        </col>
+        <col name="WyborPartiiOpcje" type="GrupyDostawOpcje" category="Dodatkowe"
+                 description="Opcje wyboru partii."/>
+        <col name="EdycjaNazwy" type="boolean" category="Opis"
+                 description="Określa, czy jest możliwa edycja nazwy towaru na poszczególnych pozycjach dokumentów handlowych." />
+        <col name="Opis" type="text" category="Opis na dokumencie"
+                 description="Rozszerzony opis towaru, który może być wykorzystywany podczas drukowania dokumentów handlowych." />
+
+        <col name="DoliczajKosztDodatkowy" type="boolean" category="Dodatkowe" caption="Doliczanie kosztu dodatkowego" description="Doliczanie kosztu dodatkowego." />
+
+        <!-- /DODATKOWE -->
+
+        <!-- JEDNOSTKI I KODY-->
+        <col name="MasaNetto" type="Quantity" category="Jednostki"
+                 description="Masa dla jednej magazynowej jednostki towaru.">
+            <verifier name="Towar.MasaNettoUEVerifier" />
+        </col>
+        <col name="MasaBrutto" type="Quantity" category="Jednostki"
+                description="Masa brutto dla jednej magazynowej jednostki towaru.">
+        </col>
+        <col name="JednostkaAlternatywna" type="Jednostka" category="Jednostki" name12="JednAlt"
+                description="Jednostka alternatywna wykorzystywana przy niektórych dokumentach."
+                relname="Alternatywna jednostka towarowa" />
+        <col name="JednostkaReszty" type="Jednostka" category="Jednostki" name12="AltReszta"
+                 description="Jednostka reszty całkowitej ilośći wyrażonej w jednostce alternatywnej."
+                 relname="Reszta alternatywna jednostka towarowa" />
+        <!-- TASK: 6175. [7.0] -->
+        <!-- TASK: 10840 [7.8] -->
+        <col name="PrefiksGTIN13" type="string" length="7" category="Jednostki"
+                 description="Prefiks kodu GTIN-13, pierwsze 7 znaków wraz z rodzajem kodu.">
+            <verifier name="Towar.GTINVerifier" />
+            <verifier name="Towar.GTINUniqueVerifier" />
+        </col>
+        <!-- /JEDNOSTKI I KODY -->
+
+        <!-- ZAMÓWIENIA I ZAMIENNIKI -->
+        <col name="Dostawca" type="Kontrahent" category="Generowanie zamówień"
+                relname="Dostawca towaru"
+                children="Towary"
+                description="Standardowy dostawca towaru, dla którego mogą być generowane zamówienia na ten towar..">
+            <keycol name="Kod" />
+        </col>
+        <col name="ZaokraglenieZamowienia" type="Quantity" category="Generowanie zamówień" name12="ZaokrZam"
+                description="Zaokrąglenie ilości zamawianego towaru w górę oraz jednostka zamówienia."/>
+        <col name="StanMinimalny" type="Quantity" category="Generowanie zamówień" name12="StanMin" modifier="private"
+                      description="Minimalny stan towaru w magazynie.">
+            <attribute>Obsolete(@"Funkcjonalność przeniesiona do TowarMagazynInfo")</attribute>
+        </col>
+        <col name="StanMaksymalny" type="Quantity" category="Generowanie zamówień" name12="StanMax" modifier="private"
+                description="Maksymalny stan towaru w magazynie.">
+            <attribute>Obsolete(@"Funkcjonalność przeniesiona do TowarMagazynInfo")</attribute>
+        </col>
+        <!-- /ZAMÓWIENIA I ZAMIENNIKI  -->
+
+        <!-- KOMPLETACJA -->
+        <col name="PelneKomplety" type="boolean" category="Towar jako produkt"
+                 description="Wymusza kompletacje tylko za pomocą pełnych kompletów. Możliwa jest tylko produkcja będaca wielokrotnością ilości wynikowej." />
+        <col name="ProduktInfo" type="ProduktInfo" category="Towar jako produkt"
+                 description="Informacje specyficzne dla towaru jako produktu." />
+        <!-- /KOMPLETACJA -->
+
+        <!-- MARŻA -->
+        <col name="MinimalnaMarza" type="double" modifier="public virtual"
+             caption="Minimalna marża"
+             category="Minimalna dopuszczalna marża"
+             description="Kwota minimalnej marży, którą należy osiągnąć na sprzedaży towaru." />
+        <col name="MinimalnaMarzaProcent" type="percent" modifier="public virtual"
+             caption="Procent marży minimalnej"
+             category="Minimalna dopuszczalna marża"
+                 description="Procent minimalnej marży, którą należy osiągnąć na sprzedaży towaru." />
+        <!-- /MARŻA -->
+
+        <col name="Link" type="string" length="24"/>
+        <col name="AlternatywneDefinicjeStawekInfo" type="AlternatywneDefinicjeStawekInfo"
+                 caption="Alternatywne definicje stawek VAT"
+                 description="Alternatywne definicje stawek VAT." />
+
+        <col name="KrajPochodzenia" type="string" length="2" category="UE"
+      description="Kod kraju pochodzenia towaru raportowany na dokumencie Intrastat." />
+
+      <col name="PodlegaPSD" type="boolean" modifier="internal" />
+      <col name="GrupaTowarowaVat" type="ProceduraVAT" />
+
+      <col name="CechyWgZestawow" type="boolean" description="Określa, czy cechy towaru będą wyświetlane według przypisanych zestawów cech." />
+
+      <col name="Wariantowy" type="boolean" description="Określa, czy towar jest wariantowy." />
+      <col name="ZestawCechWariantu" type="guid" description="Wskazanie na zestaw cech wariantowych."/>
+    </table>
+
+    <table name="WariantTowaru" tablename="WariantyTowaru"
+          caption="Warianty towaru"
+          tablecaption="Warianty towaru">
+      <col name="Towar" type="Towar"
+             caption="Towar"
+             description="Towar, do którego przypisany jest wariant."
+             required="true" readonly="true"
+             children="Warianty"
+             relname="Warianty towary dla zapisu"
+             delete="cascade"
+             keyprimary="true"
+             keyunique="true">
+        <keycol name="Wariant"/>
+      </col>
+      <col name="Wariant" type="Towar"
+        caption="Wariant"
+        description="Wariant towaru."
+        required="true" readonly="false"/>
+    </table>
+    
+    <table name="KodCN" tablename="KodyCN" guided="Root">
+        <key name="WgKod" keyunique="true" keyprimary="true">
+            <keycol name="Kod" />
+        </key>
+        <col name="Kod" type="string" length="8"  required="true" keyprimary="true" caption="Kod"></col>
+        <col name="Opis" type="text" required="false" />
+        <col name="JednostkaUzupelniajaca" type="Jednostka" required="false" caption="Jednostka uzupełniająca" />
+        <col name="WymagaMasyNetto" type="boolean" />
+        <col name="DefinicjaStawkiVAT" type="DefinicjaStawkiVat" required="false" caption="Definicja stawki VAT" />
+    </table>
+
+    <!-- Robert - task 12228 - 8.1 - dodanie ulubionych towarów dla obiektów Kontrahent i KontaktOsoba -->
+    <interface name="ITowaryUlubioneHost"/>
+    <table name="TowarUlubiony" tablename="TowaryUlubione"
+          caption="Ulubione towary"
+          tablecaption="Ulubione towary">
+
+        <col name="Zapis" type="ITowaryUlubioneHost"
+                description="Zapis, do którego przypisany jest dany towar"
+                children="TowaryUlubione"
+                relname="Ulubione towary dla zapisu"
+                required="true" readonly="true" keyunique="true" keyprimary="true"
+                relguided="inner" relright="true" delete="cascade">
+            <keycol name="Towar" />
+        </col>
+
+        <col name="Towar" type="Towar"
+             caption="Ulubiony towar"
+             description="Ulubiony towar skojarzony z danym zapisem."
+             required="true" readonly="false"
+             modifier="public virtual"
+             delete="cascade"
+     />
+
+    </table>
+
+    <subrow name="AlternatywneDefinicjeStawekInfo">
+        <col name="Sprzedaz" type="DefinicjaStawkiVat" required="false" readonly="false" setonlynull="true" modifier="public virtual"
+             caption="Alternatywna definicja stawki VAT sprzedaży."
+             description="Alternatywna definicja stawki VAT (procent stawki VAT) dla operacji sprzedaży."/>
+        <col name="Zakup" type="DefinicjaStawkiVat" required="false" readonly="false" setonlynull="true" modifier="public virtual"
+             caption="Alternatywna definicja stawki VAT zakupu."
+             description="Alternatywna definicja stawki VAT (procent stawki VAT) dla operacji zakupu."/>
+        <col name="PowodZmianyStawkiVat" type="PowodZmianyStawkiVat" required="false" readonly="false" modifier="public virtual"
+             description="Informacja o przyczynie zmiany stawek VAT i konieczności stosowania stawek alternatywnych." >
+            <attribute>Browsable(false)</attribute>
+        </col>
+    </subrow>
+
+    <table name="TowarMagazynInfo" tablename="TowarMagazyn" name8="TowMag" >
+        <col name="Towar" type="Towar" children="MagazynInfo" childrenclass="TowarMagazynInfoSubTable"
+            description="Indywidualne parametry towaru dla magazynów." relguided="inner" keyprimary="true" keyunique="true">
+            <keycol name="Magazyn" />
+        </col>
+        <col name="Magazyn" type="Magazyn" />
+        <col name="StanMinimum" type="Quantity" important="true"
+            description="Stan minimalny towaru w magazynie." />
+        <col name="StanMaximum" type="Quantity" important="true"
+            description="Stan maksymalny towaru w magazynie."/>
+        <!-- TASK: 5705 [6.2] -->
+        <col name="CenaMinimalna" type="currency" important="true"
+          description="Cena minimalna netto towaru w magazynie." />
+    </table>
+
+    <table name="ElemOpakowan" name8="ElOpak" tablename="ElemyOpakowan"
+           caption="Element schematu opakowań" tablecaption="Elementy schematów opakowań">
+
+        <col name="Schemat" type="SchemOpakowan" required="true" readonly="true" category="Ogólne"
+             description="Dokument, do którego należy ta pozycja"
+             children="Elementy"
+             relname="Elementy schematu"
+             delete="cascade"
+             relguided="inner"
+             keyprimary="true"
+             keyclass="Lp" keyclasscol="Lp"
+        />
+
+        <col name="Lp" type="int" required="true" category="Ogólne" batchfield="false" />
+        <col name="Opakowanie" type="Towar" required="true" category="Ogólne"
+             description="Towar będący elementem schematu opakowań." />
+        <col name="Ilosc" type="Quantity" category="Ogólne"
+             description="Ilość opakowań" />
+        <col name="IloscTowaru" type="double" category="Ogólne"
+             description="Ilość towaru dla której są wydawane opakowania." />
+        <col name="IloscMinimalna" type="double" category="Ogólne"
+             description="Ilość minimalna towaru dla której są wydawane opakowania." />
+
+    </table>
+
+    <table name="SchemOpakowan" name8="SchOpak" guided="Root" tablename="SchemyOpakowan"
+           caption="Schemat opakowań" tablecaption="Schematy opakowań">
+
+        <key name="WgKodu" keyunique="true" keyprimary="true">
+            <keycol name="Kod" />
+        </key>
+        <key name="WgNazwy">
+            <keycol name="Nazwa" />
+        </key>
+
+        <col name="Kod" type="string" length="40" category="Ogólne" required="true" important="true"
+                description="Symbol, skrócona nazwa schematu opakowań"/>
+
+        <col name="Nazwa" type="string" length="200" required="true" category="Ogólne" important="true"
+                description="Nazwa schematu opakowań.">
+        </col>
+
+    </table>
+
+    <table name="SchematTowar" name8="SchTwr" tablename="SchematyTowary"
+           caption="Schemat opakowań towaru" tablecaption="Schematy opakowań towarów">
+
+
+        <col name="Towar" type="Towar" category="Ogólne" required="true"
+                description="Towar do którego przypisany jest alternatywny schemat opakowań"
+             children="SchematyTowary"
+             delete="cascade"
+             relname="Schematy dla towaru"
+             keyprimary="true"
+         />
+
+        <col name="SchematOpakowan" type="SchemOpakowan" required="true" category="Ogólne"
+                description="Alternatywny schemat opakowań dla towaru."
+             children="SchematyTowary"
+             relguided="inner"
+             delete="cascade"
+             relname="Towary dla schematu"
+         />
+
+        <col name="DomyslnyRozchod" type="boolean" category="Ogólne"
+              description="Określa, czy dany schamat jest domyślnym dla dokumentów rozchodowych. " />
+
+        <col name="DomyslnyPrzychod" type="boolean" category="Ogólne"
+              description="Określa, czy dany schamat jest domyślnym dla dokumentów przychodowych. " />
+
+
+    </table>
+
+    <table name="ElementKompletu" tablename="ElemKompletow" guided="Root" 
+        caption="Element kompletu" tablecaption="Elementy kompletów"
+    >
+        <col name="Komplet" type="Towar" required="true" readonly="true" category="Ogólne"
+            description="Towar będący kompletem zawierającym składnik."
+            relguided="inner"
+            relname="Komplet składnika"
+            children="ElementyKompletu"
+            delete="cascade"
+            keyprimary="true"
+            keyclass="Lp" keyclasscol="Lp"
+        />
+        <col name="Lp" type="int" required="true" category="Ogólne" batchfield="false"/>
+
+        <col name="Towar" type="Towar" required="true" category="Ogólne"
+            description="Towar będący składnikiem lub produktem kompletu."
+            relname="Towar składnika"
+        />
+
+        <col name="Typ" type="TypElementuKompletu" category="Ogólne" required="true"
+            description="Określa, czy element jest składnikiem, czy produktem." />
+
+        <col name="Ilosc" type="Quantity" category="Ogólne" required="true" caption="Ilość"
+            description="Ilość elementu kompletu." />
+        <col name="Magazyn" type="Magazyn" category="Ogólne" modifier="public virtual"
+            description="Magazyn, na którym znajduje się składnik bądź będzie dostarczony produkt." />
+        <col name="Wartosc" type="currency" category="Ogólne" caption="Wartość"
+            description="Wartość elementu kompletu." />
+        <col name="WartoscWCZakupu" type="currency" category="Ogólne" caption="Wartość w c. zakupu"
+            description="Wartość elementu kompletu w cenie zakupu." />
+        <col name="ProporcjaWartosci" type="boolean" category="Ogólne" caption="Proporcja wartości"
+            description="Wskazuje że wartość składników ma być rozdzielona proporcjonalnie na produkty." />
+    </table>
+
+    <table name="DefinicjaCeny" tablename="DefinicjeCen" guided="Root" config="true"
+        caption="Definicja ceny"
+        tablecaption="Definicje cen"
+    >
+
+        <interface>IRightsSource</interface>
+
+        <key name="WgNazwy" keyunique="true" keyprimary="true">
+            <keycol name="Nazwa" />
+        </key>
+        <key name="WgPriorytetu">
+            <keycol name="Priorytet" />
+            <keycol name="Nazwa" />
+        </key>
+        <!-- TASK: 1842. [4.5] -->
+        <key name="Promocyjne">
+            <keycol name="AkceptujPromocje"/>
+            <keycol name="Blokada" />
+        </key>
+        <col name="Nazwa" type="string" length="30" localization="dictionary" category="Ogólne" required="true" important="true"
+            description="Nazwa ceny" />
+        <col name="Blokada" type="boolean" category="Ogólne" important="true"
+            description="Określa cenę, która nie jest już używana przez program." />
+        <col name="DodawanaDoTowaru" type="boolean" category="Ogólne"
+            description="Cena będzie dodawana i zapamiętana w towarze." />
+        <col name="Priorytet" type="int" category="Ogólne"
+            description="Priorytet określający kolejność wyliczania cen towaru."
+        />
+        <col name="AktualizujPrzychodem" type="boolean" category="Ogólne"
+            description="Określa, czy dana cena ma być automatycznie aktualizowana po wprowadzeniu dokumentu przychodowego." />
+
+        <col name="CenaOdbiorcy" type="boolean" category="Grupy" modifier="public virtual"
+                     description="Określa sposób wyliczania ceny kontrahenta.">
+            <attribute>Obsolete("see PodmiotCeny { get; set; }")</attribute>
+        </col>
+        <col name="PodmiotCeny" type="PodmiotCeny" category="Grupy"
+                     description="Określa sposób wyliczania ceny kontrahenta." />
+        <!-- TASK: 2630. [4.5] -->
+        <col name="IndywidualnaRabatowana" type="boolean" category="Grupy"
+                 description="Określa, czy cena indywidualna będzie rabatowana." />
+        <!-- TASK: 1842. [4.5] -->
+        <col name="AkceptujPromocje" type="boolean" category="Grupy"
+            description="Określa, czy definicja ceny dopuszcza stosowanie promocji." />
+        <!-- TASK: 5897. [6.2] -->
+        <col name="RabatujPromocje" type="boolean" category="Grupy"
+                description="Określa, czy definicja ceny dopuszcza rabatowanie przeceny." />
+
+        <col name="Indywidualna" type="AlgorytmRabatu" name12="Ind"
+            description="Określa sposób wyliczania ceny indywidualnej." />
+        <col name="Indywidualna2" type="AlgorytmRabatu" name12="Ind2"
+            description="Określa drugi sposób wyliczania ceny indywidualnej." />
+        <col name="Indywidualna3" type="AlgorytmRabatu" name12="Ind3"
+            description="Określa trzeci sposób wyliczania ceny indywidualnej." />
+        <col name="Rabat1" type="AlgorytmRabatu" name12="R1"
+            description="Określa pierwszy rodzaj naliczanego rabatu." />
+        <col name="Rabat2" type="AlgorytmRabatu" name12="R2"
+            description="Określa drugi rodzaj naliczanego rabatu." />
+        <col name="Rabat3" type="AlgorytmRabatu" name12="R3"
+            description="Określa trzeci rodzaj naliczanego rabatu." />
+        <col name="Rabat4" type="AlgorytmRabatu" name12="R4"
+            description="Określa czwarty rodzaj naliczanego rabatu." />
+        <col name="Rabat5" type="AlgorytmRabatu" name12="R5"
+            description="Określa piąty rodzaj naliczanego rabatu." />
+
+
+        <col name="Metoda" type="text" category="Algorytm"
+            description="Algorytm wyliczenia ceny" />
+
+        <col name="Algorytm" type="AlgorytmCeny" name12="Alg" category="Algorytm"
+            description="Określa współczynnik uwzględniany w wyliczanej cenie" />
+
+        <col name="Kierunek" type="KierunekCeny" caption="Kierunek ceny" />
+        <col name="DomyslnyNarzut" type="percent" category="Ogólne"  caption="Narzut %"
+               description="Proponowany narzut dla nowych cen" />
+        <col name="DomyslnaMarza" type="percent" category="Ogólne"   caption="Marża %"
+               description="Proponowany narzut dla nowych cen" />
+        
+      
+    </table>
+
+    <subrow name="AlgorytmCeny">
+        <col name="Typ" type="TypAlgorytmuCeny"
+            description="Określa sposób utworzenia algorytmu wyliczania ceny" />
+        <col name="ZalezyOdDokumentu" type="boolean"
+            description="Wyliczenie ceny możliwe jest tylko na dokumencie. Nie można wykorzystać ceny w cenniku" />
+
+        <col name="CechaBazowa" type="string" length="30"
+            description="Cecha towaru, która jest podstawą wyliczania ceny" />
+        <col name="CenaBazowa" type="DefinicjaCeny"
+            description="Definicja ceny, która jest podstawą wyliczania" />
+
+        <col name="Wspolczynnik" type="WspolczynnikCeny" name12="Wsp"
+            description="Określa współczynnik uwzględniany w wyliczanej cenie" />
+
+        <col name="Waluta" type="Waluta"
+            description="Określa walutę, w której ma być wyrażona cena." />
+        <col name="Zaokraglenie" type="boolean"
+            description="Pozwala na automatyczne zaokrąglanie ceny wg podanych reguł." />
+        <col name="Dokladnosc" type="double"
+            description="Dokladność z jaką należy zaokrąglić kwotą 100." />
+        <col name="Delta" type="double"
+            description="O ile pomniejszyć kwotę 100, po zaokrągleniu." />
+    </subrow>
+
+    <subrow name="AlgorytmRabatu">
+        <col name="Rodzaj" type="RodzajRabatu"
+            description="Określa rodzaj naliczanego rabatu." />
+        <col name="Wliczaj" type="WliczanieRabatu"
+            description="Określa sposób wpływania ratabu na pozycję dokumentu handlowego." />
+        <col name="GrupaTowarowa" type="FeatureDefinition"
+            description="Definicja grupy towarowej biorącej udział w naliczania rabatu." />
+        <col name="Grupa" type="FeatureDefinition"
+            description="Definicja grupy kontrahenta, dokumentu, itp biorącej udział w naliczania rabatu." />
+    </subrow>
+
+    <subrow name="DefinicjaPowstaniaObowiazkuVATInfo">
+        <col name="Sprzedaz" type="DefinicjaPowstaniaObowiazkuVAT" cstype="Row"
+             description="Definicja powstania obowiązku VAT dla transakcji sprzedaży." />
+    </subrow>
+
+    <subrow name="PrecyzjaCeny">
+        <col name="Wymuszaj" type="boolean"
+             description="Wskazuje na to, że precyzja ceny ustalona na definicji ma pierwszeńśtwo przed precyzją ceny na kartotece towaru"></col>
+        <col name="Precyzja" type="int"
+             description="Precyzja zaokrąglenia (wyliczania) cen towaru"></col>
+    </subrow>
+
+    <subrow name="ProduktInfo">
+        <col name="CenaIndywidualna" type="boolean"
+             description="Indywidualne ustawienia wartości produktu." />
+        <col name="CenaEwidencyjna" type="DefinicjaCeny"
+             description="Cena ewidencyjna produktu." />
+    </subrow>
+
+    <subrow name="WspolczynnikCeny">
+        <col name="Znak" type="ZnakWspółczynnika"
+            description="Określa sposób uwzglęcnienia współczynnika w cenie towaru" />
+        <col name="Typ" type="TypWspółczynnikaCeny"
+            description="Określa rodzaj współczynnika" />
+        <col name="Wartosc" type="string" length="200"
+            description="W zależności od rodzaju współczynnika przyjmuje wartość, cechę lub właściwość będącą współczynnikiem" />
+    </subrow>
+
+    <table name="Cena" tablename="Ceny"
+        caption="Cena"
+        tablecaption="Ceny"
+    >
+        <col name="Towar" type="Towar" required="true" readonly="true" category="Ogólne"
+            description="Towar, któremu przyporządkowana jest cena."
+            relguided="inner"
+            relname="Towar ceny"
+            children="Ceny"
+            delete="cascade"
+            keyunique="true"
+            childrenclass="Towar.CenySubTable"
+        >
+            <keycol name="Definicja"/>
+        </col>
+        <col name="Definicja" type="DefinicjaCeny" readonly="true" required="true" category="Ogólne"
+             keyprimary="true"
+            description="Definicja ceny określająca sposób wyliczania ceny" />
+
+      <col name="Netto" type="doublecy" category="Ogólne"
+          description="Kwota netto ceny" >
+        <verifier onadded = "true" name="Cena.SymbolWalutyVerifier"></verifier></col>
+        <col name="Brutto" type="doublecy" category="Ogólne"
+            description="Kwota brutto ceny">
+          <verifier onadded = "true" name="Cena.SymbolWalutyVerifier"></verifier></col>
+
+      <col name="Narzut" type="percent" category="Ceny" caption="Narzut bazowy %"
+               description="Narzut procentowy wykorzystywany do wyliczania ceny" modifier="public virtual"/>
+      <col name="Marza" type="percent" caption="Marża bazowa %" category="Ceny"
+               description="Marża procentowa wykorzystywana do wyliczania ceny" modifier="public virtual"/>
+
+        <col name="StandardowaIlosc" type="Quantity" name12="StdIlosc" category="Ogólne" modifier="internal"
+            description="Standardowa ilość i jednostka dla ceny" />
+
+        <col name="Polacz" type="boolean" category="Ogólne" caption="Połącz"
+            description="Wymusza wzajemne przeliczanie ceny netto i brutto." />
+        <col name="Korygowana" type="boolean" category="Ogólne"
+            description="Umożliwia edycję ceny, jeżeli jest ona wyliczana na podstawie innej ceny." />
+    </table>
+
+    <table name="CenaIndywidualna" tablename="CenyIndywidualne">
+        <col name="Towar" type="Towar" required="true" readonly="true" category="Ogólne"
+            description="Towar, któremu przyporządkowana jest cena indywidualna."
+            relguided="inner"
+            relname="Ceny indywidualne"
+            children="CenyIndywidualne"
+            delete="cascade"
+            keyunique="false"
+             keyprimary="true"
+        >
+            <keycol name="Kontrahent"/>
+            <keycol name="Grupa"/>
+        </col>
+        <col name="Kontrahent" type="Kontrahent" readonly="true" category="Ogólne"
+            description="Kontrahent, dla którego jest przypisana cena kontrahenta."
+            relname="Kontrahent ceny"
+            children="Ceny"
+            delete="cascade"
+            keyunique="false"
+        >
+            <keycol name="Grupa"/>
+            <keycol name="Towar"/>
+        </col>
+        <col name="Grupa" type="DictionaryItem" readonly="true" category="Ogólne"
+            description="Wartość słownika, dla którego jest przypisana cena grupowa."
+            relname="Grupa ceny"
+            keyunique="false"
+        >
+            <keycol name="Kontrahent"/>
+            <keycol name="Towar"/>
+        </col>
+
+        <col name="Netto" type="doublecy" category="Ogólne"
+            description="Kwota netto ceny kontrahenta" />
+        <col name="Brutto" type="doublecy" category="Ogólne"
+            description="Kwota brutto ceny kontrahenta" />
+
+        <col name="StandardowaIlosc" type="Quantity" name12="StdIlosc" category="Ogólne" modifier="internal"
+            description="Standardowa ilość i jednostka dla ceny" />
+
+        <col name="Polacz" type="boolean" category="Ogólne" caption="Połącz"
+            description="Wymusza wzajemne przeliczanie ceny netto i brutto." />
+        <col name="Zdefiniowana" type="boolean" category="Ogólne"
+            description="Czy cena kontrahenta została określona." />
+
+        <col name="Rabat" type="percent" category="Ogólne" modifier="public virtual"
+            description="Procent rabatu towaru dla kontrahenta lub grupy." />
+      <col name="Prog" type="Quantity" category="Ogólne" modifier="public virtual"
+           caption="Ilość" description="Próg minimalny rabatu ilościowego." >
+        <verifier name="CenaIndywidualna.ProgRequiredVerifier" onadded="true"/>
+        <verifier name="CenaIndywidualna.ProgSymbolVerifier" onadded="true"/>
+        <verifier name="CenaIndywidualna.ProgUniqueVerifier" onadded="true"/>
+      </col>
+        <col name="RabatZdefiniowany" type="boolean" category="Ogólne"
+            description="Określa, czy rabat został wprowadzony." />
+        <col name="NazwaTowaru" type="string" length="200" category="Ogólne"
+            description="Indywidualna nazwa kontrahenta dla towaru." />
+    </table>
+
+    <table name="CenaGrupowa" tablename="CenyGrupowe" guided="Root">
+        <col name="GrupaTowarowa" type="DictionaryItem" readonly="true" category="Ogólne"
+            description="Grupa towarowa, której przyporządkowana jest cena."
+            relname="Ceny grupowe"
+            delete="cascade"
+            keyunique="true"
+        >
+            <keycol name="Kontrahent"/>
+            <keycol name="Grupa"/>
+        </col>
+        <col name="Kontrahent" type="Kontrahent" readonly="true" category="Ogólne"
+            description="Kontrahent, dla którego jest przypisana cena kontrahenta."
+            relname="Kontrahent ceny grupowej"
+            children="CenyGrupowe"
+            delete="cascade"
+            keyunique="true"
+        >
+            <keycol name="Grupa"/>
+            <keycol name="GrupaTowarowa"/>
+        </col>
+        <col name="Grupa" type="DictionaryItem" readonly="true" category="Ogólne"
+            description="Wartość słownika, dla którego jest przypisana cena grupowa."
+            relname="Grupa ceny grupowej"
+            keyunique="true"
+        >
+            <keycol name="Kontrahent"/>
+            <keycol name="GrupaTowarowa"/>
+        </col>
+
+        <col name="DefinicjaCeny" type="DefinicjaCeny" category="Ogólne"
+             keyprimary="true"
+            description="Definicja ceny wykorzystywana do wyliczeń." />
+
+        <col name="Rabat" type="percent" category="Ogólne"
+            description="Procent rabatu towaru dla kontrahenta lub grupy." />
+        <col name="RabatZdefiniowany" type="boolean" category="Ogólne"
+            description="Określa, czy rabat został wprowadzony." />
+        <!-- TASK: 5897. [6.2] -->
+        <col name="RabatujPromocje" type="boolean" category="Ogólne" modifier="internal"
+                description="Wskazuje na to, czy promocja podlega rabatowaniu."/>
+    </table>
+
+    <table name="PrzecenaOkresowa" tablename="PrzecenyOkres" name8="PrzcOkr" guided="Root">
+        <key keyunique="true" name="WgNazwy" keyprimary="true">
+            <keycol name="Cel"/>
+            <keycol name="Nazwa" />
+        </key>
+
+        <key name="Zatwierdzone">
+            <keycol name="Zatwierdzona"/>
+            <keycol name="Cel"/>
+        </key>
+
+        <key name="WgTypu">
+            <keycol name="Typ" />
+        </key>
+
+        <key name="WgWartośćCechy">
+            <keycol name="GrupaKontrahentowWartosc"/>
+        </key>
+
+        <col name="Cel" type="CelPrzecenyOkresowej" selector="true"
+             readonly="true" />
+        <col name="Nazwa" type="string" length="32" required="true"
+            description="Nazwa przeceny okresowej (promocji)."/>
+        <col name="Okres" type="FromTo" required="true"
+            description="Okres obowiązywania przeceny okresowej." />
+        <col name="Zatwierdzona" type="boolean"
+            description="Wskazuje na to, czy promocja jest zatwierdzona."/>
+        <!-- TASK: 5897. [6.2] -->
+        <col name="Rabatowana" type="boolean"
+                description="Wskazuje na to, czy promocja podlega rabatowaniu."/>
+        <!-- TASK: 9117 [7.7] -->
+        <col name="Typ" type="TypPrzecenyOkresowej"
+             description="Wskazuje na typ danej promocji okresowej, ważne przy ewentualnym ustalaniu priorytetów w przypadku zachodzących na siebie okresów promocji." />
+        <col name="Kontrahent" type="Kontrahent"
+             description="Określa dla jakiego kontrahenta jest promocja indywidualna." />
+        <col name="GrupaKontrahentow" type="FeatureDefinition" caption="Nazwa cechy grupującej"
+             description="Określa dla jakiej grupy kontrahentów jest promocja grupowa." />
+        <col name="GrupaKontrahentowWartosc" type="string" caption="Wartość cechy grupującej" length="32" modifier="public virtual"
+             description="Określa dla jakiej grupy kontrahentów jest promocja grupowa.">
+            <attribute>ControlEdit(ControlEditKind.ComboBox)</attribute>
+        </col>
+        <col name="Priorytet" type="int" caption="Priorytet"
+             description="Określa priorytet ważności promocji - jedynie w przypadku przeceny dla grup." />
+        <col name="Stosowanie" type="StosowaniePrzeceny" caption="Stosowanie przeceny okresowej" description="Stosowawnie przeceny okresowej." />
+        <col name="Kierunek" type="KierunekCeny" caption="Kierunek ceny" />
+        <col name="Cena" type="DefinicjaCeny" caption="Cena przeceniana" />
+        <col name="Magazyn" type="Magazyn" caption="Magazyn, którego dotyczy przecena" />
+    </table>
+
+    <table name="PrzecenaOkresowaTowaru" tablename="PrzecenyOkresTwr" name8="PrzcOkrT">
+        <col name="PrzecenaOkresowa" type="PrzecenaOkresowa"
+         children="PrzecenyTowarow" delete="cascade"
+             keyprimary="true">
+            <attribute>Context</attribute>
+            <keycol name="Towar" />
+        </col>
+        <col name="Towar" type="Towar" required="true" children="Przeceny"
+         description="Towar, którego dotyczy przecena okresowa.">
+            <attribute>Context</attribute>
+        </col>
+        <col name="Netto" type="doublecy"
+         category="Cena"
+         caption="Cena promocyjna netto"
+         description="Promocyjna cena netto."/>
+        <col name="Brutto" type="doublecy"
+         category="Cena"
+         caption="Cena promocyjna brutto"
+         description="Promocyjna cena brutto."/>
+        <!-- TASK: 4825. [6.0] /sbm -->
+        <col name="Rabat" type="percent" modifier="protected"
+         category="Cena"
+         caption="Rabat promocyjny"
+         description="Procent rabatu promocyjnego."/>
+      <col name="Prog" type="Quantity" category="Ogólne" modifier="public virtual"
+           caption="Ilość" description="Próg minimalny rabatu ilościowego." >
+        <verifier name="PrzecenaOkresowaTowaru.ProgRequiredVerifier" onadded="true"/>
+        <verifier name="PrzecenaOkresowaTowaru.ProgSymbolVerifier" onadded="true"/>
+        <verifier name="PrzecenaOkresowaTowaru.ProgUniqueVerifier" onadded="true"/>
+      </col>
+        <!-- TASK: 5897. [6.2] -->
+        <col name="Rabatowana" type="boolean"
+                description="Wskazuje na to, czy promocja podlega rabatowaniu."/>
+    </table>
+
+    <table name="KodTwrKontrahent" tablename="KodyTwrKontrah" caption="Kod towaru">
+
+        <key name="WgTowarKontrahent">
+            <keycol name="Kontrahent" />
+            <keycol name="Towar"/>
+        </key>
+
+
+        <col name="Kontrahent" type="Kontrahent" caption="Kontrahent" description="Kontrahent do którego przypisany jest kod kreskowy."
+             delete="cascade" keyprimary="true" keyunique="true"
+             required="true"
+         >
+            <keycol name="Kod"/>
+            <attribute>Context(Required=false)</attribute>
+        </col>
+        <col name="Towar" type="Towar" caption="Towar" description="Towar do którego przypisany jest kod kreskowy."
+             delete="cascade"
+             required="true"
+             children="KodyKontrahenta"
+
+         >
+            <attribute>Context(Required=false)</attribute>
+        </col>
+        <col name="Kod" type="KodKreskowy" caption="Kod kreskowy" description="Kod kreskowy przypisany do kontrahenta."
+             delete="cascade"
+             required="true"
+             relname="Kody obce kontrahenta"
+             children="KodyKontrahenta"
+         >
+            <attribute>Context(Required=false)</attribute>
+        </col>
+    </table>
+
+    <table name="DostawcaTowaru" tablename="DostawcyTowaru" caption="Dostawca towaru" name8="DostTwr" tablecaption="Dostawcy towaru">
+        <col name="Towar" type="Towar" caption="Towar" description="Towar do którego przypisany jest dostawca" keyprimary="true"
+        children="Dostawcy" relname="Dostawcy towaru" delete="cascade" relguided="inner">
+            <attribute>Context(Required=false)</attribute>
+        </col>
+        <col name="Dostawca" type="Kontrahent" caption="Dostawca" description="Dostawca towaru" required="true" keyunique="true" delete="cascade">
+            <keycol name="Towar"/>
+        </col>
+        <col name="Domyslny" type="boolean" category="Ogólne" caption="Domyślny" description="Określa czy dostaca jest domyślny."></col>
+        <col name="CzasDostawy" type="int" category="Ogólne" caption="Czas dostawy (dni)" description="Czas dostawcy (dni)."></col>
+    </table>
+
+    <enum name="CelPrzecenyOkresowej" />
+    <enum name="PodmiotCeny"/>
+    <enum name="PowodZmianyStawkiVat"/>
+    <enum name="RodzajRabatu" />
+    <enum name="TypAlgorytmuCeny" />
+    <enum name="TypElementuKompletu"/>
+    <enum name="TypFiltruTowaru"/>
+    <enum name="TypJednostki" />
+    <enum name="TypPrzecenyOkresowej" />
+    <enum name="TypTowaru"/>
+    <enum name="TypWspółczynnikaCeny" />
+    <enum name="WarunekAktualizacjiCeny"/>
+    <enum name="WliczanieRabatu" />
+    <enum name="WyborPartiiAutonumerowanie" />
+    <enum name="ZnakWspółczynnika" />
+    <enum name="StosowaniePrzeceny" />
+    <enum name="KierunekCeny" />
+</module>

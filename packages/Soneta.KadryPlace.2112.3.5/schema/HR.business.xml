@@ -1,0 +1,804 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="HR" namespace="Soneta.HR" versionName="soneta">
+  <import>../..</import>
+  <using>Soneta.Core</using>
+  <using>Soneta.Core.DbTuples</using>
+  <using>Soneta.Config</using>
+	<using>Soneta.Kadry</using>
+	<using>Soneta.Kalend</using>
+  <using>Soneta.Place</using>
+  <using>Soneta.CRM</using>
+  <using>Soneta.Oceny</using>
+  <using>Soneta.HR2</using>
+
+  <enum name="TypyElementuOceny"/>
+	
+	<interface name="IOcenaPracownika"/>
+	
+	<table name="DefElementuOcenyPracownika" tablename="DefElemOcenPrac" name8="DefElOcP" guided="Root" config="true"
+		caption="Definicja kryterium oceny"
+		tablecaption="Definicje kryteriów ocen"
+	>
+		<key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+		<col name="Kategoria" type="string" length="30" required="true">
+			<attribute>Dictionary("Element oceny")</attribute> 
+		</col>
+		<col name="Nazwa" type="string" length="50" localization="dictionary" required="true"/>
+		<col name="Limit" type="decimal"/>
+		<col name="Blokada" type="boolean"/>
+    <col name="Opis" type="text"/>
+  </table>
+
+  <table name="WartośćElementuOcenyPracownika" tablename="WartElemOcenPrac" config="true"
+    caption="Wartość elementu oceny" 
+    tablecaption="Wartości elementu oceny"
+  >
+    <key name="WgWartości">
+      <keycol name="Definicja" />
+      <keycol name="Wartosc" />
+    </key>
+    <col name="Definicja" type="DefElementuOcenyPracownika"
+			keyunique="true"
+      keyprimary="true"
+			readonly="true"
+			required="true"
+			relname="Wartości elementu oceny"
+			children="Wartości"
+			relguided="inner"
+			delete="cascade"
+		>
+      <keycol name="Nazwa"/>
+    </col>
+    <col name="Nazwa" type="string" length="30" localization="dictionary" required="true"/>
+    <col name="Wartosc" type="decimal" caption="Wartość">
+      <verifier name="WartośćElementuOcenyPracownika.WartośćUniqueVerifier" onadded="true"/>
+    </col>
+  </table>
+
+	<table name="WzorOcenyPracownika" tablename="WzoryOcenPrac" name8="WzOcPrac" guided="Root" config="true"
+		caption="Wzór oceny"
+		tablecaption="Wzory ocen"
+ 	>
+		<key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+		<col name="Nazwa" type="string" length="30" localization="dictionary" required="true"/>
+		<col name="Blokada" type="boolean"/>
+    <col name="Opis" type="text"/>
+  </table>
+
+	<table name="ElementWzoruOcenyPracownika" tablename="ElemWzorowOcPrac" name8="ElWzOcPr" config="true"
+		caption="Kryterium"
+		tablecaption="Kryteria"
+	>
+		<col name="Wzor" type="WzorOcenyPracownika" caption="Wzór"
+			keyunique="true"
+			readonly="true"
+			required="true"
+			relname="Elementy wzoru"
+			children="ElementyOceny"
+			relguided="inner"
+			delete="cascade"
+      keyprimary="true"
+		>
+			<keycol name="Definicja"/>
+		</col>
+		<col name="Definicja" type="DefElementuOcenyPracownika" 
+			required="true" 
+			relname="Elementy definicji oceny"
+		/>
+	</table>
+
+	<table name="OcenaPracownika" tablename="OcenyPracownikow" name8="OcenyPrc" guided="Root"
+		caption="Ocena pracownika"
+		tablecaption="Oceny pracowników"
+	>
+		<interface>IOcenaPracownika</interface>
+		<key name="WgTerminu">
+			<keycol name="Termin"/>
+		</key>
+		<key name="WgDaty">
+			<keycol name="Data"/>
+		</key>
+		<col name="Pracownik" type="Pracownik"
+			readonly="true"
+			required="true"
+			relright="true"
+			relname="Oceny pracownika"
+			children="Oceny"
+			delete="cascade" 
+      keyprimary="true"
+		/>
+		<col name="Nazwa" type="string" length="30" required="true">
+			<attribute>Dictionary("Ocena.Nazwa")</attribute> 
+		</col>
+		<col name="Termin" type="date">
+			<verifier name="OcenaPracownika.DataTerminVerifier" onadded="true"/>
+		</col>
+		<col name="Anulowany" type="boolean"/>
+		<col name="Data" type="date">
+			<verifier name="OcenaPracownika.DataTerminVerifier"/>
+		</col>
+		<col name="Opis" type="text"/>
+	</table>
+	
+	<enum name="TypyElementowOceny"/>
+	
+	<table name="ElementOcenyPracownika" tablename="ElementyOcenPrac" name8="ElemOcPr"
+		caption="Kryterium"
+		tablecaption="Kryteria"
+	>
+		<col name="Pracownik" type="Pracownik"
+			readonly="true"
+			required="true"
+			relname="Elementy oceny pracownika"
+			children="ElementyOceny"
+      keyprimary="true"
+		>
+			<keycol name="Definicja"/>
+			<keycol name="Data"/>
+		</col>
+		<col name="Ocena" type="IOcenaPracownika" 
+			readonly="true"
+			required="true"
+			relname="Elementy oceny"
+			children="ElementyOceny"
+			relguided="inner"
+			keyunique="true"
+		>
+			<keycol name="Definicja"/>
+		</col>
+		<col name="Definicja" type="DefElementuOcenyPracownika" 
+			required="true" 
+			relname="Elementy definicji oceny"
+		>
+			<keycol name="Typ"/>
+		</col>  
+		<col name="Data" type="date"/>
+		<col name="Typ" type="TypyElementowOceny" required="true"/>
+		<col name="Wartosc" type="decimal" caption="Wartość"/>
+	</table>
+
+  <!-- DEFINICJA STANOWISKA -->
+  <table name="DefinicjaStanowiska" tablename="DefStanowisk" guided="Root" config="true"
+		caption="Definicja stanowiska"
+		tablecaption="Definicje stanowisk"
+ 	>
+    <interface>IŹródłoKartyOpisuStanowiska</interface>
+    <key name="WgNazwa"
+         keyprimary="true"
+         keyunique="true"
+         >
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgKodWymiany">
+      <keycol name="KodWymiany" />
+    </key>
+    <col name="Nazwa" type="string" length="50" localization="dictionary" required="true"/>
+    <col name="Stanowisko" type="string" length="50" required="true" localization="dictionary"/>
+ 		<col name="Funkcja" type="string" length="50" localization="dictionary">
+			<attribute>Dictionary("Etat.Funkcja")</attribute> 
+ 		</col>
+		<col name="Specjalosc" type="string" length="50">
+			<attribute>Dictionary("Etat.Specjalność")</attribute> 
+		</col>
+		<col name="Blokada" type="boolean"/>
+		<!-- KALENDARZ -->
+		<col name="Kalendarz" type="KalendarzBase" required="true" modifier="protected" 
+			relname="Kalendarz definicji stanowiska" 
+		/>
+		<col name="InterpretacjaKalendarza" name12="IntKal" type="InterpretacjaKalendarza"/>
+    <col name="NieNadpisujKalendarza" type="boolean"/>
+		<!-- ETAT - ZASZEREGOWANIE -->
+		<col name="Grupa" type="GrupaZaszeregowania"/>
+		<col name="TypStawki" type="TypStawkiZaszeregowania"/>
+		<col name="Zaszeregowanie" name12="Zas" type="Zaszeregowanie"/>
+    <col name="Opis" type="text" localization="dictionary"/>
+    <!-- 9.0 -->
+    <col name="KodWykonywanegoZawodu" type="KodWykonywanegoZawodu"
+			relname="Kod wykonywanego zawodu dla stanowiska"
+		/>
+    <col name="KodPracyWSzczWarunkach" type="KodPracyWSzególnychWarunkachCharakterze"/>
+    <col name="StanowiskoPelne" type="string" length="255" category="Umowa o pracę" localization="dictionary"/>
+    <col name="FunkcjaPelna" type="string" length="255" category="Umowa o pracę" localization="dictionary"/>
+    <!-- 14.3 -->
+    <col name="KodWymiany" type="string" length="32"/>
+    <col name="DefinicjaFunkcji" type="DefinicjaFunkcji"/>    
+  </table>
+
+  <table name="UprawnienieDefinicjiStanowiska" tablename="UprawnDefStan" cached="true" 
+         caption="Uprawnienie definicji stanowiska" 
+         tablecaption="Uprawnienia defincji stanowisk" >
+    <col name="DefinicjaStanowiska" type="DefinicjaStanowiska"
+         readonly="true"
+         required="true"
+         keyunique="true"
+         caption="Definicja stanowiska"
+         relname="Uprawnienia def stanowisk"
+         children="Uprawnienia"
+         keyprimary="true"
+         delete="cascade"
+         relguided="inner"
+    >
+      <keycol name="DefinicjaUprawnienia"/>
+    </col>
+    <col name="DefinicjaUprawnienia" type="DefinicjaUprawnienia"
+         required="true"
+         caption="Definicja uprawnienia" 
+         relname="Stanowiska def uprawnień">
+    </col>
+  </table>
+
+  <table name="SzkolenieBHPDefinicjiStanowiska" tablename="SzkolBHPDefStan" config="true"
+         caption="Szkolenie BHP definicji stanowiska" tablecaption="Szkolenia BHP defincji stanowisk" >
+    <col name="DefinicjaStanowiska" type="DefinicjaStanowiska"
+         readonly="true"
+         required="true"
+         keyunique="true"
+         caption="Definicja stanowiska"
+         relname="Szkolenia BHP def stanowisk"
+         children="SzkoleniaBHP"
+         keyprimary="true"
+         delete="cascade"
+         relguided="inner"
+    >
+      <keycol name="DefinicjaSzkolenia"/>
+    </col>
+    <col name="DefinicjaSzkolenia" type="DefinicjaSzkoleniaBHP"
+         required="true"
+         caption="Definicja szkolenia"
+         relname="Stanowiska def szkoleń BHP">
+    </col>
+  </table>
+
+  <table name="BadaniaLekarskieDefinicjiStanowiska" tablename="BadLekDefStan" config="true"
+         caption="Badanie lekarskie definicji stanowiska" tablecaption="Badania lekarskie defincji stanowisk" >
+    <col name="DefinicjaStanowiska" type="DefinicjaStanowiska"
+         readonly="true"
+         required="true"
+         keyunique="true"
+         caption="Definicja stanowiska"
+         relname="Badania lekarskie def stanowisk"
+         children="BadaniaLekarskie"
+         keyprimary="true"
+         delete="cascade"
+         relguided="inner"         
+    >
+      <keycol name="DefinicjaBadania"/>
+    </col>
+    <col name="DefinicjaBadania" type="DefinicjaBadaniaLekarskiego"
+         required="true"
+         caption="Definicja badania lekarskego"
+         relname="Stanowiska def badań lekarskich">
+    </col>
+  </table>
+
+  <table name="GrupaZaszeregowaniaDefinicjiStanowiska" tablename="GrupZasDefStan" config="true"
+       caption="Grupa zaszeregowania definicji stanowiska" tablecaption="Grupy zaszeregowania defincji stanowisk" >
+    <col name="DefinicjaStanowiska" type="DefinicjaStanowiska"
+         readonly="true"
+         required="true"
+         keyunique="true"
+         caption="Definicja stanowiska"
+         relname="Grupy zaszeregowania def stanowisk"
+         children="GrupyZaszeregowania"
+         keyprimary="true"
+         delete="cascade"
+         relguided="inner"
+    >
+      <keycol name="GrupaZaszeregowania"/>
+    </col>
+    <col name="GrupaZaszeregowania" type="GrupaZaszeregowania"
+         required="true"
+         caption="Grupa zaszeregowania"
+         relname="Stanowiska grupy zaszeregowania">
+    </col>
+  </table>
+
+  <table name="WydziałDefinicjiStanowiska" tablename="WydzialyDefStan" config="true"
+       caption="Jednostka organizacyjna definicji stanowiska"
+       tablecaption="Jednostki organizacyjne defincji stanowisk" >
+    <col name="DefinicjaStanowiska" type="DefinicjaStanowiska"
+         readonly="true"
+         required="true"
+         keyunique="true"
+         caption="Definicja stanowiska"
+         relname="Jednostka organizacyjna def stanowisk"
+         children="Wydziały"
+         keyprimary="true"
+         delete="cascade"
+         relguided="inner"
+    >
+      <keycol name="Wydzial"/>
+    </col>
+    <col name="Wydzial" type="Wydzial"
+         required="true"
+         caption="Jednostka organizacyjna"
+         relname="Stanowiska wydziału">
+    </col>
+    <col name="Ilosc" type="Fraction" caption="Ilość"/>
+  </table>
+
+  <table name="DokumentDefinicjiStanowiska" tablename="DokumentyDefStan" config="true"
+       caption="Dokument definicji stanowiska" tablecaption="Dokumenty defincji stanowisk" >
+    <col name="DefinicjaStanowiska" type="DefinicjaStanowiska"
+         readonly="true"
+         required="true"
+         keyunique="true"
+         caption="Definicja dokumentu"
+         relname="Definicje dokumentów def stanowisk"
+         children="DefinicjeDokumentow"
+         keyprimary="true"
+         delete="cascade"
+         relguided="inner"
+    >
+      <keycol name="DefinicjaDokumentu"/>
+    </col>
+    <col name="DefinicjaDokumentu" type="DbTupleDefinition"
+         required="true"
+         caption="Definicja dokumentu"
+         relname="Stanowiska definicji dokumentów">
+    </col>
+  </table>
+
+  <!-- DEFINICJA FUNKCJI -->
+  <table name="DefinicjaFunkcji" tablename="DefinicjeFunkcji" guided="Root" config="true"
+		caption="Definicja funkcji"
+		tablecaption="Definicje funkcji"
+ 	>
+    <key name="WgNazwa"
+         keyprimary="true"
+         keyunique="true"
+         >
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgKodWymiany">
+      <keycol name="KodWymiany" />
+    </key>
+    <col name="Nazwa" type="string" length="50" required="true" localization="dictionary"/>
+    <col name="Funkcja" type="string" length="50" localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="FunkcjaPelna" type="string" length="255" category="Umowa o pracę" />
+    <col name="Opis" type="text" localization="dictionary"/>
+    <col name="KodWymiany" type="string" length="32"/>
+  </table>
+  
+  <!-- REKRUTACJA -->
+  <enum name="StanyRekrutacji"/>
+  
+  <table name="Rekrutacja" tablename="Rekrutacje" name8="Rekrut" guided="Root">
+    <interface>IŹródłoKartyCharakterystykiPracownika</interface>
+    <key name="WgDaty">
+      <keycol name="DataZgloszenia"/>
+    </key>
+    <col name="Stan" type="StanyRekrutacji" category="Dokument" required="true" readonly="set"/>
+    <col name="Pracownik" type="Pracownik"
+			readonly="true"
+			required="true"
+ 			relright="true"
+			relname="Rekrutacja pracownika"
+			children="Kandydatury"
+      keyprimary="true"
+		/>
+ 		<col name="Wydzial" type="Wydzial" required="true"
+      caption="Jednostka organizacyjna"
+ 			relname="Kandydatury do wydziału"
+ 		/>
+ 		<col name="Stanowisko" type="DefinicjaStanowiska"
+ 			relname="Kandydatury na stanowisko"
+ 			children="Kandydatury"
+ 		/>
+    <col name="Zrodlo" type="IŹródłoRekrutacji" readonly="set"
+ 			relname="Źródła rekrutacji"
+ 		/>
+    <col name="Odpowiedzialny" type="IOceniający" children="Rekrutacje" relname="Osoba odpowiedzialna za proces rekrutacji"/>
+    <col name="DataZgloszenia" type="date" required="true"/>
+ 		<col name="Anulowana" type="boolean" caption="Nieaktualna"/>
+ 		<col name="DataZatrudnienia" type="date"/>
+    <col name="Opis" type="text"/>
+  </table>
+
+  <table name="DefinicjaEtapuRekrutacji" tablename="DefEtaRekrutacji" guided="Root" config="true"
+		caption="Etap rekrutacji"
+		tablecaption="Etapy rekrutacji"
+	>
+    <key name="WgNazwa" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="30" required="true" localization="dictionary"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Zarzadzany" type="boolean" caption="Zarządzany" description="Etap zarządzany przez proces"/>
+  </table>
+
+  <table name="EtapRekrutacji" tablename="EtapyRekrutacji" name8="EtapyRek" guided="Root"
+		caption="Etap rekrutacji"
+		tablecaption="Etapy rekrutacji"
+	>
+		<interface>IOcenaPracownika</interface>
+		<key name="WgTerminu">
+			<keycol name="Termin"/>
+		</key>
+		<key name="WgDaty">
+			<keycol name="Data"/>
+		</key>
+		<col name="Rekrutacja" type="Rekrutacja" readonly="true" required="true"
+			children="Etapy"
+			relname="Etapy rekrutacji"
+			keyclass="Lp" 
+			keyclasscol="Lp"
+			relguided="inner"
+			delete="cascade" 
+      keyprimary="true"
+		/>
+		<col name="Lp" type="int" batchfield="false"/>
+    <!--col name="Nazwa" type="string" length="30" required="true">
+			<attribute>Dictionary("Rekrutacja.Etap")</attribute> 
+		</col-->
+    <col name="Odpowiedzialny" type="IOceniający" children="EtapyRekrutacji" relname="Osoba odpowiedzialna za etap rekrutacji"/>
+    <col name="Definicja" type="DefinicjaEtapuRekrutacji" required="true"
+			relname="Definicje etapów rekrutacji"
+		/>
+    <col name="Termin" type="date">
+			<verifier name="EtapRekrutacji.DataTerminVerifier" onadded="true"/>
+		</col>
+		<col name="Data" type="date">
+			<verifier name="EtapRekrutacji.DataTerminVerifier"/>
+		</col>
+		<col name="Opis" type="text" />
+ 	</table>
+ 	
+	<table name="Wyszukanie" tablename="Wyszukania" name8="Wyszuk" guided="Root"
+		caption="Wyszukanie" 
+		tablecaption="Wyszukania"
+	>
+		<key name="WgNazwy" keyunique="true" keyprimary="true">
+			<keycol name="Nazwa" />
+		</key>
+		<col name="Nazwa" type="string" length="30" required="true"/>
+		<col name="Blokada" type="boolean"/>
+    <col name="Opis" type="text"/>
+    <col name="WymaganeMinimum" type="decimal"/>
+  </table>		
+	
+	<table name="PozycjaWyszukania" tablename="PozycjeWyszukan" name8="PozWysz"
+		caption="Kryterium" 
+		tablecaption="Kryteria"
+	>
+		<col name="Wyszukanie" type="Wyszukanie" readonly="true" required="true"
+			children="Pozycje"
+			relname="Pozycje wyszukania"
+			keyclass="Lp" 
+			keyclasscol="Lp"
+			relguided="inner"
+			delete="cascade" 
+      keyprimary="true"
+		/>
+		<col name="Lp" type="int" batchfield="false"/>
+		<col name="Definicja" type="DefElementuOcenyPracownika" 
+			required="true" 
+			relname="Elementy definicji oceny"
+		/>
+		<col name="Min" type="decimal"/>
+		<col name="Max" type="decimal"/>
+		<col name="Wymagany" type="boolean"/>
+		<col name="Waga" type="decimal"/>
+	</table>
+
+  <!-- UPRAWNIENIA -->
+  <table name="KategoriaUprawnienia" tablename="KatUprawnien" guided="Root" config="true"
+  caption="Kategoria uprawnienia"
+  tablecaption="Kategorie uprawnień"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="30" localization="dictionary" required="true"/>
+    <col name="Blokada" type="boolean"/>
+  </table>
+
+  <table name="DefinicjaUprawnienia" tablename="DefUprawnien" guided="Root" config="false"
+		caption="Definicja uprawnienia"
+		tablecaption="Definicje uprawnień"
+	>
+    <interface>IManagedRowDefinion</interface>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Kategoria" type="KategoriaUprawnienia" required="true"/>
+    <col name="Nazwa" type="string" length="80" localization="dictionary" required="true"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="Bezterminowe" type="boolean">
+      <verifier name="DefinicjaUprawnienia.BezterminoweWażnyVerifier" onadded="true"/>
+    </col>
+    <col name="WaznyLata" type="int" caption="Ważny lata">
+      <verifier name="DefinicjaUprawnienia.BezterminoweWażnyVerifier"/>
+    </col>
+    <col name="WaznyMiesiace" type="int" caption="Ważny miesiące">
+      <verifier name="DefinicjaUprawnienia.BezterminoweWażnyVerifier"/>
+    </col>
+    <col name="WaznyDoKoncaMiesiaca" type="boolean"/>
+    <col name="Ostrzezenie" type="int"/>
+    <col name="WymaganyNumer" type="boolean"/>
+    <col name="TylkoPosrednio" type="boolean" caption="Utwórz tylko pośrednio"/>
+  </table>
+
+  <interface name="IŹródłoUzyskaniaUprawnienia"/>
+  <table name="UprawnieniePracownika" tablename="UprawnieniaPrac" guided="Root"
+    caption="Uprawnienie"
+		tablecaption="Uprawnienia"
+	>
+    <key name="WgOkresu">
+      <keycol name="Okres.To" />
+    </key>
+    <col name="Zrodlo" type="IŹródłoUzyskaniaUprawnienia" readonly="true"
+      relname="Uprawnienia źródła"
+      children="Uprawnienia"
+      delete="cascade"
+    />
+    <col name="Definicja" type="DefinicjaUprawnienia" required="noverified">
+      <keycol name="Okres.To" />
+      <verifier name="UprawnieniePracownika.NumerVerifier"/>
+    </col>
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" keyprimary="true"
+			relname="Uprawnienia pracownika"
+			children="Uprawnienia"
+			delete="cascade"
+			relright="true"
+    />
+    <col name="DataUzyskania" type="date" required="true"/>
+    <col name="TerminWaznosci" type="date" required="true" caption="Termin ważności"/>
+    <col name="Numer" type="string" length="32" caption="Numer uprawnienia">
+      <verifier name="UprawnieniePracownika.NumerVerifier"/>
+    </col>
+    <col name="WydanePrzez" type="string" length="50" />
+    <col name="DataUtraty" type="date" required="true"/>
+    <col name="Opis" type="text"/>
+    <col name="Okres" type="FromTo" required="true" readonly="set"/>
+  </table>
+
+  <!-- SZKOLENIA -->
+  <table name="KategoriaSzkolenia" tablename="KategorieSzkolen" guided="Root" config="true"
+		caption="Kategoria szkolenia"
+		tablecaption="Kategorie szkoleń"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Nazwa" type="string" length="80" localization="dictionary" required="true"/>
+    <col name="Blokada" type="boolean"/>
+  </table>
+
+  <table name="DefinicjaSzkolenia" tablename="DefinicjeSzkolen" guided="Root" config="false"
+		caption="Definicja szkolenia"
+		tablecaption="Definicje szkoleń"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Kategoria" type="KategoriaSzkolenia" required="true"/>
+    <col name="Nazwa" type="string" length="80" required="true"/>
+    <col name="Blokada" type="boolean"/>
+  </table>
+
+  <table name="UprawnienieDefinicjiSzkolenia" tablename="UprawnDefSzkol" config="false"
+		caption="Uprawnienie"
+		tablecaption="Uprawnienia"
+	>
+    <col name="DefinicjaSzkolenia" type="DefinicjaSzkolenia" readonly="true" required="true" category="Ogólne"
+			relname="Definicja szkolenia dla uprawnienia"
+      children="Uprawnienia"
+			keyprimary="true"
+      keyunique="true"
+      relguided="inner"
+		>
+      <keycol name="DefinicjaUprawnienia"/>
+    </col>
+    <col name="DefinicjaUprawnienia" type="DefinicjaUprawnienia" required="true" category="Ogólne"/>
+  </table>
+
+  <table name="DostawcaSzkoleń" tablename="DostawcySzkolen" guided="Root"
+    caption="Dostawca szkoleń"     
+		tablecaption="Dostawcy szkoleń"
+	>
+    <key name="WgKodu" keyunique="true" keyprimary="true">
+      <keycol name="Kod" />
+    </key>
+    <key name="WgNazwy">
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgNIP" >
+      <keycol name="NIP" />
+    </key>
+    <key name="WgEuVAT" >
+      <keycol name="EuVAT" />
+    </key>
+    <col name="Kontrahent" type="Kontrahent" required="true" readonly="true"          
+         delete="cascade"
+         keyunique="true"
+         relright="true"
+    />
+    <col name="Kod" type="string" length="20" category="Ogólne" readonly="set"/>
+    <col name="Nazwa" type="string" length="240" category="Ogólne" readonly="set"/>
+    <col name="NIP" type="string" length="13" category="Ogólne" readonly="set"/>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" readonly="set"/>
+    <col name="Osoba" type="KontaktOsoba" category="Kontrahent"/>
+  </table>
+
+  <enum name="TypOfertySzkolenia"/>
+  <enum name="TypLokalizacjiSzkolenia"/>
+  <table name="OfertaSzkolenia" tablename="OfertySzkolen" guided="Root"
+    caption="Oferta szkolenia"
+		tablecaption="Oferty szkoleń"
+	>
+    <interface>IAdresHost</interface>
+    <key name="WgNazwa"
+         keyprimary="true"
+         keyunique="true"
+         >
+      <keycol name="Nazwa" />
+    </key>
+    <key name="WgKod">
+      <keycol name="Kod" />
+    </key>
+    <key name="WgKodUDostawcy">
+      <keycol name="KodUDostawcy" />
+    </key>
+    <col name="Typ" type="TypOfertySzkolenia" required="true" readonly="true" selector="true"/>
+    <col name="Nazwa" type="string" length="60" required="true"/>
+    <col name="Kod" type="string" length="20"/>
+    <col name="KodUDostawcy" type="string" length="20"/>
+    <col name="Definicja" type="DefinicjaSzkolenia" required="true" keyunique="true">
+      <keycol name="Nazwa" />
+    </col>
+    <col name="Dostawca" type="DostawcaSzkoleń" readonly="true"
+			  relname="Oferty dostawców szkoleń"
+        children="Oferty"
+			  delete="cascade"
+			  relright="true"
+    />
+    <col name="Osoba" type="KontaktOsoba"/>
+    <col name="Kontakt" type="Kontakt" category="Kontrahent"/>
+    <col name="Blokada" type="boolean"/>
+    <col name="CzasTrwaniaDni" type="int"/>
+    <col name="CzasTrwaniaGodz" type="time"/>
+    <col name="MinOsob" type="int" caption="Min. ilość uczestników"/>
+    <col name="MaxOsob" type="int" caption="Max. ilość uczestników"/>
+    <col name="Cena" type="currency"/>
+    <col name="CenaOdOsoby" type="currency"/>
+    <col name="Lokalizacja" type="TypLokalizacjiSzkolenia"/>
+    <col name="Opis" type="text"/>
+  </table>
+
+  <table name="BudżetSzkoleń" tablename="BudzetySzkolen" guided="Root"
+		tablecaption="Budżety szkoleń"
+	>
+    <key name="WgNazwy" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa" />
+      <keycol name="Okres.To" />
+    </key>
+    <col name="Wydzial" type="Wydzial" readonly="true" required="true" category="Ogólne"
+      caption="Jednostka organizacyjna"
+			relname="Jednostka organizacyjna budżetu szkoleń"
+			relright="true"
+		>
+      <keycol name="Okres.To" />
+    </col>
+    <col name="Okres" type="FromTo" required="true" />
+    <col name="Nazwa" type="string" length="80" required="true"/>
+    <col name="Plan" type="currency"/>
+    <col name="Realizacja" type="currency" readonly="set"/>
+    <col name="Zaplanowane" type="currency" readonly="set"/>
+    <col name="Wykonany" type="boolean"/>
+  </table>
+
+  <enum name="StanyRealizacjiSzkolenia"/>
+  <table name="EtapRealizacjiSzkolenia" tablename="EtapRealizSzkol" guided="Root" config="true"
+		caption="Etap realizacji szkolenia"
+		tablecaption="Etapy realizacji szkoleń"
+	>
+    <key name="WgNazwa" keyunique="true" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <key name="WgLp">
+      <keycol name="Lp"/>
+    </key>
+    <col name="Lp" type="int" required="true" batchfield="false"/>
+    <col name="Nazwa" type="string" length="30" required="true" localization="dictionary"/>
+    <col name="Stan" type="StanyRealizacjiSzkolenia" required="true"/>
+    <col name="Blokada" type="boolean"/>
+  </table>
+
+  <table name="WniosekOSzkolenie" tablename="WnioskiOSzkol" guided="Root"
+		tablecaption="Wnioski o szkolenia"
+	>
+    <interface>IŹródłoUzyskaniaUprawnienia</interface>
+    <interface>IOcenaPracownika</interface>
+    <interface>IBazaZrodlaWyplaty</interface>
+    <key name="WgDataZgloszenia" >
+      <keycol name="DataZgloszenia"/>
+    </key>
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" keyprimary="true"
+			relname="Wnioski o szkolenia pracownika"
+			children="WnioskiOSzkolenia"
+			delete="cascade"
+			relright="true"
+         />
+    <col name="Kierownik" type="Pracownik"/>
+    <col name="Budzet" type="BudżetSzkoleń"
+			relname="Wnioski o szkolenia budżetu"
+			children="WnioskiOSzkolenia"
+         />
+    <col name="Definicja" type="DefinicjaSzkolenia" required="true"/>
+    <col name="SkierowanyPrzezZaklad" type="boolean"/>
+    <col name="DataZgloszenia" type="date" required="true" caption="Data zgłoszenia"/>
+    <col name="Termin" type="date" required="true"/>
+    <col name="DataAnulowania" type="date"/>
+    <col name="Etap" type="EtapRealizacjiSzkolenia" required="true"/>
+    <col name="Realizacja" type="RealizacjaSzkolenia"
+			   relname="Uczestnicy szkolenia"
+			   children="Uczestnicy"/>
+    <col name="Ocena" type="string" length="20"/>
+    <col name="KorektaKosztu" type="boolean"/>
+    <col name="Koszt" type="currency"/>
+    <col name="Rozliczenie" type="RozliczenieSwiadczenia"/>
+    <col name="Opis" type="text"/>
+  </table>
+
+  <table name="RealizacjaSzkolenia" tablename="RealizSzkolen" guided="Root"
+		caption="Szkolenie"
+		tablecaption="Szkolenia"
+	>
+    <interface>IAdresHost</interface>
+    <interface>IOceniany</interface>
+    <interface>IŹródłoOceny</interface>
+    <key name="WgOkresu">
+      <keycol name="Okres.To" />
+    </key>
+    <col name="Definicja" type="DefinicjaSzkolenia" required="true" keyprimary="true"/>
+    <col name="Tytul" type="string" length="80" required="true" caption="Tytuł"/>
+    <col name="Oferta" type="OfertaSzkolenia"/>
+    <col name="Wewnetrzne" type="boolean" caption="Szkolenie wewnętrzne"/>
+    <col name="Dostawca" type="DostawcaSzkoleń"/>
+    <col name="Osoba" type="KontaktOsoba"/>
+    <col name="Budzet" type="BudżetSzkoleń"
+			relname="Realizacja szkoleń z budżetu"
+			children="Szkolenia"
+    />
+    <col name="Okres" type="FromTo" required="true"/>
+    <col name="Etap" type="EtapRealizacjiSzkolenia" required="true"/>
+    <col name="Cena" type="currency"/>
+    <col name="CenaOdOsoby" type="currency"/>
+    <col name="KorektaKosztu" type="boolean"/>
+    <col name="Koszt" type="currency"/>
+    <col name="Lokalizacja" type="TypLokalizacjiSzkolenia"/>
+    <col name="Opis" type="text"/>
+  </table>
+
+  <table name="UkończoneSzkolenie" tablename="UkonczSzkolenia" guided="Root"
+		caption="Ukończone szkolenie" tablecaption="Ukończone szkolenia"
+	>
+    <interface>IOcenaPracownika</interface>
+    <key name="WgOkresu">
+      <keycol name="Okres.To" />
+    </key>
+    <col name="Pracownik" type="Pracownik" readonly="true" required="true" keyprimary="true"
+			relname="Ewidencja szkoleń pracownika"
+			children="UkończoneSzkolenia"
+			delete="cascade"
+			relright="true"
+         >
+      <keycol name="Okres.To"/>
+    </col>
+    <col name="Wniosek" type="WniosekOSzkolenie" readonly="true"
+			   relname="Ukonczone szkolenia dla wniosku"
+			   children="UkończoneSzkolenia"/>
+    <col name="Nazwa" type="string" length="80" required="true">
+      <attribute>Dictionary("Kurs.Temat")</attribute>
+    </col>
+    <col name="Okres" type="FromTo" required="true"/>
+    <col name="Ocena" type="string" length="20"/>
+    <col name="Opis" type="text"/>
+  </table>
+</module>

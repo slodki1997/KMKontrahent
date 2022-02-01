@@ -1,0 +1,349 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" xsi:schemaLocation="http://www.enova.pl/schema/ http://www.enova.pl/schema/business_struct.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Magazyny" namespace="Soneta.Magazyny" versionName="soneta">
+	<import>../..</import>
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Towary</using>
+	<using>Soneta.Handel</using>
+	<using>Soneta.Magazyny.Dostawy</using>
+	<using>Soneta.CRM</using>
+	<using>Soneta.Business.Db</using>
+
+	<table name="GrupaDostaw" tablename="GrupyDostaw" name8="GrpDstw" namespace="Soneta.Magazyny.Dostawy"
+		   caption="Partia" tablecaption="Partie">
+
+		<interface>IKodowany</interface>
+
+		<key name="WgData" keyprimary="false">
+			<keycol name="Data"/>
+		</key>
+
+		<key name="WgNumer" keyprimary="true" keyunique="true">
+			<keycol name="Numer"/>
+			<keycol name="Towar"/>
+		</key>
+		
+		<col name="Towar" type="Towar" required="true" readonly="true"
+			 children="Partie" relname="Partie towaru" delete="cascade"
+			 caption="Towar w partii."
+			 description="Towar w partii.">
+			<keyinclude name="Blokada"/>
+		</col>
+		<col name="Blokada" type="boolean"
+			 caption="Blokada."
+			 description="Blokuje możliwość manipulowania grupą dostaw." />
+		<col name="Data" type="date"
+			 caption="Data"
+			 description="Data." />
+		<col name="Numer" type="string" length="40" modifier="public virtual" required="true"
+			caption="Numer"
+			 description="Numer partii." />
+
+	</table>
+
+	<table name="OkresMagazynowy" tablename="OkresyMag" guided="Root" config="true" tablecaption="Okresy magazynowe" caption="Okres magazynowy">
+
+		<key name="WgOkres" keyunique="true"
+			 keyprimary="true" >
+			<keycol name="Okres.To" />
+		</key>
+
+		<col name="Okres" type="FromTo" required="true"
+			description="Określa okres czasu, dla którego jest aktualny ten okres magazynowy." />
+		<col name="Zamkniety" type="boolean" caption="Zamknięty"
+			description="Określa, czy okres magazynowy jest zamknięty bez prawa do jego modyfikacji." />
+
+	</table>
+
+	<table name="Magazyn" tablename="Magazyny" guided="Root" cached="true" config="true">
+		<interface>IRightsSource</interface>
+		<interface>IElementSlownika</interface>
+
+		<key name="WgNazwa" keyunique="true">
+			<keycol name="Nazwa" />
+		</key>
+		<key name="WgSymbol" keyunique="true">
+			<keycol name="Symbol" />
+		</key>
+
+		<col name="Symbol" type="string" length="12" required="true" important="true"
+			description="Krótki symbol magazynu wykorzystywany do wyszukiwania i numeracji dokumentów handlowych." />
+		<col name="Nazwa" type="string" length="40" required="true" important="true"
+				description="Nazwa wykorzystywania do wyszukiwania dokumentów, wyświetlana w polach wprowadzania magazynu." />
+		<col name="Opis" type="string" length="80" localization="dictionary"
+			description="Opis magazynu." />
+		<col name="Algorytm" type="AlgorytmMagazynowy"
+			description="Określa algorytm rozchodu zasobów w tym magazynie.">
+			<verifier name="Magazyn.CechaAlgorytmuVerifier"/>
+		</col>
+		<col name="CechaAlgorytmu" type="string" length="30"
+			description="Nazwa cechy pozycji lub dokumentu, wg której ma być realizowany rozchód z magazynu (algorytm wg cechy).">
+			<attribute>ControlEdit(ControlEditKind.ComboBox)</attribute>
+			<verifier name="Magazyn.CechaAlgorytmuVerifier"/>
+		</col>
+		<col name="StanyUjemne" type="StanyUjemne"
+			description="Określa sposób działania programu w przypadku wystąpienia stanu ujemnego w magazynie." />
+		<col name="StanyUjemneKorygowanieRozchodu" type="boolean"
+			description="Możliwość operowania na stanach ujemnych, także przy wystawianiu korekt sprzedaży." />
+		<col name="RezerwacjePonizejStanu" type="StanyUjemne"
+			description="Określa sposób działania programu w przypadku gdy ilość rezerwowanego towaru przekracza stan magazynowy." />
+		<col name="MarzaUjemna" type="StanyUjemne"
+			description="Określa sposób działania programu w przypadku rozchodu (sprzedaży) towaru z magazynu po cenie niższej niż cena przychodu (zakupu)." />
+		<col name="RozchodyPoPrzychodach" type="boolean"
+			description="Wymusza łączenie rozchodów tylko z przychodami, które są wcześniej." />
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne"
+			relname="Oddział firmy do którego należy magazyn"
+			children="Magazyny"
+			description="Oddział firmy do którego należy magazyn."
+			 keyprimary="true" />
+
+    <col name="Lokalizacja" type="Lokalizacja" category="Ogólne" modifier="public virtual"
+			 caption="Lokalizacja magazynu"
+			 description="Lokalizacja magazynu." />
+    
+		<col name="FiltrTowaru" type="string" length="250" category="Towar"
+			description="Filtr dostępności towarów dla magazynu." />
+		<col name="PodlegaGeneratorZamowien" type="boolean" category="Ogólne"
+			description="Określa, czy magazyn będzie uwzględniany w generatorze zamówień." />
+		<col name="OkresDostepnosci" type="FromTo" category="Ogólne" name12="OkresDos"
+			description="Określa, okres dostępności, w którym magazyn jest widoczny na filtrach." />
+	</table>
+
+	<subrow name="PartiaTowaru">
+
+		<col name="Typ" type="TypPartii" required="true"
+			description="Typ partii towaru, określający czy jest to rzeczywista partia towaru, czy jedynie zamówiona." />
+		<col name="Wartosc" type="decimal" caption="Wartość"
+			description="Wartość tej partii towaru." />
+		<col name="PozycjaIdent" type="int" required="true" batchfield="false"
+			description="Identyfikuje pozycje dokumentu handlowego, na wskutek którego powstała partia towaru." />
+		<col name="Dokument" type="DokumentHandlowy" required="true"
+			description="Dokument, na podstawie którego powstała ta partia towaru." >
+			<keycol name="PozycjaIdent" />
+		</col>
+                <col name="KontrahentPartii" type="Kontrahent" readonly="set"
+                        description="Kontrahent, który jest dostawcą/odbiorcą tej partii towaru." >
+                        <keycol name="Data"/>
+                        <keycol name="Czas"/>
+                </col>
+		<col name="Data" type="date" required="true" readonly="set"
+				description="Data powstania partii towaru, pobrana z dokumentu." />
+		<col name="Czas" type="time" readonly="set"
+				description="Czas powstania partii towaru, pobrany z dokumentu." />
+		<col name="PartiaTowaru" type="GrupaDostaw" readonly="set"
+			 description="Partia towaru." >
+		</col>
+
+	</subrow>
+
+	<table name="Obrot" tablename="Obroty" guided="None" caption="Obrót">
+
+		<key name="WgPrzychodPartiaTowaruMagazyn">
+			<keycol name="Przychod.PartiaTowaru"/>
+			<keycol name="Magazyn"/>
+			<keycol name="Towar"/>
+		</key>
+
+		<key name="WgPrzychodPartiaTowaruTowar">
+			<keycol name="Przychod.PartiaTowaru"/>
+			<keycol name="Towar"/>
+		</key>
+		
+		<key name="WgTowarOkres">
+			<keycol name="Towar"/>
+			<keycol name="Okres"/>
+      <keycol name="Data"/>
+      <keycol name="Czas"/>
+		</key>
+
+    <key name="WgPrzychodKontrahentMagazyn">
+      <keycol name="Przychod.KontrahentPartii"/>
+      <keycol name="Magazyn"/>
+      <keycol name="Data"/>
+      <keycol name="Czas"/>
+    </key>
+
+    <key name="WgRozchodKontrahentMagazyn">
+      <keycol name="Rozchod.KontrahentPartii"/>
+      <keycol name="Magazyn"/>
+      <keycol name="Data"/>
+      <keycol name="Czas"/>
+    </key>
+
+                <key name="WgPrzychodKontrahent" >
+      <keycol name="Przychod.KontrahentPartii"/>
+                        <keycol name="Okres"/>
+                        <keycol name="Magazyn"/>
+                        <keycol name="Data"/>
+                        <keycol name="Czas"/>
+                        <keyinclude name="Przychod.Typ"/>
+                        <keyinclude name="Przychod.Data"/>
+                </key>
+
+                <key name="WgRozchodKontrahent" >
+      <keycol name="Rozchod.KontrahentPartii"/>
+                        <keycol name="Okres"/>
+                        <keycol name="Magazyn"/>
+                        <keycol name="Data"/>
+                        <keycol name="Czas"/>
+                        <keyinclude name="Rozchod.Typ"/>
+                        <keyinclude name="Rozchod.Data"/>
+                </key>
+
+		<col name="Okres" type="OkresMagazynowy" required="true" readonly="set"
+			relname="Obroty okresu"
+			description="Okres magazynowy, w którym został naliczony ten obrót magazynowy (marża)."
+		>
+			<keycol name="Data"/>
+			<keycol name="Czas"/>
+		</col>
+		<col name="Magazyn" type="Magazyn" required="true" readonly="true"
+			relname="Obroty w magazynie" relright="true"
+			description="Magazyn, w którym został naliczony ten obrót magazynowy."
+		>
+			<keycol name="Okres"/>
+			<keycol name="Towar"/>
+			<keycol name="Data"/>
+			<keycol name="Czas"/>
+		</col>
+		<col name="Towar" type="Towar" required="true" readonly="true" lock="ExclusiveGet"
+			 relname="Obroty towaru"
+			 children="Obroty"
+			 keyprimary="true"
+			 description="Towar, dla ktrego zostałł naliczony obrót magazynowy"
+		>
+			<keycol name="Magazyn"/>
+			<keycol name="Data"/>
+			<keycol name="Czas"/>
+		</col>
+
+		<col name="Korekta" type="KorektaObrotu"
+			description="Określa sposób powstania obrotu, czy jest to obrót stornujący inne oborty." />
+		<col name="Stornowany" type="Obrot"
+			description="Określa obrót, który został stornowany przez ten obrót." />
+		<col name="Ilosc" type="Quantity" caption="Ilość"
+			description="Ilość towaru z partii towaru użytej w tyn obrocie. " />
+                <col name="PrzychodPierwotny" type="PartiaTowaru" caption="Przychód pierwotny"
+                        description="Informacja o pierwotnej przychodowej partii towaru." />
+		<col name="Przychod" type="PartiaTowaru" caption="Przychód"
+			description="Informacja o przychodowej partii towaru." />
+		<col name="Rozchod" type="PartiaTowaru" caption="Rozchód"
+			description="Informacja o rozchodowej partii towaru." />
+		<col name="Data" type="date" readonly="set"
+			description="Data (rozchodu) powstania obrotu." />
+		<col name="Czas" type="time" readonly="set"
+			description="Czas (rozchodu) powstania obrotu." />
+
+		<col name="Flags" type="Handel.Helpers.Flags" modifier="protected" category="Ogólne"
+			 description="Flagi dodatkowe." />
+	</table>
+
+	<table name="Zasob" tablename="Zasoby" guided="None" caption="Zasób" >
+
+                <key name="WgPartiaKontrahent" >
+      <keycol name="Partia.KontrahentPartii"/>
+                        <keycol name="Okres"/>
+                        <keycol name="Magazyn"/>
+                        <keycol name="Partia.Data"/>
+                        <keycol name="Partia.Czas"/>
+                </key>
+
+		<key name="WgPartiaTowaruMagazyn">
+			<keycol name="Partia.PartiaTowaru"/>
+			<keycol name="Magazyn"/>
+			<keycol name="Towar"/>
+		</key>
+
+    <key name="WgPartiiWOkresie" keyunique="true">
+      <keycol name="Okres" />
+      <keycol name="Partia.Dokument" />
+      <keycol name="Partia.PozycjaIdent" />
+      <keycol name="PartiaPierwotna.Dokument" />
+      <keycol name="PartiaPierwotna.PozycjaIdent" />
+      <keycol name="Partia.Typ" />
+      <keycol name="Nadrzedny" />
+    </key>
+
+		<key name="WgPartiaTowaruTowar">
+			<keycol name="Partia.PartiaTowaru"/>
+			<keycol name="Towar"/>
+		</key>
+		
+		<col name="Okres" type="OkresMagazynowy" required="true" readonly="true"
+			delete="cascade"
+			relname="Zasoby okresu"
+			description="Okres magazynowy, do którego został naliczony zasób magazynowy."
+		>
+			<keycol name="Partia.Data"/>
+			<keycol name="Partia.Czas"/>
+		</col>
+		<col name="Magazyn" type="Magazyn" required="true" readonly="true"
+			relname="Zasoby w magazynie" relright="true"
+			description="Magazyn, w którym znajduje się partia towaru tego zasobu."
+		>
+			<keycol name="Okres"/>
+			<keycol name="Partia.Data"/>
+			<keycol name="Partia.Czas"/>
+		</col>
+		<col name="Towar" type="Towar" required="true" readonly="true" lock="ExclusiveGet"
+			 relname="Zasoby towaru"
+			 children="Zasoby"
+			 keyprimary="true"
+			 description="Towar, dla którego naliczony jest ten zasób."
+		>
+			<keycol name="Okres"/>
+			<keycol name="Magazyn"/>
+            <keycol name="PartiaPierwotna.Data"/>
+            <keycol name="PartiaPierwotna.Czas"/>
+			<keyinclude name="Partia.Typ"/>
+			<keyinclude name="Kierunek"/>
+      <verifier name="Zasob.TowarBlokadaVerifier" onadded="true" />
+		</col>
+
+		<col name="Kierunek" type="KierunekPartii" required="true"
+			description="Określa kierunek partii towaru, czy jest to partia towaru na magazynie, czy towar sprzedany na stanie ujemnym." />
+
+		<col name="Ilosc" type="Quantity" caption="Ilość"
+			description="Ilość towaru z partii w tym zasobie." >
+			<verifier name="Zasob.NadrzednyVerifier" />
+		</col>
+		<!-- TASK: 3360, [5.1] -->
+		<col name="IloscRezerwowana" type="Quantity" caption="Rezerwacja"
+			description="Ilość towaru zarezerwowana na tym zasobie." />
+                <col name="PartiaPierwotna" type="PartiaTowaru"
+                        description="Informacja o pierwotnej partii towaru (przychodowej lub rozchodowej)." />
+		<col name="Partia" type="PartiaTowaru"
+			description="Informacja o partii towaru (przychodowej lub rozchodowej)." />
+
+		<col name="Nadrzedny" type="Zasob" required="false"
+			 description="Zasób nadrzędny."
+			 relname="Podrzędne zasoby"
+			 children="Podrzedne">
+			<keycol name="Partia.Typ" />
+			<verifier name="Zasob.NadrzednyVerifier" />
+		</col>
+
+		<col name="ParametryRezerwacji" type="ParametryRezerwacji" caption="Parametry rezerwacji zasobu"
+			 description="Parametry rezerwacji zasóbu (w przypadku zamówień algorytmicznych)." />
+
+		<col name="PartiaTowaru" type="GrupaDostaw" >
+
+		</col>
+	</table>
+
+	<subrow name="ParametryRezerwacji">
+		<col name="DataOd" type="date" caption="Data początku rezerwacji." />
+		<col name="DataDo" type="date" caption="Data końca rezerwacji." />
+		<col name="CzasOd" type="time" caption="Czas początku rezerwacji." />
+		<col name="CzasDo" type="time" caption="Czas końca rezerwacji." />
+		<col name="Priorytet" type="SlownikElem" caption="Priorytet rezerwacji."  />
+	</subrow>
+
+	<enum name="AlgorytmMagazynowy" />
+	<enum name="Handel.Helpers.Flags" />
+	<enum name="KierunekPartii" />
+	<enum name="KorektaObrotu" />
+	<enum name="StanyUjemne" />
+	<enum name="TypPartii" />
+
+</module>
